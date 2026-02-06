@@ -4,8 +4,9 @@ import { Vector2 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
-import RenderPixelatedPass from "./RenderPixelatedPass"
-import PixelatePass from "./PixelatePass"
+import RenderPixelatedPass from "./RenderPixelatedPass.js"
+import { stopGoEased } from "../utils/math.js"
+import PixelatePass from "./PixelatePass.js"
 
 let
     camera: THREE.Camera,
@@ -110,6 +111,16 @@ export default function initScene() {
     target.position.set(0, 0, 0)
     spotLight.castShadow = true
     scene.add(spotLight)
+}
+
+export function animateScene() {
+    let t = performance.now() / 1000
+
+    let mat = (crystalMesh.material as THREE.MeshPhongMaterial)
+    mat.emissiveIntensity = Math.sin(t * 3) * .5 + .5
+    crystalMesh.position.y = .7 + Math.sin(t * 2) * .05
+    crystalMesh.rotation.y = stopGoEased(t, 2, 4) * 2 * Math.PI
+
 }
 
 function pixelTex(tex: THREE.Texture) {

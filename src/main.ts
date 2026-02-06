@@ -1,8 +1,7 @@
 import "./style.css"
 import * as THREE from "three"
-import { stopGoEased } from "./math.js"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
-import initScene, { scene, composer, crystalMesh } from "./initScene.js"
+import initScene, { scene, composer, animateScene } from "./scene/initScene.js"
 
 let
   mixer: THREE.AnimationMixer,
@@ -20,13 +19,8 @@ let currentAction: THREE.AnimationAction | null = null;
 
 function animate() {
   requestAnimationFrame(animate)
-  let t = performance.now() / 1000
 
-  let mat = (crystalMesh.material as THREE.MeshPhongMaterial)
-  mat.emissiveIntensity = Math.sin(t * 3) * .5 + .5
-  crystalMesh.position.y = .7 + Math.sin(t * 2) * .05
-  crystalMesh.rotation.y = stopGoEased(t, 2, 4) * 2 * Math.PI
-
+  animateScene();
   mixer?.update(clock.getDelta());
 
   composer.render()
@@ -42,10 +36,10 @@ async function addPlayer() {
   await loadAnimation('Walk', 'src/assets/Player/Animations/Walk.glb');
   await loadAnimation('FastRun', 'src/assets/Player/Animations/Fast-Run.glb');
 
-  play('Walk');
+  playAnimation('Walk');
 
   setTimeout(() => {
-    play('FastRun');
+    playAnimation('FastRun');
   }, 5000)
 }
 
@@ -61,7 +55,7 @@ async function loadAnimation(name: string, url: string) {
   actions[name] = mixer.clipAction(clip);
 }
 
-function play(name: string) {
+function playAnimation(name: string) {
   const next = actions[name];
   if (!next || next === currentAction) return;
 
