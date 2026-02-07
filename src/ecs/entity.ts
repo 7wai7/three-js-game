@@ -6,8 +6,4 @@ export class Entity {
     constructor(id: EntityId) {
         this.id = id
     }
-
-    getComponent() {
-        
-    }
 }
