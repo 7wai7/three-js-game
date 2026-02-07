@@ -11,13 +11,19 @@ export default class MeshComponent extends MonoBehaviourComponent {
     private meshPath: string;
     private transformComp!: TransformComponent;
 
-    constructor(meshPath: string) {
+    constructor(meshOrPath: string | THREE.Object3D) {
         super();
-        this.meshPath = meshPath;
+        if (meshOrPath instanceof THREE.Object3D) {
+            this.mesh = meshOrPath;
+            this.meshPath = "";
+            scene.add(this.mesh);
+        } else {
+            this.meshPath = meshOrPath;
+        }
     }
 
     async init() {
-        await this.loadMesh(this.meshPath);
+        if (!this.mesh) await this.loadMesh(this.meshPath);
         this.transformComp = ecsService.getComponent(this.entityId, TransformComponent)!;
         if (!this.transformComp)
             throw new Error(`MeshComponent requires a TransformComponent on the same entity (entityId: ${this.entityId})`)
@@ -30,7 +36,7 @@ export default class MeshComponent extends MonoBehaviourComponent {
         this.mesh = model
     }
 
-    async update() {
+    async postUpdate() {
         if (!this.mesh) return;
         this.mesh.position.set(this.transformComp.position.x, this.transformComp.position.y, this.transformComp.position.z);
         this.mesh.rotation.set(this.transformComp.rotation.x, this.transformComp.rotation.y, this.transformComp.rotation.z);

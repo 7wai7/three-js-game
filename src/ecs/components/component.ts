@@ -1,6 +1,6 @@
 import type { EntityId } from "../ecs.types";
 
-export default class Component {
+export default abstract class Component {
     id: string = crypto.randomUUID();
     entityId!: EntityId;
 

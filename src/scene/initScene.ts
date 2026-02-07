@@ -123,14 +123,7 @@ export function animateScene() {
 
 }
 
-function pixelTex(tex: THREE.Texture) {
-    tex.minFilter = THREE.NearestFilter
-    tex.magFilter = THREE.NearestFilter
-    tex.generateMipmaps = false
-    tex.wrapS = THREE.RepeatWrapping
-    tex.wrapT = THREE.RepeatWrapping
-    return tex
-}
+
 
 
 export { scene, camera, renderer, composer, crystalMesh }

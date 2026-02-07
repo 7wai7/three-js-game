@@ -10,6 +10,18 @@ class MonoBehaviourSystem {
         }
     }
 
+    postUpdate() {
+        for (const component of this.components.values()) {
+            component?.postUpdate();
+        }
+    }
+
+    preRender() {
+        for (const component of this.components.values()) {
+            component?.preRender();
+        }
+    }
+
     addComponent(component: MonoBehaviourComponent) {
         this.components.set(component.id, component);
     }
