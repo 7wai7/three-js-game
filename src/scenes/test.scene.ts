@@ -47,11 +47,29 @@ export default class TestScene extends GameScene {
   }
 
   createPlayer() {
+    const PLAYER_HEIGHT = 1.8;
+    const PLAYER_RADIUS = 0.3;
+    const HALF_HEIGHT = (PLAYER_HEIGHT - PLAYER_RADIUS * 2) / 2;
+
     const [_, components] = this.ecsService.createEntity(
       new TransformComponent(),
+
       new MeshComponent("src/assets/Player/Mesh.glb"),
+
       new AnimationComponent(),
+
+      new PhysicsComponent(
+        RAPIER.RigidBodyDesc.kinematicPositionBased()
+          .setTranslation(0, PLAYER_HEIGHT / 2, 0)
+          .lockRotations(),
+
+        RAPIER.ColliderDesc.capsule(HALF_HEIGHT, PLAYER_RADIUS)
+          .setFriction(0)
+          .setRestitution(0),
+      ),
     );
+
+    components[1].visualOffset.y = -PLAYER_HEIGHT / 2
 
     const animationComp = components[2];
     animationComp.loadAnimation(

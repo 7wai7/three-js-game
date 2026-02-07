@@ -14,14 +14,7 @@ export function createRenderer() {
   renderResolution.y |= 0;
   let aspectRatio = screenResolution.x / screenResolution.y;
 
-  const camera = new THREE.OrthographicCamera(
-    -aspectRatio,
-    aspectRatio,
-    1,
-    -1,
-    0.1,
-    10,
-  );
+  const camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1);
 
   // Renderer
   const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -47,7 +40,7 @@ export function createRenderer() {
     passes: {
       pixelPass,
       bloomPass,
-      pixelatePass
+      pixelatePass,
     },
   };
 }

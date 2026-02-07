@@ -2,9 +2,11 @@ import * as THREE from "three";
 import TransformComponent from "./transform.component";
 import { gltfLoader } from "../../main";
 import MonoBehaviourComponent from "./monoBehaviour.component";
+import type { Point } from "../ecs.types";
 
 export default class MeshComponent extends MonoBehaviourComponent {
   mesh?: THREE.Object3D;
+  visualOffset: Point = { x: 0, y: 0, z: 0 };
 
   private meshPath?: string;
   private transformComp!: TransformComponent;
@@ -26,6 +28,7 @@ export default class MeshComponent extends MonoBehaviourComponent {
     }
 
     if (!this.mesh) await this.loadMesh(this.meshPath);
+
     this.transformComp = this.ecsService.getComponent(
       this.entityId,
       TransformComponent,
@@ -46,9 +49,9 @@ export default class MeshComponent extends MonoBehaviourComponent {
   async postUpdate() {
     if (!this.mesh) return;
     this.mesh.position.set(
-      this.transformComp.position.x,
-      this.transformComp.position.y,
-      this.transformComp.position.z,
+      this.transformComp.position.x + this.visualOffset.x,
+      this.transformComp.position.y + this.visualOffset.y,
+      this.transformComp.position.z + this.visualOffset.z,
     );
     this.mesh.rotation.set(
       this.transformComp.rotation.x,
