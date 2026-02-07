@@ -5,6 +5,7 @@ import type GameScene from "../scenes/gameScene";
 import type { RenderPasses } from "./engine.types";
 import EcsService from "../ecs/ecs.service";
 import MonoBehaviourSystem from "../ecs/systems/monoBehaviour.system";
+import RAPIER from "@dimforge/rapier3d";
 
 export default class Engine {
   ecsService: EcsService;
@@ -15,6 +16,9 @@ export default class Engine {
   passes: RenderPasses;
   clock = new THREE.Clock();
   controls?: OrbitControls;
+  
+  gravity = { x: 0, y: -9.81, z: 0 };
+  physicsWorld = new RAPIER.World(this.gravity);
 
   readonly monoBehaviourSystem = new MonoBehaviourSystem();
 

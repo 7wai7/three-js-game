@@ -4,24 +4,30 @@ import type {
   RigidBody,
   RigidBodyDesc,
 } from "@dimforge/rapier3d";
-import { physicsWorld } from "../../physics/world";
 import TransformComponent from "./transform.component";
 import MonoBehaviourComponent from "./monoBehaviour.component";
 
 export default class PhysicsComponent extends MonoBehaviourComponent {
-  readonly rb: RigidBody;
-  readonly collider: Collider;
+  rb!: RigidBody;
+  collider!: Collider;
 
   private transformComponent?: TransformComponent;
+  private rbDesc: RigidBodyDesc;
+  private colliderDesc: ColliderDesc;
 
   constructor(rbDesc: RigidBodyDesc, colliderDesc: ColliderDesc) {
     super();
-    this.rb = physicsWorld.createRigidBody(rbDesc);
-    this.collider = physicsWorld.createCollider(colliderDesc, this.rb);
+    this.rbDesc = rbDesc;
+    this.colliderDesc = colliderDesc;
   }
 
   init() {
     super.init();
+    this.rb = this.engine.physicsWorld.createRigidBody(this.rbDesc);
+    this.collider = this.engine.physicsWorld.createCollider(
+      this.colliderDesc,
+      this.rb,
+    );
     this.transformComponent = this.ecsService.getComponent(
       this.entityId,
       TransformComponent,

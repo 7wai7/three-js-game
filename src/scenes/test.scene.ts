@@ -4,7 +4,6 @@ import RAPIER from "@dimforge/rapier3d";
 import MeshComponent from "../ecs/components/mesh.component";
 import PhysicsComponent from "../ecs/components/physics.component";
 import TransformComponent from "../ecs/components/transform.component";
-import { physicsWorld } from "../physics/world";
 import AnimationComponent from "../ecs/components/animation.component";
 
 export default class TestScene extends GameScene {
@@ -44,7 +43,7 @@ export default class TestScene extends GameScene {
   }
 
   update() {
-    physicsWorld.step();
+    this.engine.physicsWorld.step();
   }
 
   createPlayer() {
