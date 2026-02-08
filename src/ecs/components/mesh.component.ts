@@ -18,7 +18,6 @@ export default class MeshComponent extends MonoBehaviourComponent {
   }
 
   async init() {
-    super.init();
     if (this.meshOrPath instanceof THREE.Object3D) {
       this.mesh = this.meshOrPath;
       this.meshPath = "";

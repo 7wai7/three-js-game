@@ -13,24 +13,30 @@ export default abstract class Component {
 
   private inited = false;
 
-  onInit({
-    entityId,
-    scene,
-    engine,
-    ecsService,
-  }: {
+  onInit(ctx: {
     entityId: EntityId;
     scene: GameScene;
     engine: Engine;
     ecsService: EcsService;
   }) {
-    this.entityId = entityId;
-    this.scene = scene;
-    this.engine = engine;
-    this.ecsService = ecsService;
-    if (!this.inited) this.init();
+    if (this.inited) return;
+
+    this.entityId = ctx.entityId;
+    this.scene = ctx.scene;
+    this.engine = ctx.engine;
+    this.ecsService = ctx.ecsService;
+
+    this.__internalInit(); // lifecycle систем
+    this.init(); // ← hook для нащадків
+
+    this.inited = true;
   }
 
+  // системний lifecycle (override ЗАБОРОНЕНО)
+  protected __internalInit(): void {}
+
+  // user hook
   protected init(): void {}
+
   onDestroy(): void {}
 }

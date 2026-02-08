@@ -22,7 +22,6 @@ export default class PhysicsComponent extends MonoBehaviourComponent {
   }
 
   init() {
-    super.init();
     this.rb = this.engine.physicsWorld.createRigidBody(this.rbDesc);
     this.collider = this.engine.physicsWorld.createCollider(
       this.colliderDesc,
