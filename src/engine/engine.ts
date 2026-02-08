@@ -6,6 +6,7 @@ import type { RenderPasses } from "./engine.types";
 import EcsService from "../ecs/ecs.service";
 import MonoBehaviourSystem from "../ecs/systems/monoBehaviour.system";
 import RAPIER from "@dimforge/rapier3d";
+import { inputManager } from "../imput/InputManager";
 
 export default class Engine {
   ecsService: EcsService;
@@ -19,6 +20,7 @@ export default class Engine {
 
   gravity = { x: 0, y: -9.81, z: 0 };
   physicsWorld = new RAPIER.World(this.gravity);
+  deltaTime = 0;
 
   readonly monoBehaviourSystem = new MonoBehaviourSystem();
 
@@ -66,16 +68,19 @@ export default class Engine {
     requestAnimationFrame(this.loop);
 
     const dt = this.clock.getDelta();
+    this.deltaTime = dt;
 
     this.physicsWorld.step();
     this.monoBehaviourSystem.update();
     this.monoBehaviourSystem.postUpdate();
-    this.currentScene?.update(dt);
-    this.currentScene?.lateUpdate(dt);
+    this.currentScene?.update();
+    this.currentScene?.lateUpdate();
     this.controls?.update();
 
     this.monoBehaviourSystem.preRender();
     this.composer.render();
+
+    inputManager.postUpdate();
   };
 
   private clearThreeScene(scene: THREE.Scene) {

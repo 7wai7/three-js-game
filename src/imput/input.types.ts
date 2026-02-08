@@ -8,6 +8,7 @@ export type InputKey =
     | "KeyC"
     | "Space"
     | "ShiftLeft"
+    | "ShiftRight"
     | "Tab"
     | "AltLeft"
     | "Escape";

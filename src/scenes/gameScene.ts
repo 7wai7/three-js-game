@@ -17,8 +17,8 @@ export default abstract class GameScene extends THREE.Scene {
   }
 
   protected abstract init(): void;
-  update(_dt: number): void {}
-  lateUpdate(_dt: number): void {}
+  update(): void {}
+  lateUpdate(): void {}
 
   dispose() {}
 }

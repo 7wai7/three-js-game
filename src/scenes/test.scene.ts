@@ -5,6 +5,7 @@ import MeshComponent from "../ecs/components/mesh.component";
 import PhysicsComponent from "../ecs/components/physics.component";
 import TransformComponent from "../ecs/components/transform.component";
 import AnimationComponent from "../ecs/components/animation.component";
+import PlayerControllerComponent from "../ecs/components/playerController.component";
 
 export default class TestScene extends GameScene {
   protected init() {
@@ -57,17 +58,23 @@ export default class TestScene extends GameScene {
       new PhysicsComponent(
         RAPIER.RigidBodyDesc.kinematicPositionBased()
           .setTranslation(0, PLAYER_HEIGHT / 2, 0)
-          .lockRotations(),
+          .enabledRotations(true, true, true),
 
         RAPIER.ColliderDesc.capsule(HALF_HEIGHT, PLAYER_RADIUS)
           .setFriction(0)
           .setRestitution(0),
       ),
+
+      new PlayerControllerComponent(),
     );
 
     components[1].visualOffset.y = -PLAYER_HEIGHT / 2
 
     const animationComp = components[2];
+    animationComp.loadAnimation(
+      "Idle",
+      "src/assets/Player/Animations/Standing-Idle.glb",
+    );
     animationComp.loadAnimation(
       "Walk",
       "src/assets/Player/Animations/Walk.glb",
@@ -76,11 +83,6 @@ export default class TestScene extends GameScene {
       "FastRun",
       "src/assets/Player/Animations/Fast-Run.glb",
     );
-    animationComp.playAnimation("Walk");
-
-    setTimeout(() => {
-      animationComp.playAnimation("FastRun");
-    }, 5000);
   }
 
   addLight() {

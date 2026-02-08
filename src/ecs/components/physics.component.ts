@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import type {
   Collider,
   ColliderDesc,
@@ -36,7 +37,10 @@ export default class PhysicsComponent extends MonoBehaviourComponent {
   update(): void {
     if (!this.transformComponent) return;
     const position = this.rb.translation();
-    const rotation = this.rb.rotation();
+    const rot = this.rb.rotation();
+    const quat = new THREE.Quaternion(rot.x, rot.y, rot.z, rot.w);
+    const euler = new THREE.Euler().setFromQuaternion(quat, "YXZ");
+
     const scale = this.transformComponent.scale;
     this.transformComponent.position = {
       x: position.x,
@@ -44,9 +48,9 @@ export default class PhysicsComponent extends MonoBehaviourComponent {
       z: position.z,
     };
     this.transformComponent.rotation = {
-      x: rotation.x,
-      y: rotation.y,
-      z: rotation.z,
+  x: euler.x,
+  y: euler.y,
+  z: euler.z,
     };
     this.transformComponent.scale = scale;
   }

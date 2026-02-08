@@ -132,7 +132,7 @@ class InputManager {
         // Перелік строгих комбінацій які ми хочемо перехопити
         const isCtrlW = (e.ctrlKey || e.metaKey) && (e.key === 'w' || e.key === 'W');
         const isCtrlT = (e.ctrlKey || e.metaKey) && (e.key === 't' || e.key === 'T');
-        const isCtrlR = (e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R');
+        // const isCtrlR = (e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R');
         const isF5 = e.key === 'F5';
         const isTab = e.key === 'Tab';
         const isAlt = e.key === 'Alt'; // Alt окрема клавіша
@@ -140,7 +140,7 @@ class InputManager {
 
         // Якщо lock — запобігаємо стандартним діям для цих кейсів
         if (locked) {
-            if (isCtrlW || isCtrlT || isCtrlR || isF5 || isTab || isAlt || isMeta) {
+            if (isCtrlW || isCtrlT /* || isCtrlR */ || isF5 || isTab || isAlt || isMeta) {
                 e.preventDefault();              // блокуємо browser action
                 e.stopImmediatePropagation();    // запобігаємо даліїй обробці
             }
@@ -220,3 +220,4 @@ class InputManager {
 }
 
 export const inputManager = new InputManager();
+inputManager.init();

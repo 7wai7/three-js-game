@@ -41,8 +41,9 @@ export default class AnimationComponent extends MonoBehaviourComponent {
   }
 
   playAnimation(name: string) {
-    if (!this.actions[name]) {
+    if (!this.actions[name] && !this.mixer) {
       this.pendingPlay = name;
+      console.warn(`Animation ${name} not exist`);
       return;
     }
 
