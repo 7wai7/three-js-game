@@ -1,11 +1,10 @@
 import type Engine from "../engine/engine";
 import type Component from "./components/component";
 import type { EntityId } from "./ecs.types";
-import { Entity } from "./entity";
 
 export default class EcsService {
   private engine: Engine;
-  private entities = new Map<EntityId, [Entity, Component[]]>();
+  private entities = new Map<EntityId, Component[]>();
   private nextEntityId: EntityId = 0;
 
   constructor(engine: Engine) {
@@ -14,8 +13,7 @@ export default class EcsService {
 
   createEntity<T extends Component[]>(...components: T) {
     const id = this.nextEntityId++;
-    const entity = new Entity(id);
-    this.entities.set(id, [entity, components]);
+    this.entities.set(id, components);
     for (const component of components) {
       component.onInit({
         entityId: id,
@@ -24,14 +22,12 @@ export default class EcsService {
         ecsService: this,
       });
     }
-    return [entity, components] as [Entity, T];
+    return [id, components] as [EntityId, T];
   }
 
   destroyEntity(entityId: EntityId) {
-    const entry = this.entities.get(entityId);
-    if (!entry) return;
-
-    const [, components] = entry;
+    const components = this.entities.get(entityId);
+    if (!components) return;
 
     for (let i = components.length - 1; i >= 0; i--) {
       components[i].onDestroy?.();
@@ -41,8 +37,8 @@ export default class EcsService {
   }
 
   addComponent<T extends Component>(entityId: EntityId, component: T) {
-    const entry = this.entities.get(entityId);
-    if (!entry) {
+    const components = this.entities.get(entityId);
+    if (!components) {
       throw new Error(`Entity with id ${entityId} does not exist`);
     }
     component.onInit({
@@ -51,25 +47,25 @@ export default class EcsService {
       engine: this.engine,
       ecsService: this,
     });
-    entry[1].push(component);
+    components.push(component);
   }
 
   getComponent<T extends Component>(
     entityId: EntityId,
     componentClass: new (...args: any[]) => T,
   ): T | undefined {
-    const entry = this.entities.get(entityId);
-    if (!entry) {
+    const components = this.entities.get(entityId);
+    if (!components) {
       throw new Error(`Entity with id ${entityId} does not exist`);
     }
-    return entry[1].find((comp) => comp instanceof componentClass) as
+    return components.find((comp) => comp instanceof componentClass) as
       | T
       | undefined;
   }
 
   clear() {
     // destroy у зворотному порядку
-    for (const [_, [_entity, components]] of this.entities) {
+    for (const [_, components] of this.entities) {
       for (let i = components.length - 1; i >= 0; i--) {
         const c = components[i];
         try {
