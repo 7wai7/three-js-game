@@ -51,4 +51,13 @@ export default class PhysicsComponent extends MonoBehaviourComponent {
     };
     this.transformComponent.scale = scale;
   }
+
+  onDestroy() {
+    if (this.collider) {
+      this.engine.physicsWorld.removeCollider(this.collider, true);
+    }
+    if (this.rb) {
+      this.engine.physicsWorld.removeRigidBody(this.rb);
+    }
+  }
 }

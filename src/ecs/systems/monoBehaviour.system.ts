@@ -2,7 +2,7 @@ import type MonoBehaviourComponent from "../components/monoBehaviour.component";
 import type { ComponentId } from "../ecs.types";
 
 export default class MonoBehaviourSystem {
-  private components = new Map<ComponentId, MonoBehaviourComponent>();
+  components = new Map<ComponentId, MonoBehaviourComponent>();
 
   update() {
     for (const component of this.components.values()) {
@@ -28,5 +28,9 @@ export default class MonoBehaviourSystem {
 
   removeComponent(component: MonoBehaviourComponent) {
     this.components.delete(component.id);
+  }
+
+  dispose() {
+    this.components.clear();
   }
 }

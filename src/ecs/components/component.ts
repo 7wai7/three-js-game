@@ -32,4 +32,5 @@ export default abstract class Component {
   }
 
   protected init(): void {}
+  onDestroy(): void {}
 }

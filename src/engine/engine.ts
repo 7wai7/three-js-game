@@ -16,7 +16,7 @@ export default class Engine {
   passes: RenderPasses;
   clock = new THREE.Clock();
   controls?: OrbitControls;
-  
+
   gravity = { x: 0, y: -9.81, z: 0 };
   physicsWorld = new RAPIER.World(this.gravity);
 
@@ -41,13 +41,19 @@ export default class Engine {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.target.set(0, 1, 0);
-    this.camera.position.z = 2;
-    this.camera.position.y = 2 * Math.tan(Math.PI / 6);
+    this.camera.position.z = 20;
+    this.camera.position.y = 2;
     this.controls.update();
   }
 
   setScene(scene: GameScene) {
-    if (this.currentScene) this.currentScene.onExit();
+    if (this.currentScene) {
+      this.currentScene.onExit();
+      this.monoBehaviourSystem.dispose();
+      this.ecsService.clear();
+      this.physicsWorld = new RAPIER.World(this.gravity);
+      this.clearThreeScene(this.currentScene);
+    }
 
     // Передаємо сцену в RenderPass
     this.passes.pixelPass.scene = scene;
@@ -61,6 +67,7 @@ export default class Engine {
 
     const dt = this.clock.getDelta();
 
+    this.physicsWorld.step();
     this.monoBehaviourSystem.update();
     this.monoBehaviourSystem.postUpdate();
     this.currentScene?.update(dt);
@@ -70,4 +77,24 @@ export default class Engine {
     this.monoBehaviourSystem.preRender();
     this.composer.render();
   };
+
+  private clearThreeScene(scene: THREE.Scene) {
+    scene.traverse((obj: any) => {
+      if (obj.geometry) obj.geometry.dispose();
+
+      if (obj.material) {
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((m: any) => m.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      }
+
+      if (obj.texture) obj.texture.dispose();
+    });
+
+    while (scene.children.length > 0) {
+      scene.remove(scene.children[0]);
+    }
+  }
 }

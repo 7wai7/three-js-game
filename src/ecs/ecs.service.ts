@@ -27,6 +27,19 @@ export default class EcsService {
     return [entity, components] as [Entity, T];
   }
 
+  destroyEntity(entityId: EntityId) {
+    const entry = this.entities.get(entityId);
+    if (!entry) return;
+
+    const [, components] = entry;
+
+    for (let i = components.length - 1; i >= 0; i--) {
+      components[i].onDestroy?.();
+    }
+
+    this.entities.delete(entityId);
+  }
+
   addComponent<T extends Component>(entityId: EntityId, component: T) {
     const entry = this.entities.get(entityId);
     if (!entry) {
@@ -52,5 +65,22 @@ export default class EcsService {
     return entry[1].find((comp) => comp instanceof componentClass) as
       | T
       | undefined;
+  }
+
+  clear() {
+    // destroy у зворотному порядку
+    for (const [_, [_entity, components]] of this.entities) {
+      for (let i = components.length - 1; i >= 0; i--) {
+        const c = components[i];
+        try {
+          c.onDestroy?.();
+        } catch (e) {
+          console.error("Component destroy error:", c, e);
+        }
+      }
+    }
+
+    this.entities.clear();
+    this.nextEntityId = 0;
   }
 }

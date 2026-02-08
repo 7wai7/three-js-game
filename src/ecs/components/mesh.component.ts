@@ -64,4 +64,24 @@ export default class MeshComponent extends MonoBehaviourComponent {
       this.transformComp.scale.z,
     );
   }
+
+  onDestroy() {
+    if (!this.mesh) return;
+
+    this.scene.remove(this.mesh);
+
+    this.mesh.traverse((obj: any) => {
+      if (obj.geometry) obj.geometry.dispose();
+
+      if (obj.material) {
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((m: any) => m.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      }
+    });
+
+    this.mesh = undefined;
+  }
 }

@@ -42,10 +42,6 @@ export default class TestScene extends GameScene {
     );
   }
 
-  update() {
-    this.engine.physicsWorld.step();
-  }
-
   createPlayer() {
     const PLAYER_HEIGHT = 1.8;
     const PLAYER_RADIUS = 0.3;

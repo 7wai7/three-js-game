@@ -14,4 +14,8 @@ export default class MonoBehaviourComponent extends Component {
   postUpdate(): void {}
 
   preRender(): void {}
+
+  onDestroy() {
+    this.engine.monoBehaviourSystem.removeComponent(this);
+  }
 }
