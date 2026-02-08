@@ -32,7 +32,7 @@ export default class TestScene extends GameScene {
       new MeshComponent(
         new THREE.Mesh(
           new THREE.BoxGeometry(1, 1, 1),
-          new THREE.MeshStandardMaterial({ color: 0x66ccff }),
+          new THREE.MeshStandardMaterial({ color: 0x66cc00 }),
         ),
       ),
       new PhysicsComponent(
