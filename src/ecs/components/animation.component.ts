@@ -7,7 +7,6 @@ export default class AnimationComponent extends MonoBehaviourComponent {
   private mixer?: THREE.AnimationMixer;
   private actions: Record<string, THREE.AnimationAction> = {};
   private currentAction: THREE.AnimationAction | null = null;
-  private clock = new THREE.Clock();
 
   private pendingLoads: [string, string][] = []; // черга
   private pendingPlay?: string;
@@ -15,7 +14,7 @@ export default class AnimationComponent extends MonoBehaviourComponent {
   update() {
     this.tryInitMixer();
     if (!this.mixer) return;
-    this.mixer.update(this.clock.getDelta());
+    this.mixer.update(this.engine.deltaTime);
   }
 
   async loadAnimation(name: string, url: string) {
@@ -41,9 +40,8 @@ export default class AnimationComponent extends MonoBehaviourComponent {
   }
 
   playAnimation(name: string) {
-    if (!this.actions[name] && !this.mixer) {
+    if (!this.actions[name]) {
       this.pendingPlay = name;
-      console.warn(`Animation ${name} not exist`);
       return;
     }
 

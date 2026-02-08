@@ -6,13 +6,21 @@ import PhysicsComponent from "../ecs/components/physics.component";
 import TransformComponent from "../ecs/components/transform.component";
 import AnimationComponent from "../ecs/components/animation.component";
 import PlayerControllerComponent from "../ecs/components/playerController.component";
+import { stopGoEased } from "../utils/math";
 
 export default class TestScene extends GameScene {
+  crystalMesh?: THREE.Mesh<
+    THREE.IcosahedronGeometry,
+    THREE.MeshPhongMaterial,
+    THREE.Object3DEventMap
+  >;
+
   protected init() {
     this.background = new THREE.Color(0x202025);
     this.addLight();
 
     this.createPlayer();
+    this.addCrystal();
 
     this.ecsService.createEntity(
       new TransformComponent(),
@@ -43,6 +51,21 @@ export default class TestScene extends GameScene {
     );
   }
 
+  update() {
+    this.animateCrystalMesh();
+  }
+
+  animateCrystalMesh() {
+    if (!this.crystalMesh) return;
+
+    let t = performance.now() / 1000;
+
+    let mat = this.crystalMesh.material as THREE.MeshPhongMaterial;
+    mat.emissiveIntensity = Math.sin(t * 3) * 0.5 + 0.5;
+    this.crystalMesh.position.y = 0.7 + Math.sin(t * 2) * 0.05;
+    this.crystalMesh.rotation.y = stopGoEased(t, 2, 4) * 2 * Math.PI;
+  }
+
   createPlayer() {
     const PLAYER_HEIGHT = 1.8;
     const PLAYER_RADIUS = 0.3;
@@ -57,7 +80,7 @@ export default class TestScene extends GameScene {
 
       new PhysicsComponent(
         RAPIER.RigidBodyDesc.kinematicPositionBased()
-          .setTranslation(0, PLAYER_HEIGHT / 2, 0)
+          .setTranslation(-1, PLAYER_HEIGHT / 2, 0)
           .enabledRotations(true, true, true),
 
         RAPIER.ColliderDesc.capsule(HALF_HEIGHT, PLAYER_RADIUS)
@@ -68,7 +91,7 @@ export default class TestScene extends GameScene {
       new PlayerControllerComponent(),
     );
 
-    components[1].visualOffset.y = -PLAYER_HEIGHT / 2
+    components[1].visualOffset.y = -PLAYER_HEIGHT / 2;
 
     const animationComp = components[2];
     animationComp.loadAnimation(
@@ -86,10 +109,39 @@ export default class TestScene extends GameScene {
   }
 
   addLight() {
-    let directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    let directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight.position.set(100, 100, 100);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.set(2048, 2048);
     this.add(directionalLight);
+
+    let spotLight = new THREE.SpotLight(
+      0xffffff,
+      10,
+      50,
+      Math.PI * 2,
+      0.0001,
+      1,
+    );
+    spotLight.position.set(2, 3, 0);
+    this.add(spotLight);
+  }
+
+  addCrystal() {
+    const radius = 0.2;
+    const geometry = new THREE.IcosahedronGeometry(radius);
+    this.crystalMesh = new THREE.Mesh(
+      geometry,
+      new THREE.MeshPhongMaterial({
+        color: 0x2379cf,
+        emissive: 0x143542,
+        shininess: 100,
+        specular: 0xffffff,
+        opacity: 0.5,
+      }),
+    );
+    this.crystalMesh.receiveShadow = true;
+    this.crystalMesh.castShadow = true;
+    this.add(this.crystalMesh);
   }
 }

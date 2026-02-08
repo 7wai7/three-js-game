@@ -13,8 +13,6 @@ export default class PlayerControllerComponent extends MonoBehaviourComponent {
     private animationComp!: AnimationComponent;
 
     init() {
-        super.init();
-
         this.physicsComp = this.ecsService.getComponent(
             this.entityId,
             PhysicsComponent,

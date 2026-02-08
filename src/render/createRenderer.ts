@@ -15,6 +15,11 @@ export function createRenderer() {
   let aspectRatio = screenResolution.x / screenResolution.y;
 
   const camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1);
+  camera.position.z = -5;
+  camera.position.y = 5;
+  camera.zoom = 0.3;
+  camera.updateProjectionMatrix()
+  camera.lookAt(new THREE.Vector3(0, 1, 0));
 
   // Renderer
   const renderer = new THREE.WebGLRenderer({ antialias: false });

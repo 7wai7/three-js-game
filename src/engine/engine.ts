@@ -41,11 +41,11 @@ export default class Engine {
     this.setScene(scene);
     this.loop();
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.target.set(0, 1, 0);
-    this.camera.position.z = 20;
-    this.camera.position.y = 2;
-    this.controls.update();
+    // this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    // this.controls.target.set(0, 1, 0);
+    // this.camera.position.z = 20;
+    // this.camera.position.y = 2;
+    // this.controls.update();
   }
 
   setScene(scene: GameScene) {
@@ -67,6 +67,7 @@ export default class Engine {
   private loop = () => {
     requestAnimationFrame(this.loop);
 
+    console.log(this.camera)
     const dt = this.clock.getDelta();
     this.deltaTime = dt;
 

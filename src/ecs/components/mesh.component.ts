@@ -39,10 +39,14 @@ export default class MeshComponent extends MonoBehaviourComponent {
   }
 
   async loadMesh(meshPath: string) {
-    const base = await gltfLoader.loadAsync(meshPath);
-    const model = base.scene;
-    this.scene.add(model);
-    this.mesh = model;
+    try {
+      const base = await gltfLoader.loadAsync(meshPath);
+      const model = base.scene;
+      this.scene.add(model);
+      this.mesh = model;
+    } catch (error) {
+      console.error("Failed to load mesh: ", error);
+    }
   }
 
   async postUpdate() {
