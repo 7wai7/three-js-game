@@ -8,8 +8,6 @@ export default function getUniformScale(mesh: Object3D, desiredSize: Vector3 | n
         const center = new Vector3();
         box.getCenter(center);
 
-        console.log('size', size);
-
         // 2) вибрати scale — зазвичай uniform scale зберігає пропорції моделі
         //    обираємо scale такий, щоб найбільша вісь моделі помістилась у бажаний розмір
         const desired = desiredSize instanceof Vector3

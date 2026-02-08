@@ -67,7 +67,6 @@ export default class Engine {
   private loop = () => {
     requestAnimationFrame(this.loop);
 
-    console.log(this.camera)
     const dt = this.clock.getDelta();
     this.deltaTime = dt;
 
