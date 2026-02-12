@@ -112,10 +112,10 @@ export default class PlayerControllerComponent extends MonoBehaviourComponent {
     if (!this.meshComp || !this.meshComp.mesh) return;
 
     const spine = this.meshComp.mesh.getObjectByName(
-      "mixamorigSpine1",
+      "Spine1",
     ) as THREE.Bone;
     const head = this.meshComp.mesh.getObjectByName(
-      "mixamorigHead",
+      "Head",
     ) as THREE.Bone;
     if (!spine || !head) return;
 
