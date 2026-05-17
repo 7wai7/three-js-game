@@ -7,8 +7,9 @@ import TransformComponent from "../ecs/components/transform.component";
 import AnimationComponent from "../ecs/components/animation.component";
 import PlayerControllerComponent from "../ecs/components/playerController.component";
 import { stopGoEased } from "../utils/math";
+import createOrthographicCamera from "../utils/createOrthographicCamera";
 
-export default class TestScene extends GameScene {
+export default class CharacterScene extends GameScene {
   crystalMesh?: THREE.Mesh<
     THREE.IcosahedronGeometry,
     THREE.MeshPhongMaterial,
@@ -17,6 +18,7 @@ export default class TestScene extends GameScene {
 
   protected init() {
     this.background = new THREE.Color(0x202025);
+    this.camera = createOrthographicCamera();
     this.addLight();
 
     this.createPlayer();
@@ -143,5 +145,9 @@ export default class TestScene extends GameScene {
     this.crystalMesh.receiveShadow = true;
     this.crystalMesh.castShadow = true;
     this.add(this.crystalMesh);
+  }
+
+  render(renderer: THREE.WebGLRenderer) {
+    renderer.render(this, this.camera);
   }
 }

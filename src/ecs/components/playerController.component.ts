@@ -68,7 +68,7 @@ export default class PlayerControllerComponent extends MonoBehaviourComponent {
       this.engine.renderer.domElement,
     );
 
-    this.raycaster.setFromCamera(ndc, this.engine.camera);
+    this.raycaster.setFromCamera(ndc, this.scene.camera);
 
     const ray = this.raycaster.ray;
 

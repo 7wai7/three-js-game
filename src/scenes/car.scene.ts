@@ -5,11 +5,20 @@ import MeshComponent from "../ecs/components/mesh.component";
 import PhysicsComponent from "../ecs/components/physics.component";
 import TransformComponent from "../ecs/components/transform.component";
 import AnimationComponent from "../ecs/components/animation.component";
-import PlayerControllerComponent from "../ecs/components/playerController.component";
+import createOrthographicCamera from "../utils/createOrthographicCamera";
+import { OrbitControls } from "three/examples/jsm/Addons.js";
 
 export default class CarScene extends GameScene {
+  controls?: OrbitControls;
+
   protected init() {
     this.background = new THREE.Color(0x202025);
+    this.camera = createOrthographicCamera();
+
+    this.controls = new OrbitControls(this.camera, this.engine.renderer.domElement);
+    this.controls.target.set(0, 1, 0);
+    this.controls.update();
+
     this.addLight();
 
     this.createPlayer();
@@ -73,5 +82,9 @@ export default class CarScene extends GameScene {
     );
     spotLight.position.set(2, 5, 0);
     this.add(spotLight);
+  }
+
+  render(renderer: THREE.WebGLRenderer) {
+    renderer.render(this, this.camera);
   }
 }

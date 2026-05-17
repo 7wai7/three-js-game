@@ -1,8 +1,11 @@
 import * as THREE from "three";
 import type Engine from "../engine/engine";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import type EcsService from "../ecs/ecs.service";
 
 export default abstract class GameScene extends THREE.Scene {
+  public camera!: THREE.OrthographicCamera;
+  public composer?: EffectComposer;
   protected engine!: Engine;
   protected ecsService!: EcsService;
 
@@ -17,8 +20,10 @@ export default abstract class GameScene extends THREE.Scene {
   }
 
   protected abstract init(): void;
-  update(): void {}
-  lateUpdate(): void {}
+  update(): void { }
+  lateUpdate(): void { }
 
-  dispose() {}
+  abstract render(renderer: THREE.WebGLRenderer): void;
+
+  dispose() { }
 }

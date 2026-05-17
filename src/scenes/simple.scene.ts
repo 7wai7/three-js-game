@@ -2,8 +2,11 @@ import * as THREE from "three";
 import GameScene from "./gameScene";
 import pixelTex from "../utils/pixelTex";
 import { stopGoEased } from "../utils/math";
+import { OrbitControls } from "three/examples/jsm/Addons.js";
+import createOrthographicCamera from "../utils/createOrthographicCamera";
 
 export default class SimpleScene extends GameScene {
+  controls?: OrbitControls;
   crystalMesh?: THREE.Mesh<
     THREE.IcosahedronGeometry,
     THREE.MeshPhongMaterial,
@@ -12,6 +15,11 @@ export default class SimpleScene extends GameScene {
 
   protected init() {
     this.background = new THREE.Color(0x202025);
+    this.camera = createOrthographicCamera();
+    
+    this.controls = new OrbitControls(this.camera, this.engine.renderer.domElement);
+    this.controls.target.set(0, 1, 0);
+    this.controls.update();
 
     const texLoader = new THREE.TextureLoader();
     const tex_checker = pixelTex(
@@ -118,5 +126,9 @@ export default class SimpleScene extends GameScene {
     mesh.position.set(x, boxSideLength / 2 + 0.0001, z);
     this.add(mesh);
     return mesh;
+  }
+
+  render(renderer: THREE.WebGLRenderer) {
+    renderer.render(this, this.camera);
   }
 }
