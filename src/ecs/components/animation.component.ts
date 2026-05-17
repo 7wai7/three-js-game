@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import MonoBehaviourComponent from "./monoBehaviour.component";
-import { gltfLoader } from "../../main";
 import MeshComponent from "./mesh.component";
+import { gltfLoader } from "../../utils/loaders";
 
 export default class AnimationComponent extends MonoBehaviourComponent {
   private mixer?: THREE.AnimationMixer;

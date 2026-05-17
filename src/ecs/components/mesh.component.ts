@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import TransformComponent from "./transform.component";
-import { gltfLoader } from "../../main";
 import MonoBehaviourComponent from "./monoBehaviour.component";
 import type { Point } from "../ecs.types";
+import { gltfLoader } from "../../utils/loaders";
 
 export default class MeshComponent extends MonoBehaviourComponent {
   mesh?: THREE.Object3D;
