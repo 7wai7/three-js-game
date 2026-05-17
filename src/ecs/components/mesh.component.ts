@@ -11,6 +11,7 @@ export default class MeshComponent extends MonoBehaviourComponent {
   private meshPath?: string;
   private transformComp!: TransformComponent;
   private meshOrPath: string | THREE.Object3D;
+  private onLoadMeshQueue: ((mesh: THREE.Object3D) => void)[] = []
 
   constructor(meshOrPath: string | THREE.Object3D) {
     super();
@@ -38,12 +39,22 @@ export default class MeshComponent extends MonoBehaviourComponent {
       );
   }
 
+  async onLoadMesh(fn: (mesh: THREE.Object3D) => void) {
+    if (this.mesh) {
+      fn(this.mesh);
+      return;
+    }
+    this.onLoadMeshQueue.push(fn)
+  }
+
   async loadMesh(meshPath: string) {
     try {
       const base = await gltfLoader.loadAsync(meshPath);
       const model = base.scene;
       this.scene.add(model);
       this.mesh = model;
+      for (const fn of this.onLoadMeshQueue) fn(this.mesh)
+      this.onLoadMeshQueue = []
     } catch (error) {
       console.error("Failed to load mesh: ", error);
     }

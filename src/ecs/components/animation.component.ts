@@ -62,7 +62,6 @@ export default class AnimationComponent extends MonoBehaviourComponent {
 
     this.mixer = new THREE.AnimationMixer(meshComp.mesh);
 
-    // догружаємо все з черги
     const queue = [...this.pendingLoads];
     this.pendingLoads.length = 0;
 

@@ -4,6 +4,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { createRenderer } from "./render/createRenderer.js";
 import Engine from "./engine/engine.js";
 import TestScene from "./scenes/test.scene.js";
+import CarScene from "./scenes/car.scene.js";
 
 export const gltfLoader = new GLTFLoader();
 
