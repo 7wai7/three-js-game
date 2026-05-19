@@ -1,6 +1,19 @@
 import type { InputKey, MouseButton } from "./input.types";
 
 class InputManager {
+    // keyboard
+    readonly pressedKeys = new Set<InputKey>();
+    readonly clickedKeys = new Set<InputKey>(); // first-frame presses
+    readonly releasedKeys = new Set<InputKey>(); // first-frame releases
+
+    // mouse buttons (0 = left, 1 = middle, 2 = right)
+    readonly pressedMouseButtons = new Set<MouseButton>();
+    readonly clickedMouseButtons = new Set<MouseButton>();
+
+    readonly mouseMoveEvent: Set<(position: { x: number, y: number }, delta: { x: number, y: number }) => void> = new Set();
+    readonly mouseMoveDeltaEvent: Set<(delta: { x: number, y: number }) => void> = new Set();
+    readonly wheelEvent: Set<(delta: number) => void> = new Set();
+
     lockElement: HTMLElement | null = null;
 
     mousePosition = {
@@ -9,19 +22,6 @@ class InputManager {
     };
     mouseDelta = { x: 0, y: 0 };
     wheelDelta = 0;
-
-    // keyboard
-    pressedKeys = new Set<InputKey>();
-    clickedKeys = new Set<InputKey>(); // first-frame presses
-    releasedKeys = new Set<InputKey>(); // first-frame releases
-
-    // mouse buttons (0 = left, 1 = middle, 2 = right)
-    pressedMouseButtons = new Set<MouseButton>();
-    clickedMouseButtons = new Set<MouseButton>();
-
-    mouseMoveEvent: Set<(position: { x: number, y: number }, delta: { x: number, y: number }) => void> = new Set();
-    mouseMoveDeltaEvent: Set<(delta: { x: number, y: number }) => void> = new Set();
-    wheelEvent: Set<(delta: number) => void> = new Set();
 
     init() {
         // Обробка руху миші — movementX/movementY доступні лише при lock

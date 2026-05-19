@@ -8,11 +8,12 @@ import {
 export default class RenderPixelatedPass extends Pass {
   fsQuad: FullScreenQuad;
   resolution: THREE.Vector2;
-  scene: THREE.Scene | null;
   camera: THREE.Camera;
   rgbRenderTarget: WebGLRenderTarget;
   normalRenderTarget: WebGLRenderTarget;
   normalMaterial: THREE.Material;
+
+  scene: THREE.Scene | null;
 
   constructor(
     resolution: THREE.Vector2,

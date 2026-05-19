@@ -2,7 +2,7 @@ import type MonoBehaviourComponent from "../components/monoBehaviour.component";
 import type { ComponentId } from "../ecs.types";
 
 export default class MonoBehaviourSystem {
-  components = new Map<ComponentId, MonoBehaviourComponent>();
+  readonly components = new Map<ComponentId, MonoBehaviourComponent>();
 
   update() {
     for (const component of this.components.values()) {

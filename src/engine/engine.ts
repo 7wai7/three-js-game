@@ -6,16 +6,15 @@ import RAPIER from "@dimforge/rapier3d";
 import { inputManager } from "../imput/InputManager";
 
 export default class Engine {
-  ecsService: EcsService;
-  renderer: THREE.WebGLRenderer;
-  currentScene?: GameScene;
-  clock = new THREE.Clock();
+  readonly ecsService: EcsService;
+  readonly renderer: THREE.WebGLRenderer;
+  readonly clock = new THREE.Clock();
+  readonly gravity = { x: 0, y: -9.81, z: 0 };
+  readonly monoBehaviourSystem = new MonoBehaviourSystem();
 
-  gravity = { x: 0, y: -9.81, z: 0 };
+  currentScene?: GameScene;
   physicsWorld = new RAPIER.World(this.gravity);
   deltaTime = 0;
-
-  readonly monoBehaviourSystem = new MonoBehaviourSystem();
 
   constructor(
     renderer: THREE.WebGLRenderer,

@@ -3,9 +3,8 @@ import { WebGLRenderer, WebGLRenderTarget } from "three"
 import { FullScreenQuad, Pass } from "three/examples/jsm/postprocessing/Pass.js"
 
 export default class PixelatePass extends Pass {
-
-    fsQuad: FullScreenQuad
-    resolution: THREE.Vector2
+    readonly fsQuad: FullScreenQuad;
+    readonly resolution: THREE.Vector2;
 
     constructor( resolution: THREE.Vector2 ) {
         super()
