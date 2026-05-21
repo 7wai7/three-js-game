@@ -1,6 +1,6 @@
-import type { InputKey, MouseButton } from "./input.types";
+import System from "./system";
 
-class InputManager {
+export default class InputSystem extends System {
     // keyboard
     readonly pressedKeys = new Set<InputKey>();
     readonly clickedKeys = new Set<InputKey>(); // first-frame presses
@@ -13,17 +13,19 @@ class InputManager {
     readonly mouseMoveEvent: Set<(position: { x: number, y: number }, delta: { x: number, y: number }) => void> = new Set();
     readonly mouseMoveDeltaEvent: Set<(delta: { x: number, y: number }) => void> = new Set();
     readonly wheelEvent: Set<(delta: number) => void> = new Set();
-
-    lockElement: HTMLElement | null = null;
-
-    mousePosition = {
+    
+    readonly mousePosition = {
         x: window.innerWidth / 2,
         y: window.innerHeight / 2
     };
+
+    lockElement: HTMLElement | null = null;
     mouseDelta = { x: 0, y: 0 };
     wheelDelta = 0;
 
-    init() {
+    constructor() {
+        super();
+        
         // Обробка руху миші — movementX/movementY доступні лише при lock
         document.addEventListener('mousemove', this.onLockMouseMove.bind(this));
         window.addEventListener('mousemove', this.onMouseMove.bind(this));
@@ -219,5 +221,20 @@ class InputManager {
     }
 }
 
-export const inputManager = new InputManager();
-inputManager.init();
+
+export type InputKey =
+    | "KeyW"
+    | "KeyA"
+    | "KeyS"
+    | "KeyD"
+    | "KeyQ"
+    | "KeyE"
+    | "KeyC"
+    | "Space"
+    | "ShiftLeft"
+    | "ShiftRight"
+    | "Tab"
+    | "AltLeft"
+    | "Escape";
+
+export type MouseButton = 0 | 1 | 2; // left, middle, right

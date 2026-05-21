@@ -1,44 +1,33 @@
 import * as THREE from "three";
-import type GameScene from "../scenes/gameScene";
-import EcsService from "../ecs/ecs.service";
-import MonoBehaviourSystem from "../ecs/systems/monoBehaviour.system";
 import RAPIER from "@dimforge/rapier3d";
-import { inputManager } from "../imput/InputManager";
+import AssetManager from "./game/asset-manager";
+import World from "./ecs/world";
+import MeshSystem from "./systems/mesh.system";
+import InputSystem from "./systems/input.system";
+import RenderSystem from "./systems/render.sustem";
 
 export default class Engine {
-  readonly ecsService: EcsService;
-  readonly renderer: THREE.WebGLRenderer;
+  readonly world: World = new World();
+  readonly assets: AssetManager = new AssetManager();
+
   readonly clock = new THREE.Clock();
   readonly gravity = { x: 0, y: -9.81, z: 0 };
-  readonly monoBehaviourSystem = new MonoBehaviourSystem();
 
-  currentScene?: GameScene;
   physicsWorld = new RAPIER.World(this.gravity);
   deltaTime = 0;
 
   constructor(
     renderer: THREE.WebGLRenderer,
+    scene: THREE.Scene,
+    camera: THREE.Camera,
   ) {
-    this.renderer = renderer;
-    this.ecsService = new EcsService(this);
+    this.world.addSystem(new InputSystem());
+    this.world.addSystem(new MeshSystem());
+    this.world.addSystem(new RenderSystem(renderer, scene, camera));
   }
 
-  start(scene: GameScene) {
-    this.setScene(scene);
+  start() {
     this.loop();
-  }
-
-  setScene(scene: GameScene) {
-    if (this.currentScene) {
-      this.currentScene.onExit();
-      this.monoBehaviourSystem.dispose();
-      this.ecsService.clear();
-      this.physicsWorld = new RAPIER.World(this.gravity);
-      this.clearThreeScene(this.currentScene);
-    }
-
-    this.currentScene = scene;
-    scene.onEnter(this);
   }
 
   private loop = () => {
@@ -48,35 +37,7 @@ export default class Engine {
     this.deltaTime = dt;
 
     this.physicsWorld.step();
-    this.monoBehaviourSystem.update();
-    this.monoBehaviourSystem.postUpdate();
-    this.currentScene?.update();
-    this.currentScene?.lateUpdate();
 
-    this.monoBehaviourSystem.preRender();
-
-    this.currentScene?.render(this.renderer);
-
-    inputManager.postUpdate();
+    this.world.update(dt);
   };
-
-  private clearThreeScene(scene: THREE.Scene) {
-    scene.traverse((obj: any) => {
-      if (obj.geometry) obj.geometry.dispose();
-
-      if (obj.material) {
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach((m: any) => m.dispose());
-        } else {
-          obj.material.dispose();
-        }
-      }
-
-      if (obj.texture) obj.texture.dispose();
-    });
-
-    while (scene.children.length > 0) {
-      scene.remove(scene.children[0]);
-    }
-  }
 }
