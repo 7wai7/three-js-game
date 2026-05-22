@@ -1,7 +1,7 @@
 import "./style.css";
 import * as THREE from "three";
 import Engine from "./engine/engine.js";
-import { createPlayer } from "./engine/game/player-factory.js";
+import { createFloor, createPlayer } from "./engine/game/player-factory.js";
 
 // Initialize Three.js renderer, scene, and camera
 let screenResolution = new THREE.Vector2(
@@ -58,4 +58,5 @@ scene.add(light);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-createPlayer(engine.world, scene);
+createFloor(engine.world, engine.physicsWorld, scene);
+createPlayer(engine.world, engine.physicsWorld, scene);

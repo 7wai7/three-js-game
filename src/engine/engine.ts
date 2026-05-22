@@ -2,9 +2,9 @@ import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import AssetManager from "./game/asset-manager";
 import World from "./ecs/world";
-import MeshSystem from "./systems/mesh.system";
 import InputSystem from "./systems/input.system";
 import RenderSystem from "./systems/render.sustem";
+import PhysicsSyncSystem from "./systems/physics-sync.system";
 
 export default class Engine {
   readonly world: World = new World();
@@ -22,7 +22,7 @@ export default class Engine {
     camera: THREE.Camera,
   ) {
     this.world.addSystem(new InputSystem());
-    this.world.addSystem(new MeshSystem());
+    this.world.addSystem(new PhysicsSyncSystem());
     this.world.addSystem(new RenderSystem(renderer, scene, camera));
   }
 
