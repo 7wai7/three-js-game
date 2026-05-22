@@ -2,6 +2,7 @@ import "./style.css";
 import * as THREE from "three";
 import Engine from "./engine/engine.js";
 import { createFloor, createPlayer } from "./engine/game/player-factory.js";
+import EngineContext from "./engine/contexts/engine.context.js";
 
 // Initialize Three.js renderer, scene, and camera
 let screenResolution = new THREE.Vector2(
@@ -42,9 +43,9 @@ window.addEventListener("resize", () => {
     camera.updateProjectionMatrix();
 });
 
-
 // Initialize the game engine
 const engine = new Engine(renderer, scene, camera);
+EngineContext.setEngine(engine);
 
 engine.start();
 

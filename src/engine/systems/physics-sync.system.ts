@@ -1,27 +1,26 @@
 import MeshComponent from "../components/mesh";
 import RigidBodyComponent from "../components/rigidbody";
 import Query from "../ecs/query";
-import type World from "../ecs/world";
 import System from "./system";
 
 export default class PhysicsSyncSystem extends System {
 
-    preRender(world: World): void {
+    preRender(): void {
 
         const entities = Query.entitiesWith(
-            world,
+            this.world,
             MeshComponent,
             RigidBodyComponent,
         );
 
         for (const entity of entities) {
 
-            const mesh = world.getComponent(
+            const mesh = this.world.getComponent(
                 entity,
                 MeshComponent,
             )!.mesh;
 
-            const rb = world.getComponent(
+            const rb = this.world.getComponent(
                 entity,
                 RigidBodyComponent,
             )!.rigidBody;

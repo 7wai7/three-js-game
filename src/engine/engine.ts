@@ -2,18 +2,23 @@ import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import AssetManager from "./game/asset-manager";
 import World from "./ecs/world";
-import InputSystem from "./systems/input.system";
-import RenderSystem from "./systems/render.sustem";
 import PhysicsSyncSystem from "./systems/physics-sync.system";
+import InputManager from "./input-manager";
 
 export default class Engine {
   readonly world: World = new World();
+  readonly input: InputManager = new InputManager();
   readonly assets: AssetManager = new AssetManager();
+
+  readonly renderer: THREE.WebGLRenderer;
+  readonly scene: THREE.Scene<THREE.Object3DEventMap>;
+  readonly camera: THREE.Camera;
 
   readonly clock = new THREE.Clock();
   readonly gravity = { x: 0, y: -9.81, z: 0 };
 
-  physicsWorld = new RAPIER.World(this.gravity);
+  readonly physicsWorld = new RAPIER.World(this.gravity);
+  
   deltaTime = 0;
 
   constructor(
@@ -21,9 +26,11 @@ export default class Engine {
     scene: THREE.Scene,
     camera: THREE.Camera,
   ) {
-    this.world.addSystem(new InputSystem());
+    this.renderer = renderer;
+    this.scene = scene;
+    this.camera = camera;
+
     this.world.addSystem(new PhysicsSyncSystem());
-    this.world.addSystem(new RenderSystem(renderer, scene, camera));
   }
 
   start() {
@@ -36,8 +43,10 @@ export default class Engine {
     const dt = this.clock.getDelta();
     this.deltaTime = dt;
 
+    this.input.beginFrame();
     this.physicsWorld.step();
-
     this.world.update(dt);
+    this.renderer.render(this.scene, this.camera);
+    this.input.endFrame();
   };
 }

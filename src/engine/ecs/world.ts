@@ -53,19 +53,19 @@ export default class World {
 
     update(dt: number) {
         for (const system of this.systems) {
-            system.update?.(this, dt);
+            system.update?.();
         }
 
         for (const system of this.systems) {
-            system.postUpdate?.(this, dt);
+            system.postUpdate?.();
         }
 
         for (const system of this.systems) {
-            system.preRender?.(this, dt);
+            system.preRender?.();
         }
 
         for (const system of this.systems) {
-            system.render?.(this, dt);
+            system.render?.();
         }
     }
 }

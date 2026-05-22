@@ -1,6 +1,4 @@
-import System from "./system";
-
-export default class InputSystem extends System {
+export default class InputManager {
     // keyboard
     readonly pressedKeys = new Set<InputKey>();
     readonly clickedKeys = new Set<InputKey>(); // first-frame presses
@@ -24,8 +22,6 @@ export default class InputSystem extends System {
     wheelDelta = 0;
 
     constructor() {
-        super();
-        
         // Обробка руху миші — movementX/movementY доступні лише при lock
         document.addEventListener('mousemove', this.onLockMouseMove.bind(this));
         window.addEventListener('mousemove', this.onMouseMove.bind(this));
@@ -76,9 +72,12 @@ export default class InputSystem extends System {
         return this.clickedMouseButtons.has(button);
     }
 
+    beginFrame() {
+        // no-op for now, but could be used for future features like input buffering
+    }
 
     // call at end of frame / tick to clear "single-frame" events
-    postUpdate() {
+    endFrame() {
         this.clickedKeys.clear();
         this.releasedKeys.clear();
         this.clickedMouseButtons.clear();
