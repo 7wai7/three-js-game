@@ -5,6 +5,8 @@ import type World from "../ecs/world";
 import RigidBodyComponent from "../components/rigidbody";
 import PlayerControllerComponent from "../components/player-controller";
 import ColliderComponent from "../components/collider";
+import EngineContext from "../contexts/engine.context";
+import getUniformScale from "../../utils/getUniformScale";
 
 const textureLoader = new THREE.TextureLoader();
 
@@ -85,17 +87,24 @@ export function createCube(world: World, physicsWorld: RAPIER.World, scene: THRE
   return entity;
 }
 
-export function createPlayer(world: World, physicsWorld: RAPIER.World, scene: THREE.Scene) {
+export async function createPlayer(world: World, physicsWorld: RAPIER.World, scene: THREE.Scene) {
   const entity = world.createEntity();
 
   const radius = 0.5;
-  const height = 1.8;
+  const totalHeight = 1.8;
+  const halfHeight = (totalHeight - radius * 2) / 2;
 
-  const mesh = new THREE.Mesh(
-    new THREE.CapsuleGeometry(radius, height, 8, 16),
-    new THREE.MeshStandardMaterial({ color: 0x66cc00 }),
-  );
-  mesh.castShadow = true;
+  const mesh = await EngineContext.engine.assets.loadModel("src/assets/Player/Mesh.glb");
+  const uniformScale = getUniformScale(mesh, totalHeight);
+  mesh.scale.setScalar(uniformScale);
+
+  mesh.traverse((obj) => {
+    if (obj instanceof THREE.Mesh) {
+      obj.castShadow = true;
+      obj.receiveShadow = true;
+    }
+  });
+
   scene.add(mesh);
 
   world.addComponent(entity, new MeshComponent(mesh));
@@ -106,8 +115,8 @@ export function createPlayer(world: World, physicsWorld: RAPIER.World, scene: TH
   controller.setMaxSlopeClimbAngle(Math.PI / 4); // 45 degrees
   controller.setMinSlopeSlideAngle(Math.PI / 3); // 60 degrees
 
-  const rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, height, 0);
-  const colliderDesc = RAPIER.ColliderDesc.capsule(height / 2, radius).setRestitution(0.3);
+  const rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, totalHeight, 0);
+  const colliderDesc = RAPIER.ColliderDesc.capsule(halfHeight / 2, radius).setRestitution(0.3);
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
