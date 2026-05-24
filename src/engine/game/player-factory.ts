@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import MeshComponent from "../components/mesh";
+import Object3DComponent from "../components/object";
 import type World from "../ecs/world";
 import RigidBodyComponent from "../components/rigidbody";
 import PlayerControllerComponent from "../components/player-controller";
@@ -43,7 +43,7 @@ export function createFloor(
 
   world.addComponent(
     entity,
-    new MeshComponent(mesh),
+    new Object3DComponent(mesh),
   );
 
   const collider = physicsWorld.createCollider(
@@ -74,7 +74,7 @@ export function createCube(world: World, physicsWorld: RAPIER.World, scene: THRE
   mesh.castShadow = true;
   scene.add(mesh);
 
-  world.addComponent(entity, new MeshComponent(mesh));
+  world.addComponent(entity, new Object3DComponent(mesh));
 
   const rbDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
   const colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5).setRestitution(0.3);
@@ -107,7 +107,7 @@ export async function createPlayer(world: World, physicsWorld: RAPIER.World, sce
 
   scene.add(mesh);
 
-  world.addComponent(entity, new MeshComponent(mesh));
+  world.addComponent(entity, new Object3DComponent(mesh));
 
   const controller = physicsWorld.createCharacterController(0.01);
 

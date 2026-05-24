@@ -1,4 +1,4 @@
-import MeshComponent from "../components/mesh";
+import Object3DComponent from "../components/object";
 import RigidBodyComponent from "../components/rigidbody";
 import Query from "../ecs/query";
 import System from "./system";
@@ -9,16 +9,16 @@ export default class PhysicsSyncSystem extends System {
 
         const entities = Query.entitiesWith(
             this.world,
-            MeshComponent,
+            Object3DComponent,
             RigidBodyComponent,
         );
 
         for (const entity of entities) {
 
-            const mesh = this.world.getComponent(
+            const object = this.world.getComponent(
                 entity,
-                MeshComponent,
-            )!.mesh;
+                Object3DComponent,
+            )!.object;
 
             const rb = this.world.getComponent(
                 entity,
@@ -28,13 +28,13 @@ export default class PhysicsSyncSystem extends System {
             const pos = rb.translation();
             const rot = rb.rotation();
 
-            mesh.position.set(
+            object.position.set(
                 pos.x,
                 pos.y,
                 pos.z,
             );
 
-            mesh.quaternion.set(
+            object.quaternion.set(
                 rot.x,
                 rot.y,
                 rot.z,
