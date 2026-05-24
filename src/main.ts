@@ -20,7 +20,7 @@ renderer.setSize(screenResolution.x, screenResolution.y);
 document.body.appendChild(renderer.domElement);
 
 const camera = new THREE.OrthographicCamera(-aspectRatio, aspectRatio, 1, -1);
-camera.position.z = -5;
+camera.position.x = -5;
 camera.position.y = 5;
 camera.zoom = 0.4;
 camera.updateProjectionMatrix()

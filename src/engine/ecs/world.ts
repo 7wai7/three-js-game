@@ -51,7 +51,7 @@ export default class World {
         this.systems.push(system);
     }
 
-    update(dt: number) {
+    update() {
         for (const system of this.systems) {
             system.update?.();
         }

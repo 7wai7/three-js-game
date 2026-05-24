@@ -2,8 +2,9 @@ import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import MeshComponent from "../components/mesh";
 import type World from "../ecs/world";
-import CollidersComponent from "../components/colliders";
 import RigidBodyComponent from "../components/rigidbody";
+import PlayerControllerComponent from "../components/player-controller";
+import ColliderComponent from "../components/collider";
 
 const textureLoader = new THREE.TextureLoader();
 
@@ -53,33 +54,66 @@ export function createFloor(
 
   world.addComponent(
     entity,
-    new CollidersComponent(
-      [collider],
+    new ColliderComponent(
+      collider,
     ),
   );
 
   return entity;
 }
 
+export function createCube(world: World, physicsWorld: RAPIER.World, scene: THREE.Scene) {
+  const entity = world.createEntity();
+
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshStandardMaterial({ color: 0x66cc00 }),
+  );
+  mesh.castShadow = true;
+  scene.add(mesh);
+
+  world.addComponent(entity, new MeshComponent(mesh));
+
+  const rbDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
+  const colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5).setRestitution(0.3);
+  const rb = physicsWorld.createRigidBody(rbDesc);
+  const collider = physicsWorld.createCollider(colliderDesc, rb);
+
+  world.addComponent(entity, new RigidBodyComponent(rb));
+  world.addComponent(entity, new ColliderComponent(collider));
+
+  return entity;
+}
+
 export function createPlayer(world: World, physicsWorld: RAPIER.World, scene: THREE.Scene) {
-    const entity = world.createEntity();
+  const entity = world.createEntity();
 
-    const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1, 1),
-        new THREE.MeshStandardMaterial({ color: 0x66cc00 }),
-    );
-    mesh.castShadow = true;
-    scene.add(mesh);
+  const radius = 0.5;
+  const height = 1.8;
 
-    world.addComponent(entity, new MeshComponent(mesh));
+  const mesh = new THREE.Mesh(
+    new THREE.CapsuleGeometry(radius, height, 8, 16),
+    new THREE.MeshStandardMaterial({ color: 0x66cc00 }),
+  );
+  mesh.castShadow = true;
+  scene.add(mesh);
 
-    const rbDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
-    const colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5).setRestitution(0.3);
-    const rb = physicsWorld.createRigidBody(rbDesc);
-    const collider = physicsWorld.createCollider(colliderDesc, rb);
+  world.addComponent(entity, new MeshComponent(mesh));
 
-    world.addComponent(entity, new RigidBodyComponent(rb));
-    world.addComponent(entity, new CollidersComponent([collider]));
+  const controller = physicsWorld.createCharacterController(0.01);
 
-    return entity;
+  // Configure step climbing
+  controller.setMaxSlopeClimbAngle(Math.PI / 4); // 45 degrees
+  controller.setMinSlopeSlideAngle(Math.PI / 3); // 60 degrees
+
+  const rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, height, 0);
+  const colliderDesc = RAPIER.ColliderDesc.capsule(height / 2, radius).setRestitution(0.3);
+  const rb = physicsWorld.createRigidBody(rbDesc);
+  const collider = physicsWorld.createCollider(colliderDesc, rb);
+
+  world.addComponent(entity, new RigidBodyComponent(rb));
+  world.addComponent(entity, new ColliderComponent(collider));
+  world.addComponent(entity, new PlayerControllerComponent(controller));
+
+  return entity;
 }
