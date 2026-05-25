@@ -5,7 +5,6 @@ import type { ComponentClass, EntityId } from "./types";
 export default class World {
     readonly entites: Set<EntityId> = new Set();
     readonly components: Map<ComponentClass<any>, Map<EntityId, Component>> = new Map();
-
     readonly systems: System[] = [];
 
     private nextEntityId = 0;

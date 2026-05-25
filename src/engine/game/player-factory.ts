@@ -6,7 +6,7 @@ import RigidBodyComponent from "../components/rigidbody";
 import PlayerControllerComponent from "../components/player-controller";
 import ColliderComponent from "../components/collider";
 import EngineContext from "../contexts/engine.context";
-import getUniformScale from "../../utils/getUniformScale";
+import getUniformScale from "../../utils/get-uniform-scale";
 
 const textureLoader = new THREE.TextureLoader();
 
@@ -74,13 +74,12 @@ export function createCube(world: World, physicsWorld: RAPIER.World, scene: THRE
   mesh.castShadow = true;
   scene.add(mesh);
 
-  world.addComponent(entity, new Object3DComponent(mesh));
-
   const rbDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
   const colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5).setRestitution(0.3);
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
+  world.addComponent(entity, new Object3DComponent(mesh));
   world.addComponent(entity, new RigidBodyComponent(rb));
   world.addComponent(entity, new ColliderComponent(collider));
 
@@ -94,6 +93,7 @@ export async function createPlayer(world: World, physicsWorld: RAPIER.World, sce
   const totalHeight = 1.8;
   const halfHeight = (totalHeight - radius * 2) / 2;
 
+  // Load the player model
   const mesh = await EngineContext.engine.assets.loadModel("src/assets/Player/Mesh.glb");
   const uniformScale = getUniformScale(mesh, totalHeight);
   mesh.scale.setScalar(uniformScale);
@@ -107,8 +107,8 @@ export async function createPlayer(world: World, physicsWorld: RAPIER.World, sce
 
   scene.add(mesh);
 
-  world.addComponent(entity, new Object3DComponent(mesh));
 
+  // Create the character controller
   const controller = physicsWorld.createCharacterController(0.01);
 
   // Configure step climbing
@@ -120,6 +120,8 @@ export async function createPlayer(world: World, physicsWorld: RAPIER.World, sce
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
+  // Add components to the world
+  world.addComponent(entity, new Object3DComponent(mesh));
   world.addComponent(entity, new RigidBodyComponent(rb));
   world.addComponent(entity, new ColliderComponent(collider));
   world.addComponent(entity, new PlayerControllerComponent(controller));

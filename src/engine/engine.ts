@@ -19,7 +19,7 @@ export default class Engine {
   private readonly gravity = { x: 0, y: -9.81, z: 0 };
 
   readonly physicsWorld = new RAPIER.World(this.gravity);
-  
+
   deltaTime = 0;
 
   constructor(
