@@ -5,6 +5,7 @@ import World from "./ecs/world";
 import PhysicsSyncSystem from "./systems/physics-sync.system";
 import InputManager from "./input-manager";
 import PlayerControllerSystem from "./systems/player-controller.system";
+import CameraControllerSystem from "./systems/camera-controller.system";
 
 export default class Engine {
   readonly world: World = new World();
@@ -33,6 +34,7 @@ export default class Engine {
 
     this.world.addSystem(new PhysicsSyncSystem());
     this.world.addSystem(new PlayerControllerSystem());
+    this.world.addSystem(new CameraControllerSystem());
   }
 
   start() {

@@ -41,6 +41,6 @@ createEcsCamera(engine.world, camera);
 createFloor(engine.world, engine.physicsWorld, scene);
 // createPlayer(engine.world, engine.physicsWorld, scene);
 
-createEmpty({
-    position: new THREE.Vector3(0, 0.5, 0),
-});
+// createEmpty({
+//     position: new THREE.Vector3(0, 0.5, 0),
+// });

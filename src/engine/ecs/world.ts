@@ -30,7 +30,7 @@ export default class World {
         return component;
     }
 
-    removeComponent(entity: EntityId, componentClass: ComponentClass<any>) {
+    removeComponent<T extends Component>(entity: EntityId, componentClass: ComponentClass<T>) {
         const componentMap = this.components.get(componentClass);
         if (componentMap) {
             const component = componentMap.get(entity);
@@ -52,7 +52,12 @@ export default class World {
 
     update() {
         for (const system of this.systems) {
-            system.update?.();
+            if(system.started) {
+                system.update?.();
+            } else {
+                system.start?.();
+                system.started = true;
+            }
         }
 
         for (const system of this.systems) {

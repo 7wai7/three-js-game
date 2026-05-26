@@ -1,6 +1,10 @@
 import EngineContext from "../contexts/engine.context";
 
 export default abstract class System {
+  started = false;
+  
+  start?(): void;
+
   update?(): void;
 
   postUpdate?(): void;

@@ -18,7 +18,7 @@ export function createFloor(
   const entity = world.createEntity();
 
   const texture = textureLoader.load(
-    "src/assets/textures/blueprint.png",
+    "src/assets/textures/grid.png",
   );
 
   texture.wrapS = THREE.RepeatWrapping;

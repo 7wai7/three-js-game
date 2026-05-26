@@ -8,18 +8,14 @@ export default class InputManager {
     private readonly pressedMouseButtons = new Set<MouseButton>();
     private readonly clickedMouseButtons = new Set<MouseButton>();
 
-    private readonly mouseMoveEvent: Set<(position: { x: number, y: number }, delta: { x: number, y: number }) => void> = new Set();
-    private readonly mouseMoveDeltaEvent: Set<(delta: { x: number, y: number }) => void> = new Set();
-    private readonly wheelEvent: Set<(delta: number) => void> = new Set();
-
-    private readonly mousePosition = {
+    private readonly _mousePosition = {
         x: window.innerWidth / 2,
         y: window.innerHeight / 2
     };
     
     private lockElement: HTMLElement | null = null;
-    private mouseDelta = { x: 0, y: 0 };
-    private wheelDelta = 0;
+    private _mouseDelta = { x: 0, y: 0 };
+    private _wheelDelta = 0;
 
     constructor() {
         // Обробка руху миші — movementX/movementY доступні лише при lock
@@ -72,6 +68,18 @@ export default class InputManager {
         return this.clickedMouseButtons.has(button);
     }
 
+    get mousePosition() {
+        return this._mousePosition;
+    }
+
+    get mouseDelta() {
+        return this._mouseDelta;
+    }
+
+    get wheelDelta() {
+        return this._wheelDelta;
+    }
+
     // call at start of frame / tick to prepare for new input
     beginFrame() {
         // no-op for now, but could be used for future features like input buffering
@@ -83,30 +91,26 @@ export default class InputManager {
         this.releasedKeys.clear();
         this.clickedMouseButtons.clear();
         // zero deltas
-        this.mouseDelta.x = 0;
-        this.mouseDelta.y = 0;
-        this.wheelDelta = 0;
+        this._mouseDelta.x = 0;
+        this._mouseDelta.y = 0;
+        this._wheelDelta = 0;
     }
 
     // ------------------- internal event handlers -------------------
     private lockMouseMove(e: MouseEvent) {
         if (document.pointerLockElement === this.lockElement) {
-            this.mouseDelta.x = e.movementX;
-            this.mouseDelta.y = e.movementY;
-
-            for (const e of this.mouseMoveDeltaEvent) e(this.mouseDelta);
+            this._mouseDelta.x = e.movementX;
+            this._mouseDelta.y = e.movementY;
         }
     }
 
     private mouseMove = (e: MouseEvent) => {
         const newX = e.clientX;
         const newY = e.clientY;
-        this.mouseDelta.x = newX - (this.mousePosition.x ?? 0);
-        this.mouseDelta.y = newY - (this.mousePosition.y ?? 0);
-        this.mousePosition.x = newX;
-        this.mousePosition.y = newY;
-
-        for (const e of this.mouseMoveEvent) e(this.mousePosition, this.mouseDelta);
+        this._mouseDelta.x = newX - (this._mousePosition.x ?? 0);
+        this._mouseDelta.y = newY - (this._mousePosition.y ?? 0);
+        this._mousePosition.x = newX;
+        this._mousePosition.y = newY;
     }
 
     private mouseDown = (e: MouseEvent) => {
@@ -124,8 +128,7 @@ export default class InputManager {
 
     private wheel = (e: WheelEvent) => {
         // accumulate wheel delta; sign indicates direction
-        this.wheelDelta += e.deltaY;
-        for (const e of this.wheelEvent) e(this.wheelDelta);
+        this._wheelDelta += e.deltaY;
     }
 
     private keyDown = (e: KeyboardEvent) => {
@@ -176,10 +179,10 @@ export default class InputManager {
             const t = e.touches[0];
             const newX = t.clientX;
             const newY = t.clientY;
-            this.mouseDelta.x = newX - (this.mousePosition.x ?? 0);
-            this.mouseDelta.y = newY - (this.mousePosition.y ?? 0);
-            this.mousePosition.x = newX;
-            this.mousePosition.y = newY;
+            this._mouseDelta.x = newX - (this._mousePosition.x ?? 0);
+            this._mouseDelta.y = newY - (this._mousePosition.y ?? 0);
+            this._mousePosition.x = newX;
+            this._mousePosition.y = newY;
             if (!this.pressedMouseButtons.has(0)) this.clickedMouseButtons.add(0);
             this.pressedMouseButtons.add(0);
         }
@@ -191,10 +194,10 @@ export default class InputManager {
             const t = e.touches[0];
             const newX = t.clientX;
             const newY = t.clientY;
-            this.mouseDelta.x = newX - (this.mousePosition.x ?? 0);
-            this.mouseDelta.y = newY - (this.mousePosition.y ?? 0);
-            this.mousePosition.x = newX;
-            this.mousePosition.y = newY;
+            this._mouseDelta.x = newX - (this._mousePosition.x ?? 0);
+            this._mouseDelta.y = newY - (this._mousePosition.y ?? 0);
+            this._mousePosition.x = newX;
+            this._mousePosition.y = newY;
         }
         e.preventDefault();
     }
