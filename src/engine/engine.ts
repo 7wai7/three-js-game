@@ -10,6 +10,7 @@ import AnimationsSystem from "./systems/animations.system";
 import type { Assets } from "./assets/types";
 import TextureAssetManager from "./assets/texture-asset-manager";
 import PlayerInputSystem from "./systems/player-input.system";
+import RapierDebugRenderer from "./systems/rapier-debug-renderer.system";
 
 export default class Engine {
   readonly world: World = new World();
@@ -45,6 +46,7 @@ export default class Engine {
     this.world.addSystem(new PlayerControllerSystem());
     this.world.addSystem(new AnimationsSystem());
     this.world.addSystem(new CameraControllerSystem());
+    this.world.addSystem(new RapierDebugRenderer());
   }
 
   start() {
