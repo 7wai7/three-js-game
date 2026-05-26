@@ -1,82 +1,55 @@
 import * as THREE from "three";
-import type GameScene from "../scenes/gameScene";
-import EcsService from "../ecs/ecs.service";
-import MonoBehaviourSystem from "../ecs/systems/monoBehaviour.system";
 import RAPIER from "@dimforge/rapier3d";
-import { inputManager } from "../imput/InputManager";
+import AssetManager from "./game/asset-manager";
+import World from "./ecs/world";
+import PhysicsSyncSystem from "./systems/physics-sync.system";
+import InputManager from "./input-manager";
+import PlayerControllerSystem from "./systems/player-controller.system";
+import CameraControllerSystem from "./systems/camera-controller.system";
 
 export default class Engine {
-  readonly ecsService: EcsService;
-  readonly renderer: THREE.WebGLRenderer;
-  readonly clock = new THREE.Clock();
-  readonly gravity = { x: 0, y: -9.81, z: 0 };
-  readonly monoBehaviourSystem = new MonoBehaviourSystem();
+  readonly world: World = new World();
+  readonly input: InputManager = new InputManager();
+  readonly assets: AssetManager = new AssetManager();
 
-  currentScene?: GameScene;
-  physicsWorld = new RAPIER.World(this.gravity);
+  readonly renderer: THREE.WebGLRenderer;
+  readonly scene: THREE.Scene<THREE.Object3DEventMap>;
+  readonly camera: THREE.Camera;
+
+  private readonly clock = new THREE.Clock();
+  private readonly gravity = { x: 0, y: -9.81, z: 0 };
+
+  readonly physicsWorld = new RAPIER.World(this.gravity);
+
   deltaTime = 0;
 
   constructor(
     renderer: THREE.WebGLRenderer,
+    scene: THREE.Scene,
+    camera: THREE.Camera,
   ) {
     this.renderer = renderer;
-    this.ecsService = new EcsService(this);
+    this.scene = scene;
+    this.camera = camera;
+
+    this.world.addSystem(new PhysicsSyncSystem());
+    this.world.addSystem(new PlayerControllerSystem());
+    this.world.addSystem(new CameraControllerSystem());
   }
 
-  start(scene: GameScene) {
-    this.setScene(scene);
+  start() {
     this.loop();
-  }
-
-  setScene(scene: GameScene) {
-    if (this.currentScene) {
-      this.currentScene.onExit();
-      this.monoBehaviourSystem.dispose();
-      this.ecsService.clear();
-      this.physicsWorld = new RAPIER.World(this.gravity);
-      this.clearThreeScene(this.currentScene);
-    }
-
-    this.currentScene = scene;
-    scene.onEnter(this);
   }
 
   private loop = () => {
     requestAnimationFrame(this.loop);
 
-    const dt = this.clock.getDelta();
-    this.deltaTime = dt;
+    this.deltaTime = this.clock.getDelta();
 
+    this.input.beginFrame();
     this.physicsWorld.step();
-    this.monoBehaviourSystem.update();
-    this.monoBehaviourSystem.postUpdate();
-    this.currentScene?.update();
-    this.currentScene?.lateUpdate();
-
-    this.monoBehaviourSystem.preRender();
-
-    this.currentScene?.render(this.renderer);
-
-    inputManager.postUpdate();
+    this.world.update();
+    this.renderer.render(this.scene, this.camera);
+    this.input.endFrame();
   };
-
-  private clearThreeScene(scene: THREE.Scene) {
-    scene.traverse((obj: any) => {
-      if (obj.geometry) obj.geometry.dispose();
-
-      if (obj.material) {
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach((m: any) => m.dispose());
-        } else {
-          obj.material.dispose();
-        }
-      }
-
-      if (obj.texture) obj.texture.dispose();
-    });
-
-    while (scene.children.length > 0) {
-      scene.remove(scene.children[0]);
-    }
-  }
 }

@@ -1,9 +1,46 @@
 import "./style.css";
-import { createRenderer } from "./utils/createRenderer.js";
+import * as THREE from "three";
 import Engine from "./engine/engine.js";
-import CarScene from "./scenes/car.scene.js";
+import { createFloor } from "./engine/game/player-factory.js";
+import EngineContext from "./engine/contexts/engine.context.js";
+import { createEcsCamera, createEmpty, createMainCamera } from "./engine/game/global-factory.js";
+import setupResizeHandler from "./listeners/setup-resize-listener.js";
 
-const renderer = createRenderer();
-const engine = new Engine(renderer);
+// Initialize Three.js renderer, scene, and camera
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.shadowMap.enabled = true;
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-engine.start(new CarScene());
+const scene = new THREE.Scene();
+const camera = createMainCamera(scene);
+
+// Initialize the game engine
+const engine = new Engine(renderer, scene, camera);
+EngineContext.setEngine(engine);
+
+// Handle window resize
+setupResizeHandler(
+    renderer,
+    camera,
+);
+
+engine.start();
+
+
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5, 10, 7.5);
+light.castShadow = true;
+scene.add(light);
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
+
+
+createEcsCamera(engine.world, camera);
+createFloor(engine.world, engine.physicsWorld, scene);
+// createPlayer(engine.world, engine.physicsWorld, scene);
+
+// createEmpty({
+//     position: new THREE.Vector3(0, 0.5, 0),
+// });

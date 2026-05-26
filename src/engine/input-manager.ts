@@ -1,38 +1,32 @@
-import type { InputKey, MouseButton } from "./input.types";
-
-class InputManager {
+export default class InputManager {
     // keyboard
-    readonly pressedKeys = new Set<InputKey>();
-    readonly clickedKeys = new Set<InputKey>(); // first-frame presses
-    readonly releasedKeys = new Set<InputKey>(); // first-frame releases
+    private readonly pressedKeys = new Set<InputKey>();
+    private readonly clickedKeys = new Set<InputKey>(); // first-frame presses
+    private readonly releasedKeys = new Set<InputKey>(); // first-frame releases
 
     // mouse buttons (0 = left, 1 = middle, 2 = right)
-    readonly pressedMouseButtons = new Set<MouseButton>();
-    readonly clickedMouseButtons = new Set<MouseButton>();
+    private readonly pressedMouseButtons = new Set<MouseButton>();
+    private readonly clickedMouseButtons = new Set<MouseButton>();
 
-    readonly mouseMoveEvent: Set<(position: { x: number, y: number }, delta: { x: number, y: number }) => void> = new Set();
-    readonly mouseMoveDeltaEvent: Set<(delta: { x: number, y: number }) => void> = new Set();
-    readonly wheelEvent: Set<(delta: number) => void> = new Set();
-
-    lockElement: HTMLElement | null = null;
-
-    mousePosition = {
+    private readonly _mousePosition = {
         x: window.innerWidth / 2,
         y: window.innerHeight / 2
     };
-    mouseDelta = { x: 0, y: 0 };
-    wheelDelta = 0;
+    
+    private lockElement: HTMLElement | null = null;
+    private _mouseDelta = { x: 0, y: 0 };
+    private _wheelDelta = 0;
 
-    init() {
+    constructor() {
         // Обробка руху миші — movementX/movementY доступні лише при lock
-        document.addEventListener('mousemove', this.onLockMouseMove.bind(this));
-        window.addEventListener('mousemove', this.onMouseMove.bind(this));
-        window.addEventListener('mousedown', this.onMouseDown.bind(this));
-        window.addEventListener('mouseup', this.onMouseUp.bind(this));
-        window.addEventListener('wheel', this.onWheel.bind(this), { passive: true });
-        window.addEventListener('keydown', this.onKeyDown.bind(this));
-        window.addEventListener('keyup', this.onKeyUp.bind(this));
-        window.addEventListener('contextmenu', this.onContextMenu.bind(this));
+        document.addEventListener('mousemove', this.lockMouseMove);
+        window.addEventListener('mousemove', this.mouseMove);
+        window.addEventListener('mousedown', this.mouseDown);
+        window.addEventListener('mouseup', this.mouseUp);
+        window.addEventListener('wheel', this.wheel, { passive: true });
+        window.addEventListener('keydown', this.keyDown);
+        window.addEventListener('keyup', this.keyUp);
+        window.addEventListener('contextmenu', this.onContextMenu);
 
         // Touch support (map touches to mouse)
         window.addEventListener('touchstart', this.onTouchStart, { passive: false });
@@ -74,40 +68,52 @@ class InputManager {
         return this.clickedMouseButtons.has(button);
     }
 
+    get mousePosition() {
+        return this._mousePosition;
+    }
+
+    get mouseDelta() {
+        return this._mouseDelta;
+    }
+
+    get wheelDelta() {
+        return this._wheelDelta;
+    }
+
+    // call at start of frame / tick to prepare for new input
+    beginFrame() {
+        // no-op for now, but could be used for future features like input buffering
+    }
 
     // call at end of frame / tick to clear "single-frame" events
-    postUpdate() {
+    endFrame() {
         this.clickedKeys.clear();
         this.releasedKeys.clear();
         this.clickedMouseButtons.clear();
         // zero deltas
-        this.mouseDelta.x = 0;
-        this.mouseDelta.y = 0;
-        this.wheelDelta = 0;
+        this._mouseDelta.x = 0;
+        this._mouseDelta.y = 0;
+        this._wheelDelta = 0;
     }
 
     // ------------------- internal event handlers -------------------
-    private onLockMouseMove(e: MouseEvent) {
+    private lockMouseMove(e: MouseEvent) {
         if (document.pointerLockElement === this.lockElement) {
-            this.mouseDelta.x = e.movementX;
-            this.mouseDelta.y = e.movementY;
-
-            for (const e of this.mouseMoveDeltaEvent) e(this.mouseDelta);
+            this._mouseDelta.x = e.movementX;
+            this._mouseDelta.y = e.movementY;
         }
     }
 
-    private onMouseMove = (e: MouseEvent) => {
+    private mouseMove = (e: MouseEvent) => {
         const newX = e.clientX;
         const newY = e.clientY;
-        this.mouseDelta.x = newX - (this.mousePosition.x ?? 0);
-        this.mouseDelta.y = newY - (this.mousePosition.y ?? 0);
-        this.mousePosition.x = newX;
-        this.mousePosition.y = newY;
-
-        for (const e of this.mouseMoveEvent) e(this.mousePosition, this.mouseDelta);
+        this._mouseDelta.x = newX - (this._mousePosition.x ?? 0);
+        this._mouseDelta.y = newY - (this._mousePosition.y ?? 0);
+        this._mousePosition.x = newX;
+        this._mousePosition.y = newY;
     }
 
-    private onMouseDown = (e: MouseEvent) => {
+    private mouseDown = (e: MouseEvent) => {
         const b = e.button as MouseButton;
         if (!this.pressedMouseButtons.has(b)) {
             this.clickedMouseButtons.add(b);
@@ -115,18 +121,17 @@ class InputManager {
         this.pressedMouseButtons.add(b);
     }
 
-    private onMouseUp = (e: MouseEvent) => {
+    private mouseUp = (e: MouseEvent) => {
         const b = e.button as MouseButton;
         this.pressedMouseButtons.delete(b);
     }
 
-    private onWheel = (e: WheelEvent) => {
+    private wheel = (e: WheelEvent) => {
         // accumulate wheel delta; sign indicates direction
-        this.wheelDelta += e.deltaY;
-        for (const e of this.wheelEvent) e(this.wheelDelta);
+        this._wheelDelta += e.deltaY;
     }
 
-    private onKeyDown = (e: KeyboardEvent) => {
+    private keyDown = (e: KeyboardEvent) => {
         const locked = (document.pointerLockElement === this.lockElement);
 
         // Перелік строгих комбінацій які ми хочемо перехопити
@@ -155,7 +160,7 @@ class InputManager {
         this.pressedKeys.add(code);
     };
 
-    private onKeyUp = (e: KeyboardEvent) => {
+    private keyUp = (e: KeyboardEvent) => {
         const code = e.code as InputKey;
         this.pressedKeys.delete(code);
         this.releasedKeys.add(code);
@@ -174,10 +179,10 @@ class InputManager {
             const t = e.touches[0];
             const newX = t.clientX;
             const newY = t.clientY;
-            this.mouseDelta.x = newX - (this.mousePosition.x ?? 0);
-            this.mouseDelta.y = newY - (this.mousePosition.y ?? 0);
-            this.mousePosition.x = newX;
-            this.mousePosition.y = newY;
+            this._mouseDelta.x = newX - (this._mousePosition.x ?? 0);
+            this._mouseDelta.y = newY - (this._mousePosition.y ?? 0);
+            this._mousePosition.x = newX;
+            this._mousePosition.y = newY;
             if (!this.pressedMouseButtons.has(0)) this.clickedMouseButtons.add(0);
             this.pressedMouseButtons.add(0);
         }
@@ -189,10 +194,10 @@ class InputManager {
             const t = e.touches[0];
             const newX = t.clientX;
             const newY = t.clientY;
-            this.mouseDelta.x = newX - (this.mousePosition.x ?? 0);
-            this.mouseDelta.y = newY - (this.mousePosition.y ?? 0);
-            this.mousePosition.x = newX;
-            this.mousePosition.y = newY;
+            this._mouseDelta.x = newX - (this._mousePosition.x ?? 0);
+            this._mouseDelta.y = newY - (this._mousePosition.y ?? 0);
+            this._mousePosition.x = newX;
+            this._mousePosition.y = newY;
         }
         e.preventDefault();
     }
@@ -204,13 +209,13 @@ class InputManager {
     }
 
     dispose() {
-        document.removeEventListener('mousemove', this.onLockMouseMove);
-        window.removeEventListener('mousemove', this.onMouseMove);
-        window.removeEventListener('mousedown', this.onMouseDown);
-        window.removeEventListener('mouseup', this.onMouseUp);
-        window.removeEventListener('wheel', this.onWheel);
-        window.removeEventListener('keydown', this.onKeyDown);
-        window.removeEventListener('keyup', this.onKeyUp);
+        document.removeEventListener('mousemove', this.lockMouseMove);
+        window.removeEventListener('mousemove', this.mouseMove);
+        window.removeEventListener('mousedown', this.mouseDown);
+        window.removeEventListener('mouseup', this.mouseUp);
+        window.removeEventListener('wheel', this.wheel);
+        window.removeEventListener('keydown', this.keyDown);
+        window.removeEventListener('keyup', this.keyUp);
         window.removeEventListener('contextmenu', this.onContextMenu);
 
         window.removeEventListener('touchstart', this.onTouchStart);
@@ -219,5 +224,20 @@ class InputManager {
     }
 }
 
-export const inputManager = new InputManager();
-inputManager.init();
+
+export type InputKey =
+    | "KeyW"
+    | "KeyA"
+    | "KeyS"
+    | "KeyD"
+    | "KeyQ"
+    | "KeyE"
+    | "KeyC"
+    | "Space"
+    | "ShiftLeft"
+    | "ShiftRight"
+    | "Tab"
+    | "AltLeft"
+    | "Escape";
+
+export type MouseButton = 0 | 1 | 2; // left, middle, right
