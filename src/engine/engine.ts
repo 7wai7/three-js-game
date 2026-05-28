@@ -3,7 +3,7 @@ import RAPIER from "@dimforge/rapier3d";
 import AssetManager from "./assets/asset-manager";
 import World from "./ecs/world";
 import PhysicsSyncSystem from "./systems/physics-sync.system";
-import InputManager from "./input-manager";
+import InputManager from "./input/input-manager";
 import PlayerControllerSystem from "./systems/player-controller.system";
 import CameraControllerSystem from "./systems/camera-controller.system";
 import AnimationsSystem from "./systems/animations.system";

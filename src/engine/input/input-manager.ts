@@ -1,3 +1,5 @@
+import type { InputKey, MouseButton } from "./types";
+
 export default class InputManager {
     // keyboard
     private readonly pressedKeys = new Set<InputKey>();
@@ -223,21 +225,3 @@ export default class InputManager {
         window.removeEventListener('touchend', this.onTouchEnd);
     }
 }
-
-
-export type InputKey =
-    | "KeyW"
-    | "KeyA"
-    | "KeyS"
-    | "KeyD"
-    | "KeyQ"
-    | "KeyE"
-    | "KeyC"
-    | "Space"
-    | "ShiftLeft"
-    | "ShiftRight"
-    | "Tab"
-    | "AltLeft"
-    | "Escape";
-
-export type MouseButton = 0 | 1 | 2; // left, middle, right
