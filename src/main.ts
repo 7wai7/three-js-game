@@ -1,10 +1,10 @@
 import "./style.css";
 import * as THREE from "three";
 import Engine from "./engine/engine.js";
-import { createFloor } from "./engine/game/player-factory.js";
 import EngineContext from "./engine/contexts/engine.context.js";
 import { createEcsCamera, createEmpty, createMainCamera } from "./engine/game/global-factory.js";
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
+import { createFloor } from "./engine/game/terrain-factory.js";
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
