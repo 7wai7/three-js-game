@@ -32,6 +32,9 @@ export async function createCar(
         "src/assets/car.glb",
     );
 
+    root.position.y = 3;
+    // root.visible = false;
+
     const uniformScale = getUniformScale(root, 1);
     root.scale.setScalar(uniformScale);
 
@@ -88,7 +91,7 @@ export async function createCar(
         );
 
         // detach
-        wheel.removeFromParent();
+        // wheel.removeFromParent();
 
         // restore world transform
         wheel.position.copy(worldPos);
@@ -106,11 +109,12 @@ export async function createCar(
     // CHASSIS PHYSICS
     // =========================
 
-    const chassisSize = getObjectSize(root);
+    const chassis = root.getObjectByName("Cube")!;
+    const chassisSize = getObjectSize(chassis);
 
     const chassisRb = physicsWorld.createRigidBody(
         RAPIER.RigidBodyDesc.dynamic()
-            .setTranslation(0, 2, 0),
+            .setTranslation(0, root.position.y, 0),
     );
 
     const chassisCollider = physicsWorld.createCollider(
@@ -126,7 +130,7 @@ export async function createCar(
 
     world.addComponent(
         carEntity,
-        new Object3DComponent(root),
+        new Object3DComponent(chassis),
     );
 
     world.addComponent(
@@ -143,8 +147,11 @@ export async function createCar(
     // CREATE WHEELS
     // =========================
 
+    const wheelsEntities = [];
+
     for (let i = 0; i < wheels.length; i++) {
         const wheelEntity = world.createEntity();
+        wheelsEntities.push(wheelEntity);
 
         const wheelMesh = wheels[i];
         const wheelPos = wheelWorldPositions[i];
@@ -230,7 +237,7 @@ export async function createCar(
 
         const localAnchor2 = {
             x: 0,
-            y: 0,
+            y: 1,
             z: 0,
         };
 
@@ -247,12 +254,15 @@ export async function createCar(
         );
 
         physicsWorld.createImpulseJoint(
-          jointData,
-          chassisRb,
-          wheelRb,
-          true,
+            jointData,
+            chassisRb,
+            wheelRb,
+            true,
         );
     }
 
-    return carEntity;
+    return {
+        car: carEntity,
+        wheels: wheelsEntities,
+    };
 }
