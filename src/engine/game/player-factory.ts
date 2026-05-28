@@ -7,6 +7,8 @@ import PlayerControllerComponent from "../components/player-controller";
 import ColliderComponent from "../components/collider";
 import EngineContext from "../contexts/engine.context";
 import getUniformScale from "../../utils/get-uniform-scale";
+import AnimationComponent from "../components/animation";
+import AnimationsSystem from "../systems/animations.system";
 
 export async function createPlayer(world: World, physicsWorld: RAPIER.World, scene: THREE.Scene) {
   const entity = world.createEntity();
@@ -16,7 +18,8 @@ export async function createPlayer(world: World, physicsWorld: RAPIER.World, sce
   const halfHeight = (totalHeight - radius * 2) / 2;
 
   // Load the player model
-  const mesh = await EngineContext.engine.assets.loadModel("src/assets/Player/Mesh.glb");
+  const gltf = await EngineContext.engine.assets.loadModel("src/assets/Player/Mesh.glb");
+  const mesh = gltf.scene;
   const uniformScale = getUniformScale(mesh, totalHeight);
   mesh.scale.setScalar(uniformScale);
 
@@ -28,6 +31,19 @@ export async function createPlayer(world: World, physicsWorld: RAPIER.World, sce
   });
 
   scene.add(mesh);
+
+
+  // Load animations
+  const mixer = new THREE.AnimationMixer(mesh);
+  world.addComponent(entity, new AnimationComponent(mixer));
+  const animSystem = world.getSystem(AnimationsSystem);
+  Promise.all([
+    animSystem.loadAnimation(entity, "Idle", "src/assets/Player/Animations/Standing-Idle.glb"),
+    animSystem.loadAnimation(entity, "Walk", "src/assets/Player/Animations/Walk.glb"),
+    animSystem.loadAnimation(entity, "FastRun", "src/assets/Player/Animations/Fast-Run.glb"),
+  ]).then(() => {
+    animSystem.playAnimation(entity, "Idle");
+  })
 
 
   // Create the character controller

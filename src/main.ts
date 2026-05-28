@@ -5,6 +5,7 @@ import EngineContext from "./engine/contexts/engine.context.js";
 import { createEcsCamera, createEmpty, createMainCamera } from "./engine/game/global-factory.js";
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
 import { createFloor } from "./engine/game/terrain-factory.js";
+import { createPlayer } from "./engine/game/player-factory.js";
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -39,7 +40,7 @@ scene.add(ambientLight);
 
 createEcsCamera(engine.world, camera);
 createFloor(engine.world, engine.physicsWorld, scene);
-// createPlayer(engine.world, engine.physicsWorld, scene);
+createPlayer(engine.world, engine.physicsWorld, scene);
 
 // createEmpty({
 //     position: new THREE.Vector3(0, 0.5, 0),
