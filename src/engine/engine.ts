@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import AssetManager from "./game/asset-manager";
+import AssetManager from "./assets/asset-manager";
 import World from "./ecs/world";
 import PhysicsSyncSystem from "./systems/physics-sync.system";
 import InputManager from "./input-manager";
