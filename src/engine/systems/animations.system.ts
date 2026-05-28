@@ -1,9 +1,6 @@
-import { GLTFLoader } from "three/examples/jsm/Addons.js";
 import AnimationComponent from "../components/animation";
 import Query from "../ecs/query";
 import System from "./system";
-
-const gltfLoader = new GLTFLoader();
 
 export default class AnimationsSystem extends System {
     update(): void {
