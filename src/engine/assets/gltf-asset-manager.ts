@@ -2,7 +2,7 @@ import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js"
 import { SkeletonUtils } from "three/examples/jsm/Addons.js";
 import type { Group } from "three";
 
-export default class AssetManager {
+export default class GLTFAssetManager {
   private gltfLoader = new GLTFLoader();
   private loadedModels = new Map<string, GLTF>();
   private loadingModels = new Map<

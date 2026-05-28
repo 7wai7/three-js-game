@@ -1,17 +1,23 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import AssetManager from "./assets/asset-manager";
+import GLTFAssetManager from "./assets/gltf-asset-manager";
 import World from "./ecs/world";
 import PhysicsSyncSystem from "./systems/physics-sync.system";
 import InputManager from "./input/input-manager";
 import PlayerControllerSystem from "./systems/player-controller.system";
 import CameraControllerSystem from "./systems/camera-controller.system";
 import AnimationsSystem from "./systems/animations.system";
+import type { Assets } from "./assets/types";
+import TextureAssetManager from "./assets/texture-asset-manager";
 
 export default class Engine {
   readonly world: World = new World();
   readonly input: InputManager = new InputManager();
-  readonly assets: AssetManager = new AssetManager();
+  
+  readonly assets: Assets = {
+    gltf: new GLTFAssetManager(),
+    textures: new TextureAssetManager()
+  }
 
   readonly renderer: THREE.WebGLRenderer;
   readonly scene: THREE.Scene<THREE.Object3DEventMap>;

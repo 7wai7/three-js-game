@@ -5,12 +5,17 @@ import type World from "../ecs/world";
 import RigidBodyComponent from "../components/rigidbody";
 import PlayerControllerComponent from "../components/player-controller";
 import ColliderComponent from "../components/collider";
-import EngineContext from "../contexts/engine.context";
 import getUniformScale from "../../utils/get-uniform-scale";
 import AnimationComponent from "../components/animation";
 import AnimationsSystem from "../systems/animations.system";
+import type GLTFAssetManager from "../assets/gltf-asset-manager";
 
-export async function createPlayer(world: World, physicsWorld: RAPIER.World, scene: THREE.Scene) {
+export async function createPlayer(
+  world: World,
+  physicsWorld: RAPIER.World,
+  scene: THREE.Scene,
+  assets: GLTFAssetManager
+) {
   const entity = world.createEntity();
 
   const radius = 0.5;
@@ -18,7 +23,7 @@ export async function createPlayer(world: World, physicsWorld: RAPIER.World, sce
   const halfHeight = (totalHeight - radius * 2) / 2;
 
   // Load the player model
-  const gltf = await EngineContext.engine.assets.loadModel("src/assets/Player/Mesh.glb");
+  const gltf = await assets.loadModel("src/assets/Player/Mesh.glb");
   const mesh = gltf.scene;
   const uniformScale = getUniformScale(mesh, totalHeight);
   mesh.scale.setScalar(uniformScale);

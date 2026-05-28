@@ -4,19 +4,17 @@ import Object3DComponent from "../components/object";
 import type World from "../ecs/world";
 import ColliderComponent from "../components/collider";
 import RigidBodyComponent from "../components/rigidbody";
+import type TextureAssetManager from "../assets/texture-asset-manager";
 
-const textureLoader = new THREE.TextureLoader();
-
-export function createFloor(
+export async function createFloor(
   world: World,
   physicsWorld: RAPIER.World,
   scene: THREE.Scene,
+  assets: TextureAssetManager
 ) {
   const entity = world.createEntity();
 
-  const texture = textureLoader.load(
-    "src/assets/textures/grid.png",
-  );
+  const texture = await assets.load("src/assets/textures/grid.png");
 
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;

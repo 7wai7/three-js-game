@@ -2,7 +2,7 @@ import "./style.css";
 import * as THREE from "three";
 import Engine from "./engine/engine.js";
 import EngineContext from "./engine/contexts/engine.context.js";
-import { createEcsCamera, createEmpty, createMainCamera } from "./engine/game/global-factory.js";
+import { createEcsCamera, createMainCamera } from "./engine/game/global-factory.js";
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
 import { createFloor } from "./engine/game/terrain-factory.js";
 import { createPlayer } from "./engine/game/player-factory.js";
@@ -39,9 +39,5 @@ scene.add(ambientLight);
 
 
 createEcsCamera(engine.world, camera);
-createFloor(engine.world, engine.physicsWorld, scene);
-createPlayer(engine.world, engine.physicsWorld, scene);
-
-// createEmpty({
-//     position: new THREE.Vector3(0, 0.5, 0),
-// });
+createFloor(engine.world, engine.physicsWorld, scene, engine.assets.textures);
+createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf);

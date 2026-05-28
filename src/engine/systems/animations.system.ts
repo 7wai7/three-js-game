@@ -10,12 +10,8 @@ export default class AnimationsSystem extends System {
         );
 
         for (const entity of entities) {
-            const anim = this.world.getComponent(entity, AnimationComponent);
-            if (!anim) {
-                console.warn(`Entity ${entity} has no animation component`);
-                continue;
-            }
-            anim.mixer.update(this.engine.deltaTime);
+            const mixer = this.world.getComponent(entity, AnimationComponent)!.mixer;
+            mixer.update(this.engine.deltaTime);
         }
     }
 
@@ -26,8 +22,7 @@ export default class AnimationsSystem extends System {
             return;
         }
 
-        const gltf = await this.assets.loadModel(path);
-        console.log(gltf)
+        const gltf = await this.assets.gltf.loadModel(path);
 
         if (gltf.animations.length === 0) {
             console.error(`No animations in ${path}`);
