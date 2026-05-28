@@ -1,11 +1,11 @@
 import type System from "../systems/system";
 import Component from "./component";
-import type { ComponentClass, EntityId } from "./types";
+import type { ComponentClass, EntityId, SystemClass } from "./types";
 
 export default class World {
     readonly entites: Set<EntityId> = new Set();
     readonly components: Map<ComponentClass<any>, Map<EntityId, Component>> = new Map();
-    readonly systems: System[] = [];
+    readonly systems: Map<SystemClass<any>, System> = new Map();
 
     private nextEntityId = 0;
 
@@ -46,13 +46,18 @@ export default class World {
         }
     }
 
-    addSystem(system: System) {
-        this.systems.push(system);
+    addSystem<T extends System>(system: T) {
+        const systemClass = system.constructor as SystemClass<T>;
+        this.systems.set(systemClass, system);
+    }
+
+    getSystem<T extends System>(systemClass: SystemClass<T>) {
+        return this.systems.get(systemClass) as T;
     }
 
     update() {
-        for (const system of this.systems) {
-            if(system.started) {
+        for (const system of this.systems.values()) {
+            if (system.started) {
                 system.update?.();
             } else {
                 system.start?.();
@@ -60,15 +65,15 @@ export default class World {
             }
         }
 
-        for (const system of this.systems) {
+        for (const system of this.systems.values()) {
             system.postUpdate?.();
         }
 
-        for (const system of this.systems) {
+        for (const system of this.systems.values()) {
             system.preRender?.();
         }
 
-        for (const system of this.systems) {
+        for (const system of this.systems.values()) {
             system.render?.();
         }
     }
