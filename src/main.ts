@@ -6,6 +6,7 @@ import { createEcsCamera, createMainCamera } from "./engine/game/global-factory.
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
 import { createFloor } from "./engine/game/terrain-factory.js";
 import { createPlayer } from "./engine/game/player-factory.js";
+import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -38,6 +39,12 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
 
+const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
+
 createEcsCamera(engine.world, camera);
 createFloor(engine.world, engine.physicsWorld, scene, engine.assets.textures);
-createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf);
+createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
+    .then((entity) => {
+        cameraControllerSystem.followEntity = entity;
+    })
+

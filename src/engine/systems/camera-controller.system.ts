@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { clamp, DEG2RAD } from "three/src/math/MathUtils.js";
 import System from "./system";
-import { createEmpty } from "../game/global-factory";
 import Object3DComponent from "../components/object";
 
 export default class CameraControllerSystem extends System {
@@ -40,9 +39,6 @@ export default class CameraControllerSystem extends System {
     private readonly pitchQuat = new THREE.Quaternion();
 
     start(): void {
-        this.followEntity = createEmpty({
-            position: new THREE.Vector3(0, 0.5, 0),
-        });
         this.yawQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.yawOffset);
         this.pitchQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), this.pitchOffset);
         this.updateOffset();
