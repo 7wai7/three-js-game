@@ -19,14 +19,19 @@ export async function createPlayer(
 ) {
   const entity = world.createEntity();
 
-  const radius = 0.5;
+  const radius = 0.4;
   const totalHeight = 1.8;
   const halfHeight = (totalHeight - radius * 2) / 2;
 
   // Load the player model
   const gltf = await assets.loadModel("src/assets/Player/Mesh.glb");
   const mesh = gltf.scene;
-  const uniformScale = getUniformScale(mesh, totalHeight);
+
+  const rootMesh = new THREE.Object3D();
+  mesh.position.y = -(totalHeight / 2);
+  rootMesh.add(mesh);
+
+  const uniformScale = getUniformScale(rootMesh, totalHeight);
   mesh.scale.setScalar(uniformScale);
 
   mesh.traverse((obj) => {
@@ -36,11 +41,11 @@ export async function createPlayer(
     }
   });
 
-  scene.add(mesh);
+  scene.add(rootMesh);
 
 
   // Load animations
-  const mixer = new THREE.AnimationMixer(mesh);
+  const mixer = new THREE.AnimationMixer(rootMesh);
   world.addComponent(entity, new AnimationComponent(mixer));
   const animSystem = world.getSystem(AnimationsSystem);
   Promise.all([
@@ -60,12 +65,12 @@ export async function createPlayer(
   controller.setMinSlopeSlideAngle(Math.PI / 3); // 60 degrees
 
   const rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, totalHeight, 0);
-  const colliderDesc = RAPIER.ColliderDesc.capsule(halfHeight / 2, radius).setRestitution(0.3);
+  const colliderDesc = RAPIER.ColliderDesc.capsule(halfHeight, radius).setRestitution(0.3);
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
   // Add components to the world
-  world.addComponent(entity, new Object3DComponent(mesh));
+  world.addComponent(entity, new Object3DComponent(rootMesh));
   world.addComponent(entity, new RigidBodyComponent(rb));
   world.addComponent(entity, new ColliderComponent(collider));
   world.addComponent(entity, new PlayerControllerComponent(controller));
