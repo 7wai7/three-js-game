@@ -59,6 +59,18 @@ export async function createFloor(
   return entity;
 }
 
+export function createLight(
+  scene: THREE.Scene,
+) {
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(5, 10, 7.5);
+  light.castShadow = true;
+  scene.add(light);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambientLight);
+}
+
 export function createCube(world: World, physicsWorld: RAPIER.World, scene: THREE.Scene) {
   const entity = world.createEntity();
 

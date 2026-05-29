@@ -10,6 +10,7 @@ import AnimationComponent from "../components/animation";
 import AnimationsSystem from "../systems/animations.system";
 import type GLTFAssetManager from "../assets/gltf-asset-manager";
 import PlayerInputComponent from "../components/player-input";
+import getObjectSize from "../../utils/get-object-size";
 
 export async function createPlayer(
   world: World,
@@ -19,13 +20,13 @@ export async function createPlayer(
 ) {
   const entity = world.createEntity();
 
-  const radius = 0.4;
-  const totalHeight = 1.8;
-  const halfHeight = (totalHeight - radius * 2) / 2;
-
   // Load the player model
   const gltf = await assets.loadModel("src/assets/Player/Mesh.glb");
   const mesh = gltf.scene;
+
+  const radius = 0.22;
+  const totalHeight = getObjectSize(mesh).y;
+  const halfHeight = (totalHeight - radius * 2) / 2;
 
   const rootMesh = new THREE.Object3D();
   mesh.position.y = -(totalHeight / 2);
@@ -52,6 +53,7 @@ export async function createPlayer(
     animSystem.loadAnimation(entity, "Idle", "src/assets/Player/Animations/Standing-Idle.glb"),
     animSystem.loadAnimation(entity, "Walk", "src/assets/Player/Animations/Walk.glb"),
     animSystem.loadAnimation(entity, "FastRun", "src/assets/Player/Animations/Fast-Run.glb"),
+    animSystem.loadAnimation(entity, "Jump", "src/assets/Player/Animations/Jump.glb"),
   ]).then(() => {
     animSystem.playAnimation(entity, "Idle");
   })

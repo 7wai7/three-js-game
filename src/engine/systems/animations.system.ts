@@ -22,15 +22,19 @@ export default class AnimationsSystem extends System {
             return;
         }
 
-        const gltf = await this.assets.gltf.loadModel(path);
+        try {
+            const gltf = await this.assets.gltf.loadModel(path);
 
-        if (gltf.animations.length === 0) {
-            console.error(`No animations in ${path}`);
-            return;
+            if (gltf.animations.length === 0) {
+                console.error(`No animations in ${path}`);
+                return;
+            }
+
+            const clip = gltf.animations[0];
+            anim.actions[name] = anim.mixer.clipAction(clip);
+        } catch (error) {
+            console.error(`Failed to load gltf scene for animation ${name} by path ${path}`);
         }
-
-        const clip = gltf.animations[0];
-        anim.actions[name] = anim.mixer.clipAction(clip);
     }
 
     playAnimation(entity: number, name: string) {
@@ -41,7 +45,7 @@ export default class AnimationsSystem extends System {
         }
 
         const next = anim.actions[name];
-        if(!next) {
+        if (!next) {
             console.warn(`Animation "${name}" not found`);
             return;
         }

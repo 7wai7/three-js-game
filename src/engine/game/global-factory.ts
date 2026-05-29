@@ -11,7 +11,6 @@ export function createMainCamera(scene: THREE.Scene) {
     camera.position.x = -3;
     camera.position.z = 1;
     camera.position.y = 5;
-    camera.zoom = 0.4;
     camera.updateProjectionMatrix()
     camera.lookAt(new THREE.Vector3(0, 1, 0));
 

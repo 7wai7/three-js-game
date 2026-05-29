@@ -4,7 +4,7 @@ import Engine from "./engine/engine.js";
 import EngineContext from "./engine/contexts/engine.context.js";
 import { createEcsCamera, createMainCamera } from "./engine/game/global-factory.js";
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
-import { createFloor } from "./engine/game/terrain-factory.js";
+import { createFloor, createLight } from "./engine/game/terrain-factory.js";
 import { createPlayer } from "./engine/game/player-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
 
@@ -27,24 +27,17 @@ setupResizeHandler(
     camera,
 );
 
-engine.start();
-
-
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(5, 10, 7.5);
-light.castShadow = true;
-scene.add(light);
-
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambientLight);
-
 
 const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 
 createEcsCamera(engine.world, camera);
 createFloor(engine.world, engine.physicsWorld, scene, engine.assets.textures);
+createLight(scene);
 createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
     .then((entity) => {
         cameraControllerSystem.followEntity = entity;
     })
 
+
+
+engine.start();
