@@ -11,6 +11,15 @@ export default class PlayerControllerComponent extends Component {
     isRunning = false;
     turnSpeed = 10;
 
+    verticalVelocity = 0;
+
+    jumpForce = 9;
+    gravityScale = 2;
+
+    isGrounded = false;
+
+    jumpRequested = false;
+
     constructor(characterController: RAPIER.KinematicCharacterController) {
         super();
         this.characterController = characterController;

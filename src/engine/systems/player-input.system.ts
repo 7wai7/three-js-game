@@ -45,5 +45,7 @@ export default class PlayerInputSystem extends System {
         controller.isRunning =
             this.input.pressed("ShiftLeft") ||
             this.input.pressed("ShiftRight");
+
+        if(this.input.clicked("Space")) controller.jumpRequested = true;
     }
 }

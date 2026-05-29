@@ -43,7 +43,19 @@ export default class PlayerControllerSystem extends System {
             desiredMovement.copy(controller.inputMoveDir)
                 .multiplyScalar(speed);
 
-            desiredMovement.y += g.y;
+            if (controller.jumpRequested && controller.isGrounded) {
+                controller.verticalVelocity = controller.jumpForce;
+                controller.isGrounded = false;
+            }
+
+            controller.jumpRequested = false;
+
+            controller.verticalVelocity +=
+                g.y *
+                controller.gravityScale *
+                this.dt;
+
+            desiredMovement.y = controller.verticalVelocity;
 
             desiredMovement.multiplyScalar(this.dt);
 
@@ -57,6 +69,13 @@ export default class PlayerControllerSystem extends System {
                 y: currentPosition.y + correctedMovement.y,
                 z: currentPosition.z + correctedMovement.z
             });
+
+            controller.isGrounded =
+                characterController.computedGrounded();
+
+            if (controller.isGrounded && controller.verticalVelocity < 0) {
+                controller.verticalVelocity = 0;
+            }
 
             if (isMove) {
                 const targetAngle = Math.atan2(
