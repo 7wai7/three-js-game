@@ -1,12 +1,18 @@
 import RAPIER from "@dimforge/rapier3d";
 import Component from "../ecs/component";
+import { Vector3 } from "three";
 
 export default class PlayerControllerComponent extends Component {
-    controller: RAPIER.KinematicCharacterController;
+    characterController: RAPIER.KinematicCharacterController;
 
-    constructor(controller: RAPIER.KinematicCharacterController) {
+    inputMoveDir = new Vector3();
+    speed = 2;
+    runSpeed = 6;
+    isRunning = false;
+    turnSpeed = 10;
+
+    constructor(characterController: RAPIER.KinematicCharacterController) {
         super();
-
-        this.controller = controller;
+        this.characterController = characterController;
     }
 }

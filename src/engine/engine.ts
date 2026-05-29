@@ -9,11 +9,12 @@ import CameraControllerSystem from "./systems/camera-controller.system";
 import AnimationsSystem from "./systems/animations.system";
 import type { Assets } from "./assets/types";
 import TextureAssetManager from "./assets/texture-asset-manager";
+import PlayerInputSystem from "./systems/player-input.system";
 
 export default class Engine {
   readonly world: World = new World();
   readonly input: InputManager = new InputManager();
-  
+
   readonly assets: Assets = {
     gltf: new GLTFAssetManager(),
     textures: new TextureAssetManager()
@@ -40,6 +41,7 @@ export default class Engine {
     this.camera = camera;
 
     this.world.addSystem(new PhysicsSyncSystem());
+    this.world.addSystem(new PlayerInputSystem());
     this.world.addSystem(new PlayerControllerSystem());
     this.world.addSystem(new AnimationsSystem());
     this.world.addSystem(new CameraControllerSystem());

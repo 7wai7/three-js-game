@@ -9,6 +9,7 @@ import getUniformScale from "../../utils/get-uniform-scale";
 import AnimationComponent from "../components/animation";
 import AnimationsSystem from "../systems/animations.system";
 import type GLTFAssetManager from "../assets/gltf-asset-manager";
+import PlayerInputComponent from "../components/player-input";
 
 export async function createPlayer(
   world: World,
@@ -68,6 +69,7 @@ export async function createPlayer(
   world.addComponent(entity, new RigidBodyComponent(rb));
   world.addComponent(entity, new ColliderComponent(collider));
   world.addComponent(entity, new PlayerControllerComponent(controller));
+  world.addComponent(entity, new PlayerInputComponent());
 
   return entity;
 }
