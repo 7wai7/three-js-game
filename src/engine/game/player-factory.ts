@@ -52,11 +52,11 @@ export async function createPlayer(
   Promise.all([
     animSystem.loadAnimation(entity, "Idle", "src/assets/Player/Animations/Standing-Idle.glb"),
     animSystem.loadAnimation(entity, "Walk", "src/assets/Player/Animations/Walk.glb"),
-    animSystem.loadAnimation(entity, "FastRun", "src/assets/Player/Animations/Fast-Run.glb"),
-    animSystem.loadAnimation(entity, "Jump", "src/assets/Player/Animations/Jump.glb"),
-  ]).then(() => {
-    animSystem.playAnimation(entity, "Idle");
-  })
+    animSystem.loadAnimation(entity, "Run", "src/assets/Player/Animations/Fast-Run.glb"),
+    animSystem.loadAnimation(entity, "Jumping Up", "src/assets/Player/Animations/Jumping Up.glb"),
+    animSystem.loadAnimation(entity, "Jumping Down", "src/assets/Player/Animations/Jumping Down.glb"),
+    animSystem.loadAnimation(entity, "Fall", "src/assets/Player/Animations/Falling Idle.glb"),
+  ])
 
 
   // Create the character controller

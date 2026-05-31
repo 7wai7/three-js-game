@@ -5,16 +5,10 @@ import System from "./system";
 import RigidBodyComponent from "../components/rigidbody";
 import ColliderComponent from "../components/collider";
 import AnimationComponent from "../components/animation";
-import AnimationsSystem from "./animations.system";
 
 export default class PlayerControllerSystem extends System {
-    animSystem!: AnimationsSystem;
     forwardAxis = new THREE.Vector3(0, 0, 1);
     rightAxis = new THREE.Vector3(1, 0, 0);
-
-    start(): void {
-        this.animSystem = this.world.getSystem(AnimationsSystem);
-    }
 
     update(): void {
         const entities = Query.entitiesWith(this.world,
@@ -28,7 +22,7 @@ export default class PlayerControllerSystem extends System {
             const characterController = controller.characterController;
             const rigidBody = this.world.getComponent(entity, RigidBodyComponent)!.rigidBody;
             const collider = this.world.getComponent(entity, ColliderComponent)!.collider;
-            const animComponent = this.world.getComponent(entity, AnimationComponent);
+            const anim = this.world.getComponent(entity, AnimationComponent)!;
             let isMove = false;
 
             if (controller.inputMoveDir.lengthSq() > 0) {
@@ -46,6 +40,9 @@ export default class PlayerControllerSystem extends System {
             if (controller.jumpRequested && controller.isGrounded) {
                 controller.verticalVelocity = controller.jumpForce;
                 controller.isGrounded = false;
+                anim.requestAnimation("Jumping Up", {
+                    loop: false
+                })
             }
 
             controller.jumpRequested = false;
@@ -106,12 +103,23 @@ export default class PlayerControllerSystem extends System {
                 rigidBody.setNextKinematicRotation(newQuat);
             }
 
-            if (animComponent) {
+            if (!controller.isGrounded) {
+                if (controller.verticalVelocity < 0) {
+                    anim.requestAnimation("Fall", {
+                        fadeTime: 1
+                    });
+                }
+            }
+
+            if (!controller.jumpRequested && controller.isGrounded) {
                 if (isMove) {
-                    if (controller.isRunning) this.animSystem.playAnimation(entity, "FastRun");
-                    else this.animSystem.playAnimation(entity, "Walk");
+                    anim.requestAnimation(
+                        controller.isRunning
+                            ? "Run"
+                            : "Walk"
+                    );
                 } else {
-                    this.animSystem.playAnimation(entity, "Idle");
+                    anim.requestAnimation("Idle")
                 }
             }
         }
