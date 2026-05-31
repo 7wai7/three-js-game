@@ -7,6 +7,7 @@ import setupResizeHandler from "./listeners/setup-resize-listener.js";
 import { createCube, createFloor, createLight } from "./engine/game/terrain-factory.js";
 import { createPlayer } from "./engine/game/player-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
+import { createCar } from "./engine/game/car-factory.js";
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -43,9 +44,14 @@ createCube(engine, {
 });
 
 createLight(scene);
-createPlayer(engine)
-    .then((entity) => {
-        cameraControllerSystem.followEntity = entity;
+// createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
+//     .then((entity) => {
+//         cameraControllerSystem.followEntity = entity;
+//     })
+
+createCar(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
+    .then(data => {
+        cameraControllerSystem.followEntity = data.car;
     })
 
 
