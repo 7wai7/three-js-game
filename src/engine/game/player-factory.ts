@@ -11,6 +11,7 @@ import AnimationsSystem from "../systems/animations.system";
 import type GLTFAssetManager from "../assets/gltf-asset-manager";
 import PlayerInputComponent from "../components/player-input";
 import getObjectSize from "../../utils/get-object-size";
+import { GROUP_PLAYER, GROUP_WORLD, interactionGroups } from "./physics-groups";
 
 export async function createPlayer(
   world: World,
@@ -52,11 +53,11 @@ export async function createPlayer(
   Promise.all([
     animSystem.loadAnimation(entity, "Idle", "src/assets/Player/Animations/Standing-Idle.glb"),
     animSystem.loadAnimation(entity, "Walk", "src/assets/Player/Animations/Walk.glb"),
-    animSystem.loadAnimation(entity, "FastRun", "src/assets/Player/Animations/Fast-Run.glb"),
-    animSystem.loadAnimation(entity, "Jump", "src/assets/Player/Animations/Jump.glb"),
-  ]).then(() => {
-    animSystem.playAnimation(entity, "Idle");
-  })
+    animSystem.loadAnimation(entity, "Run", "src/assets/Player/Animations/Fast-Run.glb"),
+    animSystem.loadAnimation(entity, "Jumping Up", "src/assets/Player/Animations/Jumping Up.glb"),
+    animSystem.loadAnimation(entity, "Jumping Down", "src/assets/Player/Animations/Jumping Down.glb"),
+    animSystem.loadAnimation(entity, "Fall", "src/assets/Player/Animations/Falling Idle.glb"),
+  ])
 
 
   // Create the character controller
@@ -67,7 +68,14 @@ export async function createPlayer(
   controller.setMinSlopeSlideAngle(Math.PI / 3); // 60 degrees
 
   const rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, totalHeight, 0);
-  const colliderDesc = RAPIER.ColliderDesc.capsule(halfHeight, radius).setRestitution(0.3);
+  const colliderDesc = RAPIER.ColliderDesc.capsule(halfHeight, radius)
+    .setCollisionGroups(
+      interactionGroups(
+        GROUP_PLAYER,
+        GROUP_WORLD,
+      ),
+    )
+    .setRestitution(0.3);
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
@@ -75,7 +83,9 @@ export async function createPlayer(
   world.addComponent(entity, new Object3DComponent(rootMesh));
   world.addComponent(entity, new RigidBodyComponent(rb));
   world.addComponent(entity, new ColliderComponent(collider));
-  world.addComponent(entity, new PlayerControllerComponent(controller));
+  world.addComponent(entity, new PlayerControllerComponent(controller, {
+    colliderHalfHeight: totalHeight / 2,
+  }));
   world.addComponent(entity, new PlayerInputComponent());
 
   return entity;

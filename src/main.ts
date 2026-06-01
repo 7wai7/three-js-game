@@ -4,7 +4,7 @@ import Engine from "./engine/engine.js";
 import EngineContext from "./engine/contexts/engine.context.js";
 import { createEcsCamera, createMainCamera } from "./engine/game/global-factory.js";
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
-import { createFloor, createLight } from "./engine/game/terrain-factory.js";
+import { createCube, createFloor, createLight } from "./engine/game/terrain-factory.js";
 import { createPlayer } from "./engine/game/player-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
 
@@ -32,6 +32,7 @@ const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 
 createEcsCamera(engine.world, camera);
 createFloor(engine.world, engine.physicsWorld, scene, engine.assets.textures);
+createCube(engine.world, engine.physicsWorld, scene);
 createLight(scene);
 createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
     .then((entity) => {
