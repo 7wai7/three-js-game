@@ -5,6 +5,7 @@ import type World from "../ecs/world";
 import ColliderComponent from "../components/collider";
 import RigidBodyComponent from "../components/rigidbody";
 import type TextureAssetManager from "../assets/texture-asset-manager";
+import { GROUP_PLAYER, GROUP_WORLD, interactionGroups } from "./physics-groups";
 
 export async function createFloor(
   world: World,
@@ -46,7 +47,13 @@ export async function createFloor(
       5,
       0.1,
       5,
-    ),
+    )
+      .setCollisionGroups(
+        interactionGroups(
+          GROUP_WORLD,
+          GROUP_WORLD | GROUP_PLAYER,
+        ),
+      )
   );
 
   world.addComponent(
@@ -81,8 +88,15 @@ export function createCube(world: World, physicsWorld: RAPIER.World, scene: THRE
   mesh.castShadow = true;
   scene.add(mesh);
 
-  const rbDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
-  const colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5).setRestitution(0.3);
+  const rbDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 5, 0);
+  const colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5)
+    .setCollisionGroups(
+      interactionGroups(
+        GROUP_WORLD,
+        GROUP_WORLD | GROUP_PLAYER,
+      ),
+    )
+    .setRestitution(0.3);
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
