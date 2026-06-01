@@ -1,28 +1,28 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import Object3DComponent from "../components/object";
-import type World from "../ecs/world";
 import RigidBodyComponent from "../components/rigidbody";
 import PlayerControllerComponent from "../components/player-controller";
 import ColliderComponent from "../components/collider";
 import getUniformScale from "../../utils/get-uniform-scale";
 import AnimationComponent from "../components/animation";
 import AnimationsSystem from "../systems/animations.system";
-import type GLTFAssetManager from "../assets/gltf-asset-manager";
 import PlayerInputComponent from "../components/player-input";
 import getObjectSize from "../../utils/get-object-size";
 import { GROUP_PLAYER, GROUP_WORLD, interactionGroups } from "./physics-groups";
+import type Engine from "../engine";
+import { resolveSpawnTransform, type SpawnTransform } from "../../utils/spawn-transform";
 
 export async function createPlayer(
-  world: World,
-  physicsWorld: RAPIER.World,
-  scene: THREE.Scene,
-  assets: GLTFAssetManager
+  engine: Engine,
+  transform: SpawnTransform = {},
 ) {
+  const { world, physicsWorld, scene, assets } = engine;
+  const { position, rotation } = resolveSpawnTransform(transform);
   const entity = world.createEntity();
 
   // Load the player model
-  const gltf = await assets.loadModel("src/assets/Player/Mesh.glb");
+  const gltf = await assets.gltf.loadModel("src/assets/Player/Mesh.glb");
   const mesh = gltf.scene;
 
   const radius = 0.22;
@@ -67,7 +67,11 @@ export async function createPlayer(
   controller.setMaxSlopeClimbAngle(Math.PI / 4); // 45 degrees
   controller.setMinSlopeSlideAngle(Math.PI / 3); // 60 degrees
 
-  const rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, totalHeight, 0);
+  const rbDesc = RAPIER.RigidBodyDesc
+    .kinematicPositionBased()
+    .setTranslation(position.x, position.y + totalHeight / 2, position.z)
+    .setRotation(rotation);
+
   const colliderDesc = RAPIER.ColliderDesc.capsule(halfHeight, radius)
     .setCollisionGroups(
       interactionGroups(

@@ -31,10 +31,19 @@ setupResizeHandler(
 const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 
 createEcsCamera(engine.world, camera);
-createFloor(engine.world, engine.physicsWorld, scene, engine.assets.textures);
-createCube(engine.world, engine.physicsWorld, scene);
+createFloor(engine);
+createCube(engine, {
+    position: new THREE.Vector3(1, 1, 0),
+});
+createCube(engine, {
+    position: new THREE.Vector3(1, 2, 0),
+});
+createCube(engine, {
+    position: new THREE.Vector3(2, 2, 0),
+});
+
 createLight(scene);
-createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
+createPlayer(engine)
     .then((entity) => {
         cameraControllerSystem.followEntity = entity;
     })
