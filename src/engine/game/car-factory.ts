@@ -5,9 +5,10 @@ import Object3DComponent from "../components/object";
 import RigidBodyComponent from "../components/rigidbody";
 import ColliderComponent from "../components/collider";
 
-import type World from "../ecs/world";
 import getObjectSize from "../../utils/get-object-size";
-import type GLTFAssetManager from "../assets/gltf-asset-manager";
+import type Engine from "../engine";
+import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroups } from "./physics-groups";
+import { resolveSpawnTransform, type SpawnTransform } from "../../utils/spawn-transform";
 
 const COLLIDER_SHAPE = ["BOX", "BALL", "CAPSULE", "CYLINDER"] as const;
 type ColliderShape = typeof COLLIDER_SHAPE[number];
@@ -27,25 +28,24 @@ type ColliderDefinition = {
 };
 
 export async function createCar(
-    world: World,
-    physicsWorld: RAPIER.World,
-    scene: THREE.Scene,
-    assets: GLTFAssetManager
+    engine: Engine,
+    transform?: SpawnTransform
 ) {
+    const { world, physicsWorld, scene, assets } = engine;
+    const { position, rotation } = resolveSpawnTransform(transform);
     const carEntity = world.createEntity();
 
     // =========================
     // LOAD MODEL
     // =========================
 
-    const gltf = await assets.loadModel(
+    const gltf = await assets.gltf.loadModel(
         "src/assets/car.glb",
     );
 
     const root = gltf.scene;
     console.log(root)
 
-    // root.position.y = 3;
     // root.visible = false;
 
     root.traverse((obj) => {
@@ -71,13 +71,67 @@ export async function createCar(
     )
     console.log(physics)
 
-
-
     for (const data of physics) {
         const entity = world.createEntity();
         world.addComponent(entity, new Object3DComponent(data.mesh));
         world.addComponent(entity, new ColliderComponent(data.collider));
         world.addComponent(entity, new RigidBodyComponent(data.rigidBody));
+    }
+
+    const physicsMap = new Map(
+        physics.map((p) => [p.mesh.name, p]),
+    );
+
+    const chassis = physicsMap.get("Chassis")!;
+    const fl = physicsMap.get("FL")!;
+    const fr = physicsMap.get("FR")!;
+    const bl = physicsMap.get("BL")!;
+    const br = physicsMap.get("BR")!;
+
+    const wheels = [fl, fr, bl, br];
+
+
+
+    for (const w of wheels) {
+        createWheelJoint(
+            physicsWorld,
+            chassis.rigidBody,
+            w.rigidBody,
+        );
+    }
+
+    chassis.rigidBody.setTranslation(position, true);
+    chassis.collider.setMass(10000);
+    chassis.collider.setDensity(100);
+    chassis.collider.setRestitution(0);
+    chassis.rigidBody.setLinearDamping(0.2);
+    chassis.rigidBody.setAngularDamping(1.0);
+
+    chassis.collider.setCollisionGroups(
+        interactionGroups(
+            GROUP_VEHICLE,
+            GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER
+        )
+    )
+
+    for (const w of wheels) {
+        const current = w.rigidBody.translation();
+        const p = new THREE.Vector3(current.x, current.y, current.z).add(position);
+        w.rigidBody.setTranslation(p, true);
+        w.collider.setMass(200);
+        w.collider.setDensity(500);
+        w.collider.setRestitution(0);
+        w.rigidBody.setLinearDamping(0.1);
+        w.rigidBody.setAngularDamping(0.1);
+        w.rigidBody.enableCcd(true);
+
+        w.collider
+            .setCollisionGroups(
+                interactionGroups(
+                    GROUP_WHEEL,
+                    GROUP_WORLD | GROUP_PLAYER
+                )
+            );
     }
 
     return {
@@ -306,4 +360,62 @@ function getAxisDimensions(
                 radius: Math.max(size.x, size.y) * 0.5,
             };
     }
+}
+
+function createWheelJoint(
+    physicsWorld: RAPIER.World,
+    chassis: RAPIER.RigidBody,
+    wheel: RAPIER.RigidBody,
+) {
+    const chassisPos = chassis.translation();
+    const wheelPos = wheel.translation();
+
+    const anchor1 = {
+        x: wheelPos.x - chassisPos.x,
+        y: wheelPos.y - chassisPos.y,
+        z: wheelPos.z - chassisPos.z,
+    };
+
+    const anchor2 = {
+        x: 0,
+        y: 0,
+        z: 0,
+    };
+
+    const axis = {
+        x: 0,
+        y: 1,
+        z: 0,
+    };
+
+    const joint = RAPIER.JointData.prismatic(
+        anchor1,
+        anchor2,
+        axis,
+    );
+
+    const j = physicsWorld.createImpulseJoint(
+        joint,
+        chassis,
+        wheel,
+        true,
+    ) as RAPIER.PrismaticImpulseJoint;
+
+    j.setLimits(
+        -0.25,
+        0.25,
+    );
+
+    j.configureMotorPosition(
+        -0.25,
+        300,
+        40,
+    );
+
+    // wheel.setEnabledRotations(
+    //     false,
+    //     true,
+    //     false,
+    //     true,
+    // );
 }

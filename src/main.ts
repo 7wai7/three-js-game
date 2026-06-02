@@ -32,16 +32,18 @@ setupResizeHandler(
 const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 
 createEcsCamera(engine.world, camera);
-createFloor(engine);
-createCube(engine, {
-    position: new THREE.Vector3(1, 1, 0),
+createFloor(engine, {
+    rotation: new THREE.Euler(Math.PI / 20, 0, 0)
 });
-createCube(engine, {
-    position: new THREE.Vector3(1, 2, 0),
-});
-createCube(engine, {
-    position: new THREE.Vector3(2, 2, 0),
-});
+// createCube(engine, {
+    // position: new THREE.Vector3(1, 1, 0),
+// });
+// createCube(engine, {
+//     position: new THREE.Vector3(1, 2, 0),
+// });
+// createCube(engine, {
+//     position: new THREE.Vector3(2, 2, 0),
+// });
 
 createLight(scene);
 // createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
@@ -49,7 +51,12 @@ createLight(scene);
 //         cameraControllerSystem.followEntity = entity;
 //     })
 
-createCar(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
+createCar(
+    engine,
+    {
+        position: new THREE.Vector3(0, 5, 0)
+    }
+)
     .then(data => {
         cameraControllerSystem.followEntity = data.car;
     })
