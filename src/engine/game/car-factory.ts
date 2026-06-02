@@ -19,6 +19,13 @@ type RigidBodyDesc = typeof RIGIDBODY_DESC[number];
 const AXIS = ["X", "Y", "Z"];
 type Axis = typeof AXIS[number];
 
+type CreatedPhysicsObject = {
+    mesh: any;
+    rigidBody: RAPIER.RigidBody;
+    collider: RAPIER.Collider;
+    entity?: number
+}
+
 type ColliderDefinition = {
     mesh: THREE.Object3D;
     colliderMarker: THREE.Object3D;
@@ -29,24 +36,16 @@ type ColliderDefinition = {
 
 export async function createCar(
     engine: Engine,
-    transform?: SpawnTransform
+    transform?: Omit<SpawnTransform, "rotation">
 ) {
     const { world, physicsWorld, scene, assets } = engine;
-    const { position, rotation } = resolveSpawnTransform(transform);
-    const carEntity = world.createEntity();
-
-    // =========================
-    // LOAD MODEL
-    // =========================
+    const { position } = resolveSpawnTransform(transform);
 
     const gltf = await assets.gltf.loadModel(
         "src/assets/car.glb",
     );
 
     const root = gltf.scene;
-    console.log(root)
-
-    // root.visible = false;
 
     root.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
@@ -63,24 +62,24 @@ export async function createCar(
 
 
     const colliderDefinitions = extractPhysicsDefinitions(root);
-    console.log(colliderDefinitions)
-
-    const physics = createPhysicsObjects(
+    const physics = createPhysicsFromDefinitions(
         colliderDefinitions,
         physicsWorld
     )
-    console.log(physics)
-
-    for (const data of physics) {
-        const entity = world.createEntity();
-        world.addComponent(entity, new Object3DComponent(data.mesh));
-        world.addComponent(entity, new ColliderComponent(data.collider));
-        world.addComponent(entity, new RigidBodyComponent(data.rigidBody));
-    }
 
     const physicsMap = new Map(
         physics.map((p) => [p.mesh.name, p]),
     );
+
+    for (const data of physics) {
+        const entity = world.createEntity();
+        const p = physicsMap.get(data.mesh.name);
+        if (p) p.entity = entity;
+
+        world.addComponent(entity, new Object3DComponent(data.mesh));
+        world.addComponent(entity, new ColliderComponent(data.collider));
+        world.addComponent(entity, new RigidBodyComponent(data.rigidBody));
+    }
 
     const chassis = physicsMap.get("Chassis")!;
     const fl = physicsMap.get("FL")!;
@@ -101,7 +100,7 @@ export async function createCar(
     }
 
     chassis.rigidBody.setTranslation(position, true);
-    chassis.collider.setMass(10000);
+    chassis.collider.setMass(1000);
     chassis.collider.setDensity(100);
     chassis.collider.setRestitution(0);
     chassis.rigidBody.setLinearDamping(0.2);
@@ -115,12 +114,14 @@ export async function createCar(
     )
 
     for (const w of wheels) {
-        const current = w.rigidBody.translation();
-        const p = new THREE.Vector3(current.x, current.y, current.z).add(position);
+        const pos = w.rigidBody.translation();
+        const p = new THREE.Vector3(pos.x, pos.y, pos.z).add(position);
         w.rigidBody.setTranslation(p, true);
         w.collider.setMass(200);
         w.collider.setDensity(500);
         w.collider.setRestitution(0);
+        w.collider.setFriction(0);
+        w.collider.setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min);
         w.rigidBody.setLinearDamping(0.1);
         w.rigidBody.setAngularDamping(0.1);
         w.rigidBody.enableCcd(true);
@@ -134,9 +135,7 @@ export async function createCar(
             );
     }
 
-    return {
-        car: carEntity
-    }
+    return chassis.entity
 }
 
 
@@ -171,10 +170,10 @@ function extractPhysicsDefinitions(root: THREE.Object3D) {
     return result;
 }
 
-function createPhysicsObjects(
+function createPhysicsFromDefinitions(
     defs: ColliderDefinition[],
     physicsWorld: RAPIER.World,
-) {
+): CreatedPhysicsObject[] {
     const result = [];
 
     for (const def of defs) {

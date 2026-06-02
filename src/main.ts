@@ -33,32 +33,15 @@ const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 
 createEcsCamera(engine.world, camera);
 createFloor(engine, {
+    position: new THREE.Vector3(0, -1, 0),
     rotation: new THREE.Euler(Math.PI / 20, 0, 0)
 });
-// createCube(engine, {
-    // position: new THREE.Vector3(1, 1, 0),
-// });
-// createCube(engine, {
-//     position: new THREE.Vector3(1, 2, 0),
-// });
-// createCube(engine, {
-//     position: new THREE.Vector3(2, 2, 0),
-// });
 
 createLight(scene);
-// createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
-//     .then((entity) => {
-//         cameraControllerSystem.followEntity = entity;
-//     })
 
-createCar(
-    engine,
-    {
-        position: new THREE.Vector3(0, 5, 0)
-    }
-)
-    .then(data => {
-        cameraControllerSystem.followEntity = data.car;
+createCar(engine)
+    .then(entity => {
+        cameraControllerSystem.followEntity = entity;
     })
 
 
