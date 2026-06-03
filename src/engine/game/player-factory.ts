@@ -8,7 +8,7 @@ import getUniformScale from "../../utils/get-uniform-scale";
 import AnimationComponent from "../components/animation";
 import AnimationsSystem from "../systems/animations.system";
 import PlayerInputComponent from "../components/player-input";
-import getObjectSize from "../../utils/get-object-size";
+import { getObjectSizeBox3 } from "../../utils/get-object-size";
 import { GROUP_PLAYER, GROUP_WORLD, interactionGroups } from "./physics-groups";
 import type Engine from "../engine";
 import { resolveSpawnTransform, type SpawnTransform } from "../../utils/spawn-transform";
@@ -26,7 +26,7 @@ export async function createPlayer(
   const mesh = gltf.scene;
 
   const radius = 0.22;
-  const totalHeight = getObjectSize(mesh).y;
+  const totalHeight = getObjectSizeBox3(mesh).y;
   const halfHeight = (totalHeight - radius * 2) / 2;
 
   const rootMesh = new THREE.Object3D();
