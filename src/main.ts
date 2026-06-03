@@ -39,10 +39,15 @@ createFloor(engine, {
 
 createLight(scene);
 
-createCar(engine)
+createPlayer(engine)
     .then(entity => {
         cameraControllerSystem.followEntity = entity;
     })
+
+// createCar(engine)
+//     .then(entity => {
+//         cameraControllerSystem.followEntity = entity;
+//     })
 
 
 

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import { AXIS, COLLIDER_SHAPE, RIGIDBODY_DESC, type Axis, type ColliderDefinition, type CreatedPhysicsObject } from "./types";
-import getObjectSize from "../../utils/get-object-size";
+import { getObjectSize } from "../../utils/get-object-size";
 import { getAxisDimensions, getColliderRotationByAxis } from "./utils";
 
 export function extractAndCreateCollidersByDefinitions(
