@@ -9,7 +9,7 @@ export default class PlayerControllerComponent extends Component {
     speed = 2;
     runSpeed = 6;
     isRunning = false;
-    turnSpeed = 10;
+    turnSpeed = 6;
 
     verticalVelocity = 0;
 

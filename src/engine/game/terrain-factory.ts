@@ -3,14 +3,16 @@ import RAPIER from "@dimforge/rapier3d";
 import Object3DComponent from "../components/object";
 import ColliderComponent from "../components/collider";
 import RigidBodyComponent from "../components/rigidbody";
-import { GROUP_PLAYER, GROUP_WORLD, interactionGroups } from "./physics-groups";
+import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroups } from "./physics-groups";
 import type Engine from "../engine";
 import { resolveSpawnTransform, type SpawnTransform } from "../../utils/spawn-transform";
 
 export async function createFloor(
   engine: Engine,
+  transform?: SpawnTransform
 ) {
   const { world, physicsWorld, scene, assets } = engine;
+  const { position, rotation } = resolveSpawnTransform(transform);
   const entity = world.createEntity();
 
   const texture = await assets.textures.load("src/assets/textures/grid.png");
@@ -31,6 +33,9 @@ export async function createFloor(
     }),
   );
 
+  mesh.position.set(position.x, position.y, position.z);
+  mesh.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+
   mesh.receiveShadow = true;
 
   scene.add(mesh);
@@ -49,9 +54,13 @@ export async function createFloor(
       .setCollisionGroups(
         interactionGroups(
           GROUP_WORLD,
-          GROUP_WORLD | GROUP_PLAYER,
+          GROUP_WORLD | GROUP_PLAYER | GROUP_WHEEL | GROUP_VEHICLE,
         ),
       )
+      .setDensity(1000)
+      .setRestitution(0)
+      .setTranslation(position.x, position.y, position.z)
+      .setRotation(rotation)
   );
 
   world.addComponent(

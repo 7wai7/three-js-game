@@ -1,7 +1,7 @@
-export const GROUP_PLAYER = 0b0001;
-export const GROUP_WORLD = 0b0010;
-export const GROUP_VEHICLE = 0b0011;
-export const GROUP_TEST = 0b0100;
+export const GROUP_PLAYER = 1 << 0;
+export const GROUP_WORLD = 1 << 1;
+export const GROUP_VEHICLE = 1 << 2;
+export const GROUP_WHEEL = 1 << 3;
 
 export function interactionGroups(
     memberships: number,
