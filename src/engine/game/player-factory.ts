@@ -1,27 +1,28 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import Object3DComponent from "../components/object";
-import type World from "../ecs/world";
 import RigidBodyComponent from "../components/rigidbody";
 import PlayerControllerComponent from "../components/player-controller";
 import ColliderComponent from "../components/collider";
 import getUniformScale from "../../utils/get-uniform-scale";
 import AnimationComponent from "../components/animation";
 import AnimationsSystem from "../systems/animations.system";
-import type GLTFAssetManager from "../assets/gltf-asset-manager";
 import PlayerInputComponent from "../components/player-input";
 import getObjectSize from "../../utils/get-object-size";
+import { GROUP_PLAYER, GROUP_WORLD, interactionGroups } from "./physics-groups";
+import type Engine from "../engine";
+import { resolveSpawnTransform, type SpawnTransform } from "../../utils/spawn-transform";
 
 export async function createPlayer(
-  world: World,
-  physicsWorld: RAPIER.World,
-  scene: THREE.Scene,
-  assets: GLTFAssetManager
+  engine: Engine,
+  transform: SpawnTransform = {},
 ) {
+  const { world, physicsWorld, scene, assets } = engine;
+  const { position, rotation } = resolveSpawnTransform(transform);
   const entity = world.createEntity();
 
   // Load the player model
-  const gltf = await assets.loadModel("src/assets/Player/Mesh.glb");
+  const gltf = await assets.gltf.loadModel("src/assets/Player/Mesh.glb");
   const mesh = gltf.scene;
 
   const radius = 0.22;
@@ -52,11 +53,11 @@ export async function createPlayer(
   Promise.all([
     animSystem.loadAnimation(entity, "Idle", "src/assets/Player/Animations/Standing-Idle.glb"),
     animSystem.loadAnimation(entity, "Walk", "src/assets/Player/Animations/Walk.glb"),
-    animSystem.loadAnimation(entity, "FastRun", "src/assets/Player/Animations/Fast-Run.glb"),
-    animSystem.loadAnimation(entity, "Jump", "src/assets/Player/Animations/Jump.glb"),
-  ]).then(() => {
-    animSystem.playAnimation(entity, "Idle");
-  })
+    animSystem.loadAnimation(entity, "Run", "src/assets/Player/Animations/Fast-Run.glb"),
+    animSystem.loadAnimation(entity, "Jumping Up", "src/assets/Player/Animations/Jumping Up.glb"),
+    animSystem.loadAnimation(entity, "Jumping Down", "src/assets/Player/Animations/Jumping Down.glb"),
+    animSystem.loadAnimation(entity, "Fall", "src/assets/Player/Animations/Falling Idle.glb"),
+  ])
 
 
   // Create the character controller
@@ -66,8 +67,19 @@ export async function createPlayer(
   controller.setMaxSlopeClimbAngle(Math.PI / 4); // 45 degrees
   controller.setMinSlopeSlideAngle(Math.PI / 3); // 60 degrees
 
-  const rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(0, totalHeight, 0);
-  const colliderDesc = RAPIER.ColliderDesc.capsule(halfHeight, radius).setRestitution(0.3);
+  const rbDesc = RAPIER.RigidBodyDesc
+    .kinematicPositionBased()
+    .setTranslation(position.x, position.y + totalHeight / 2, position.z)
+    .setRotation(rotation);
+
+  const colliderDesc = RAPIER.ColliderDesc.capsule(halfHeight, radius)
+    .setCollisionGroups(
+      interactionGroups(
+        GROUP_PLAYER,
+        GROUP_WORLD,
+      ),
+    )
+    .setRestitution(0.3);
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
@@ -75,7 +87,9 @@ export async function createPlayer(
   world.addComponent(entity, new Object3DComponent(rootMesh));
   world.addComponent(entity, new RigidBodyComponent(rb));
   world.addComponent(entity, new ColliderComponent(collider));
-  world.addComponent(entity, new PlayerControllerComponent(controller));
+  world.addComponent(entity, new PlayerControllerComponent(controller, {
+    colliderHalfHeight: totalHeight / 2,
+  }));
   world.addComponent(entity, new PlayerInputComponent());
 
   return entity;

@@ -4,9 +4,10 @@ import Engine from "./engine/engine.js";
 import EngineContext from "./engine/contexts/engine.context.js";
 import { createEcsCamera, createMainCamera } from "./engine/game/global-factory.js";
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
-import { createFloor, createLight } from "./engine/game/terrain-factory.js";
+import { createCube, createFloor, createLight } from "./engine/game/terrain-factory.js";
 import { createPlayer } from "./engine/game/player-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
+import { createCar } from "./engine/game/car-factory.js";
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -31,10 +32,15 @@ setupResizeHandler(
 const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 
 createEcsCamera(engine.world, camera);
-createFloor(engine.world, engine.physicsWorld, scene, engine.assets.textures);
+createFloor(engine, {
+    position: new THREE.Vector3(0, -1, 0),
+    rotation: new THREE.Euler(Math.PI / 20, 0, 0)
+});
+
 createLight(scene);
-createPlayer(engine.world, engine.physicsWorld, scene, engine.assets.gltf)
-    .then((entity) => {
+
+createCar(engine)
+    .then(entity => {
         cameraControllerSystem.followEntity = entity;
     })
 

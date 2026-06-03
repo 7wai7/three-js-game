@@ -1,17 +1,21 @@
 import AnimationComponent from "../components/animation";
 import Query from "../ecs/query";
 import System from "./system";
+import * as THREE from "three";
 
 export default class AnimationsSystem extends System {
-    update(): void {
+    postUpdate(): void { // update -> postUpdate
         const entities = Query.entitiesWith(
             this.world,
             AnimationComponent
         );
 
         for (const entity of entities) {
-            const mixer = this.world.getComponent(entity, AnimationComponent)!.mixer;
+            const anim = this.world.getComponent(entity, AnimationComponent)!;
+            const mixer = anim.mixer;
             mixer.update(this.engine.deltaTime);
+
+            this.playAnimation(anim);
         }
     }
 
@@ -37,23 +41,27 @@ export default class AnimationsSystem extends System {
         }
     }
 
-    playAnimation(entity: number, name: string) {
-        const anim = this.world.getComponent(entity, AnimationComponent);
-        if (!anim) {
-            console.warn(`Entity ${entity} has no animation component`);
-            return;
-        }
+    private playAnimation(anim: AnimationComponent) {
+        if(!anim.requestedAnimationName || anim.currentAnimation === anim.requestedAnimationName) return;
 
-        const next = anim.actions[name];
+        const next = anim.actions[anim.requestedAnimationName];
         if (!next) {
-            console.warn(`Animation "${name}" not found`);
+            console.warn(`Animation "${anim.requestedAnimationName}" not found`);
             return;
         }
 
         if (next === anim.currentAction) return;
+        anim.currentAnimation = anim.requestedAnimationName;
 
-        next.reset().fadeIn(0.2).play();
-        anim.currentAction?.fadeOut(0.2);
+        next.reset().fadeIn(anim.requestedFadeTime).play();
+        anim.currentAction?.fadeOut(anim.requestedFadeTime);
         anim.currentAction = next;
+
+        if (!anim.requestedLoop) {
+            next.setLoop(THREE.LoopOnce, 1);
+            next.clampWhenFinished = true;
+        }
+
+        anim.clearAnimationRequest();
     }
 }

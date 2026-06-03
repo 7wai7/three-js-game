@@ -1,20 +1,21 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import Object3DComponent from "../components/object";
-import type World from "../ecs/world";
 import ColliderComponent from "../components/collider";
 import RigidBodyComponent from "../components/rigidbody";
-import type TextureAssetManager from "../assets/texture-asset-manager";
+import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroups } from "./physics-groups";
+import type Engine from "../engine";
+import { resolveSpawnTransform, type SpawnTransform } from "../../utils/spawn-transform";
 
 export async function createFloor(
-  world: World,
-  physicsWorld: RAPIER.World,
-  scene: THREE.Scene,
-  assets: TextureAssetManager
+  engine: Engine,
+  transform?: SpawnTransform
 ) {
+  const { world, physicsWorld, scene, assets } = engine;
+  const { position, rotation } = resolveSpawnTransform(transform);
   const entity = world.createEntity();
 
-  const texture = await assets.load("src/assets/textures/grid.png");
+  const texture = await assets.textures.load("src/assets/textures/grid.png");
 
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
@@ -32,6 +33,9 @@ export async function createFloor(
     }),
   );
 
+  mesh.position.set(position.x, position.y, position.z);
+  mesh.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+
   mesh.receiveShadow = true;
 
   scene.add(mesh);
@@ -46,7 +50,17 @@ export async function createFloor(
       5,
       0.1,
       5,
-    ),
+    )
+      .setCollisionGroups(
+        interactionGroups(
+          GROUP_WORLD,
+          GROUP_WORLD | GROUP_PLAYER | GROUP_WHEEL | GROUP_VEHICLE,
+        ),
+      )
+      .setDensity(1000)
+      .setRestitution(0)
+      .setTranslation(position.x, position.y, position.z)
+      .setRotation(rotation)
   );
 
   world.addComponent(
@@ -71,7 +85,13 @@ export function createLight(
   scene.add(ambientLight);
 }
 
-export function createCube(world: World, physicsWorld: RAPIER.World, scene: THREE.Scene) {
+export function createCube(
+  engine: Engine,
+  transform?: SpawnTransform
+) {
+  const { world, physicsWorld, scene } = engine;
+  const { position, rotation } = resolveSpawnTransform(transform);
+
   const entity = world.createEntity();
 
   const mesh = new THREE.Mesh(
@@ -81,8 +101,19 @@ export function createCube(world: World, physicsWorld: RAPIER.World, scene: THRE
   mesh.castShadow = true;
   scene.add(mesh);
 
-  const rbDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(0, 1, 0);
-  const colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5).setRestitution(0.3);
+  const rbDesc = RAPIER.RigidBodyDesc
+    .dynamic()
+    .setTranslation(position.x, position.y, position.z)
+    .setRotation(rotation);
+
+  const colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5)
+    .setCollisionGroups(
+      interactionGroups(
+        GROUP_WORLD,
+        GROUP_WORLD | GROUP_PLAYER,
+      ),
+    )
+    .setRestitution(0.3);
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 

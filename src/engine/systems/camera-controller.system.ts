@@ -89,20 +89,20 @@ export default class CameraControllerSystem extends System {
     }
 
     private follow() {
-        if (typeof this.followEntity !== "number") return;
-
         const camera = this.engine.camera;
-        const target = this.world.getComponent(
-            this.followEntity!,
-            Object3DComponent,
-        )?.object as THREE.Object3D;
 
-        if (!target) {
-            console.warn("Camera target not found");
-            return;
+        if (typeof this.followEntity === "number") {
+            const target = this.world.getComponent(
+                this.followEntity!,
+                Object3DComponent,
+            )?.object as THREE.Object3D;
+
+            if (!target) {
+                console.warn("Camera target not found");
+            } else {
+                target.getWorldPosition(this.targetPosition);
+            }
         }
-
-        target.getWorldPosition(this.targetPosition);
 
         this.yawQuat.setFromAxisAngle(this.upAxis, this.yawOffset);
         this.pitchQuat.setFromAxisAngle(this.rightAxis, this.pitchOffset);
