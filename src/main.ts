@@ -34,15 +34,20 @@ const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 createEcsCamera(engine.world, camera);
 createFloor(engine, {
     position: new THREE.Vector3(0, -1, 0),
-    rotation: new THREE.Euler(Math.PI / 20, 0, 0)
+    // rotation: new THREE.Euler(Math.PI / 20, 0, 0)
 });
 
 createLight(scene);
 
-createCar(engine)
+createPlayer(engine)
     .then(entity => {
         cameraControllerSystem.followEntity = entity;
     })
+
+// createCar(engine)
+//     .then(entity => {
+//         cameraControllerSystem.followEntity = entity;
+//     })
 
 
 
