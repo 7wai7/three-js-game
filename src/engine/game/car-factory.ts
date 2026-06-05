@@ -60,8 +60,8 @@ export async function createCar(
     chassis.collider.setMass(10);
     chassis.collider.setDensity(100);
     chassis.collider.setRestitution(0);
-    chassis.rigidBody.setLinearDamping(1);
-    chassis.rigidBody.setAngularDamping(1.0);
+    chassis.rigidBody.setLinearDamping(0.2);
+    chassis.rigidBody.setAngularDamping(0.2);
 
     chassis.collider.setCollisionGroups(
         interactionGroups(

@@ -40,6 +40,16 @@ export default class CarControllerSystem extends System {
             if (groundedWheels.length > 0) {
                 const position = rb.translation();
                 const rotation = rb.rotation();
+                const throttle = car.inputMoveDir.z;
+                const steer = car.inputMoveDir.x;
+                const vel = rb.linvel();
+                const horizontalVelocity = new THREE.Vector3(
+                    vel.x,
+                    0,
+                    vel.z,
+                );
+
+                const speed = horizontalVelocity.length();
 
                 const forward = new THREE.Vector3(0, 0, 1)
                     .applyQuaternion(
@@ -52,19 +62,10 @@ export default class CarControllerSystem extends System {
                     )
                     .normalize();
 
-                const throttle = car.inputMoveDir.z;
 
-                if (throttle !== 0 && !car.inputBrake) {
-                    car.rearCenter.set(0, 0, 0);
+                if (throttle !== 0 || car.inputBrake) this.calculateCarRearCenter(car, groundedWheels);
 
-                    for (const w of groundedWheels) {
-                        const v = new THREE.Vector3();
-                        w.object.getWorldPosition(v);
-                        car.rearCenter.add(v);
-                    }
-
-                    car.rearCenter.divideScalar(groundedWheels.length);
-
+                if (throttle !== 0 && !car.inputBrake && speed <= car.maxSpeed) {
                     rb.applyImpulseAtPoint(
                         {
                             x: forward.x * throttle * car.engineForce,
@@ -76,30 +77,31 @@ export default class CarControllerSystem extends System {
                     );
                 }
 
-
-                const steer = car.inputMoveDir.x;
-
-
-                const vel = rb.linvel();
-
-
-                const speed =
-                    Math.sqrt(
-                        vel.x * vel.x +
-                        vel.z * vel.z,
+                if (car.inputBrake) {
+                    const horizontalVelocity = new THREE.Vector3(
+                        vel.x,
+                        0,
+                        vel.z,
                     );
 
-                if (speed > car.maxSpeed) {
-                    const scale = car.maxSpeed / speed;
+                    const speed = horizontalVelocity.length();
 
-                    rb.setLinvel(
-                        {
-                            x: vel.x * scale,
-                            y: vel.y,
-                            z: vel.z * scale,
-                        },
-                        true,
-                    );
+                    if (speed > 0.01) {
+                        const brakeDirection =
+                            horizontalVelocity
+                                .normalize()
+                                .negate();
+
+                        rb.applyImpulseAtPoint(
+                            {
+                                x: brakeDirection.x * car.brakeForce,
+                                y: 0,
+                                z: brakeDirection.z * car.brakeForce,
+                            },
+                            car.rearCenter,
+                            true,
+                        );
+                    }
                 }
             }
         }
@@ -125,5 +127,17 @@ export default class CarControllerSystem extends System {
                 wheel.isGrounded = true;
             },
         );
+    }
+
+    private calculateCarRearCenter(car: CarComponent, groundedWheels: { object: THREE.Object3D }[]) {
+        car.rearCenter.set(0, 0, 0);
+
+        for (const w of groundedWheels) {
+            const v = new THREE.Vector3();
+            w.object.getWorldPosition(v);
+            car.rearCenter.add(v);
+        }
+
+        car.rearCenter.divideScalar(groundedWheels.length);
     }
 }
