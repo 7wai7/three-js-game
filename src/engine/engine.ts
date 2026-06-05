@@ -11,6 +11,8 @@ import type { Assets } from "./assets/types";
 import TextureAssetManager from "./assets/texture-asset-manager";
 import PlayerInputSystem from "./systems/player-input.system";
 import RapierDebugRenderer from "./systems/rapier-debug-renderer.system";
+import VehicleInputSystem from "./systems/vehicle-input.system";
+import CarControllerSystem from "./systems/car-controller.system";
 
 export default class Engine {
   readonly world: World = new World();
@@ -43,6 +45,8 @@ export default class Engine {
 
     this.world.addSystem(new PhysicsSyncSystem());
     this.world.addSystem(new PlayerInputSystem());
+    this.world.addSystem(new VehicleInputSystem());
+    this.world.addSystem(new CarControllerSystem());
     this.world.addSystem(new PlayerControllerSystem());
     this.world.addSystem(new AnimationsSystem());
     this.world.addSystem(new CameraControllerSystem());

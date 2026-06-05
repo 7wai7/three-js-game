@@ -15,18 +15,19 @@ export async function createFloor(
   const { position, rotation } = resolveSpawnTransform(transform);
   const entity = world.createEntity();
 
+  const size = 1000;
   const texture = await assets.textures.load("src/assets/textures/grid.png");
 
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
 
-  texture.repeat.set(10, 10);
+  texture.repeat.set(size, size);
 
   texture.magFilter = THREE.NearestFilter;
   texture.minFilter = THREE.NearestFilter;
 
   const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(10, 0.2, 10),
+    new THREE.BoxGeometry(size, 0.2, size),
     new THREE.MeshStandardMaterial({
       color: 0x808080,
       map: texture,
@@ -47,9 +48,9 @@ export async function createFloor(
 
   const collider = physicsWorld.createCollider(
     RAPIER.ColliderDesc.cuboid(
-      5,
+      size / 2,
       0.1,
-      5,
+      size / 2,
     )
       .setCollisionGroups(
         interactionGroups(
