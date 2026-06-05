@@ -8,7 +8,17 @@ import Object3DComponent from "../components/object";
 import ColliderComponent from "../components/collider";
 import type RAPIER from "@dimforge/rapier3d";
 
+type WheelComponents = {
+    wheel: WheelComponent;
+    object: THREE.Object3D;
+    rigidbody: RAPIER.RigidBody;
+    collider: RAPIER.Collider;
+}
+
 export default class CarControllerSystem extends System {
+    private UP = new THREE.Vector3(0, 1, 0);
+    private RIGHT = new THREE.Vector3(1, 0, 0);
+
     update(): void {
         const entities = Query.entitiesWith(this.world,
             CarComponent,
@@ -19,22 +29,23 @@ export default class CarControllerSystem extends System {
             const car = this.world.getComponent(entity, CarComponent)!;
             const carCollider = this.world.getComponent(entity, ColliderComponent)!.collider;
             const rb = this.world.getComponent(entity, RigidBodyComponent)!.rigidBody;
-            const wheels = car.wheels.map(entity => ({
-                component: this.world.getComponent(entity, WheelComponent)!,
+            const wheels: WheelComponents[] = car.wheels.map(entity => ({
+                wheel: this.world.getComponent(entity, WheelComponent)!,
                 object: this.world.getComponent(entity, Object3DComponent)!.object as THREE.Object3D,
+                rigidbody: this.world.getComponent(entity, RigidBodyComponent)!.rigidBody,
                 collider: this.world.getComponent(entity, ColliderComponent)!.collider
             }));
 
             for (const w of wheels) {
                 this.checkIsGroundedWheel(
                     this.physicsWorld,
-                    w.component,
+                    w.wheel,
                     w.collider,
                     [carCollider]
                 )
             }
 
-            const groundedWheels = [...wheels].filter(w => w.component.isRear && w.component.isGrounded);
+            const groundedWheels = [...wheels].filter(w => w.wheel.isGrounded);
 
 
             if (groundedWheels.length > 0) {
@@ -63,7 +74,7 @@ export default class CarControllerSystem extends System {
                     .normalize();
 
 
-                if (throttle !== 0 || car.inputBrake) this.calculateCarRearCenter(car, groundedWheels);
+                if (throttle !== 0 || car.inputBrake) this.calculateCarWheelsCenter(car, wheels);
 
                 if (throttle !== 0 && !car.inputBrake && speed <= car.maxSpeed) {
                     rb.applyImpulseAtPoint(
@@ -98,10 +109,18 @@ export default class CarControllerSystem extends System {
                                 y: 0,
                                 z: brakeDirection.z * car.brakeForce,
                             },
-                            car.rearCenter,
+                            car.wheelsCenter,
                             true,
                         );
                     }
+                }
+
+                for (const w of groundedWheels) {
+                    this.applyWheelLateralGrip(
+                        car,
+                        rb,
+                        w
+                    )
                 }
             }
         }
@@ -129,15 +148,73 @@ export default class CarControllerSystem extends System {
         );
     }
 
-    private calculateCarRearCenter(car: CarComponent, groundedWheels: { object: THREE.Object3D }[]) {
+    private calculateCarWheelsCenter(car: CarComponent, wheels: WheelComponents[]) {
         car.rearCenter.set(0, 0, 0);
+        car.wheelsCenter.set(0, 0, 0);
+        let groundedWheels = 0;
+        let rearWheels = 0;
 
-        for (const w of groundedWheels) {
-            const v = new THREE.Vector3();
-            w.object.getWorldPosition(v);
-            car.rearCenter.add(v);
+        for (const w of wheels) {
+            if (w.wheel.isGrounded) {
+                groundedWheels++;
+                const v = new THREE.Vector3();
+                w.object.getWorldPosition(v);
+                car.wheelsCenter.add(v);
+                if (w.wheel.isRear) {
+                    rearWheels++;
+                    car.rearCenter.add(v);
+                }
+            }
         }
 
-        car.rearCenter.divideScalar(groundedWheels.length);
+        if (rearWheels > 0) car.rearCenter.divideScalar(rearWheels);
+        if (groundedWheels > 0) car.wheelsCenter.divideScalar(groundedWheels);
+    }
+
+    private applyWheelLateralGrip(
+        car: CarComponent,
+        rb: RAPIER.RigidBody,
+        wheel: WheelComponents,
+    ) {
+        const wheelPos = wheel.rigidbody.translation();
+        const pointVelocity = rb.velocityAtPoint(wheelPos);
+
+        const side = this.RIGHT.clone()
+            .applyQuaternion(
+                wheel.object.getWorldQuaternion(
+                    new THREE.Quaternion(),
+                ),
+            )
+            .normalize();
+
+        side.applyAxisAngle(
+            this.UP,
+            wheel.wheel.currentSteerAngle,
+        );
+
+        const velocity = new THREE.Vector3(
+            pointVelocity.x,
+            0,
+            pointVelocity.z,
+        );
+
+        const sideSpeed =
+            velocity.dot(side);
+
+        const lateralImpulse =
+            side.clone()
+                .multiplyScalar(
+                    -sideSpeed * car.sideGrip,
+                );
+
+        rb.applyImpulseAtPoint(
+            {
+                x: lateralImpulse.x,
+                y: 0,
+                z: lateralImpulse.z,
+            },
+            wheelPos,
+            true,
+        );
     }
 }

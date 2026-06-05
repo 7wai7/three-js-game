@@ -108,7 +108,7 @@ export async function createCar(
         const wheelComponent = world.addComponent(entity, new WheelComponent(chassisEntity));
 
         carComponent.wheels.push(entity);
-        wheelComponent.maxSteerAngle = 30;
+        wheelComponent.maxSteerAngle = THREE.MathUtils.DEG2RAD * 20;
         wheelComponent.isRear = false;
     }
 
