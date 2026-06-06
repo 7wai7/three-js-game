@@ -216,12 +216,21 @@ export default class CarControllerSystem extends System {
 
         const velocity = new THREE.Vector3(
             pointVelocity.x,
-            0,
+            pointVelocity.y,
             pointVelocity.z,
         );
+        
+        const up = this.chassisUp;
+
+        const planarVelocity =
+            velocity.clone().sub(
+                up.clone().multiplyScalar(
+                    velocity.dot(up),
+                ),
+            );
 
         const sideSpeed =
-            velocity.dot(side);
+            planarVelocity.dot(side);
 
         const lateralImpulse =
             side.clone()
@@ -230,11 +239,7 @@ export default class CarControllerSystem extends System {
                 );
 
         rb.applyImpulseAtPoint(
-            {
-                x: lateralImpulse.x,
-                y: 0,
-                z: lateralImpulse.z,
-            },
+            lateralImpulse,
             wheelPos,
             true,
         );
