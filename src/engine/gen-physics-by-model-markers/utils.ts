@@ -52,8 +52,8 @@ export function createWheelSuspensionJoint(
         min = -0.25,
         max = 0.25,
         targetPos = -0.25,
-        stiffness = 300,
-        damping = 40
+        stiffness = 400,
+        damping = 50
     }: {
         min?: number;
         max?: number;

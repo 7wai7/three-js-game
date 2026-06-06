@@ -10,6 +10,7 @@ export default class CarComponent extends Component {
     steerTorque = 100;
     maxSpeed = 20;
     sideGrip = 12;
+    pullingGrip = 20;
 
     wheels: number[] = [];
     rearCenter = new Vector3();

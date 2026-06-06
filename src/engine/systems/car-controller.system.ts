@@ -45,10 +45,7 @@ export default class CarControllerSystem extends System {
                 )
             }
 
-            const groundedWheels = [...wheels].filter(w => w.wheel.isGrounded);
-
-
-            if (groundedWheels.length > 0) {
+            if (wheels.some(w => w.wheel.isGrounded)) {
                 const position = rb.translation();
                 const rotation = rb.rotation();
                 const throttle = car.inputMoveDir.z;
@@ -75,6 +72,14 @@ export default class CarControllerSystem extends System {
 
 
                 if (throttle !== 0 || car.inputBrake) this.calculateCarWheelsCenter(car, wheels);
+
+                for (const w of wheels) {
+                    this.applyGroundPulling(
+                        car,
+                        rb,
+                        w
+                    )
+                }
 
                 if (throttle !== 0 && !car.inputBrake && speed <= car.maxSpeed) {
                     rb.applyImpulseAtPoint(
@@ -115,7 +120,7 @@ export default class CarControllerSystem extends System {
                     }
                 }
 
-                for (const w of groundedWheels) {
+                for (const w of wheels) {
                     this.applyWheelLateralGrip(
                         car,
                         rb,
@@ -176,6 +181,8 @@ export default class CarControllerSystem extends System {
         rb: RAPIER.RigidBody,
         wheel: WheelComponents,
     ) {
+        if (!wheel.wheel.isGrounded) return;
+
         const wheelPos = wheel.rigidbody.translation();
         const pointVelocity = rb.velocityAtPoint(wheelPos);
 
@@ -216,5 +223,37 @@ export default class CarControllerSystem extends System {
             wheelPos,
             true,
         );
+    }
+
+    private applyGroundPulling(car: CarComponent, rb: RAPIER.RigidBody, wheel: WheelComponents) {
+        if (!wheel.wheel.isGrounded) return;
+
+        const wheelPos = wheel.rigidbody.translation();
+        const down = this.UP.clone()
+            .negate()
+            .applyQuaternion(
+                wheel.object.getWorldQuaternion(
+                    new THREE.Quaternion(),
+                ),
+            )
+            .normalize();
+
+        const pullImpulse =
+            down.clone()
+                .multiplyScalar(car.pullingGrip);
+
+        rb.applyImpulseAtPoint(
+            pullImpulse,
+            wheelPos,
+            true,
+        );
+
+        /* 
+         * or use wheel rigidbody
+         */
+        // wheel.rigidbody.applyImpulse(
+        //     pullImpulse,
+        //     true,
+        // );
     }
 }
