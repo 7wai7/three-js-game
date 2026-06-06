@@ -6,13 +6,10 @@ export default class CarComponent extends Component {
     inputBrake = false;
 
     engineForce = 100;
-    brakeForce = 100;
-    steerTorque = 100;
     maxSpeed = 20;
+    brakeForce = 12;
     sideGrip = 12;
     pullingGrip = 20;
 
     wheels: number[] = [];
-    rearCenter = new Vector3();
-    wheelsCenter = new Vector3();
 }

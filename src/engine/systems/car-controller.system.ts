@@ -43,36 +43,23 @@ export default class CarControllerSystem extends System {
                 collider: this.world.getComponent(entity, ColliderComponent)!.collider
             }));
 
+            let hasGroundedWheel = false;
             for (const w of wheels) {
                 this.checkIsGroundedWheel(
                     this.physicsWorld,
                     w.wheel,
                     w.collider,
                     [chassisCollider]
-                )
-            }
-
-            if (wheels.some(w => w.wheel.isGrounded)) {
-                const position = rb.translation();
-                const rotation = rb.rotation();
-                const throttle = chassis.inputMoveDir.z;
-                const steer = chassis.inputMoveDir.x;
-                const vel = rb.linvel();
-                const horizontalVelocity = new THREE.Vector3(
-                    vel.x,
-                    0,
-                    vel.z,
                 );
 
-                const speed = horizontalVelocity.length();
+                if (w.wheel.isGrounded) hasGroundedWheel = true;
+            }
 
-
+            if (hasGroundedWheel) {
                 chassisObject.getWorldQuaternion(this.chassisQuat);
                 this.chassisRight.copy(this.RIGHT).applyQuaternion(this.chassisQuat);
                 this.chassisUp.copy(this.UP).applyQuaternion(this.chassisQuat);
                 this.chassisForward.copy(this.FORWARD).applyQuaternion(this.chassisQuat);
-
-                if (throttle !== 0 || chassis.inputBrake) this.calculateCarWheelsCenter(chassis, wheels);
 
                 for (const w of wheels) {
                     this.applyGroundPulling(
@@ -90,31 +77,12 @@ export default class CarControllerSystem extends System {
                     )
                 }
 
-                if (chassis.inputBrake) {
-                    const horizontalVelocity = new THREE.Vector3(
-                        vel.x,
-                        0,
-                        vel.z,
-                    );
-
-                    const speed = horizontalVelocity.length();
-
-                    if (speed > 0.01) {
-                        const brakeDirection =
-                            horizontalVelocity
-                                .normalize()
-                                .negate();
-
-                        rb.applyImpulseAtPoint(
-                            {
-                                x: brakeDirection.x * chassis.brakeForce,
-                                y: 0,
-                                z: brakeDirection.z * chassis.brakeForce,
-                            },
-                            chassis.wheelsCenter,
-                            true,
-                        );
-                    }
+                for (const w of wheels) {
+                    this.applyWheelBrake(
+                        chassis,
+                        rb,
+                        w
+                    )
                 }
 
                 for (const w of wheels) {
@@ -148,29 +116,6 @@ export default class CarControllerSystem extends System {
                 wheel.isGrounded = true;
             },
         );
-    }
-
-    private calculateCarWheelsCenter(car: CarComponent, wheels: WheelComponents[]) {
-        car.rearCenter.set(0, 0, 0);
-        car.wheelsCenter.set(0, 0, 0);
-        let groundedWheels = 0;
-        let rearWheels = 0;
-
-        for (const w of wheels) {
-            if (w.wheel.isGrounded) {
-                groundedWheels++;
-                const v = new THREE.Vector3();
-                w.object.getWorldPosition(v);
-                car.wheelsCenter.add(v);
-                if (w.wheel.isRear) {
-                    rearWheels++;
-                    car.rearCenter.add(v);
-                }
-            }
-        }
-
-        if (rearWheels > 0) car.rearCenter.divideScalar(rearWheels);
-        if (groundedWheels > 0) car.wheelsCenter.divideScalar(groundedWheels);
     }
 
     private applyThrottle(
@@ -219,7 +164,7 @@ export default class CarControllerSystem extends System {
             pointVelocity.y,
             pointVelocity.z,
         );
-        
+
         const up = this.chassisUp;
 
         const planarVelocity =
@@ -240,6 +185,54 @@ export default class CarControllerSystem extends System {
 
         rb.applyImpulseAtPoint(
             lateralImpulse,
+            wheelPos,
+            true,
+        );
+    }
+
+    private applyWheelBrake(
+        chassis: CarComponent,
+        rb: RAPIER.RigidBody,
+        wheel: WheelComponents,
+    ) {
+        if (!wheel.wheel.isGrounded || !chassis.inputBrake) return;
+
+        const wheelPos = wheel.rigidbody.translation();
+        const pointVelocity = rb.velocityAtPoint(wheelPos);
+
+        const forward = this.chassisForward.clone();
+
+        forward.applyAxisAngle(
+            this.chassisUp,
+            wheel.wheel.currentSteerAngle,
+        );
+
+        const velocity = new THREE.Vector3(
+            pointVelocity.x,
+            pointVelocity.y,
+            pointVelocity.z,
+        );
+
+        const up = this.chassisUp;
+
+        const planarVelocity =
+            velocity.clone().sub(
+                up.clone().multiplyScalar(
+                    velocity.dot(up),
+                ),
+            );
+
+        const forwardSpeed =
+            planarVelocity.dot(forward);
+
+        const brakeImpulse =
+            forward.clone()
+                .multiplyScalar(
+                    -forwardSpeed * chassis.brakeForce,
+                );
+
+        rb.applyImpulseAtPoint(
+            brakeImpulse,
             wheelPos,
             true,
         );
