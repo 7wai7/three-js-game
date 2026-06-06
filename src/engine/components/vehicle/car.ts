@@ -5,7 +5,7 @@ export default class CarComponent extends Component {
     inputMoveDir = new Vector3();
     inputBrake = false;
 
-    engineForce = 400;
+    engineForce = 100;
     brakeForce = 100;
     steerTorque = 100;
     maxSpeed = 20;
