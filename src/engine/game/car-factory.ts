@@ -49,6 +49,20 @@ export async function createCar(
     const wheels = [...frontWheels, ...rearWheels];
 
     for (const w of wheels) {
+        if (!w.mesh.parent) {
+            console.warn(`Wheel ${w.mesh.name} doesn't have parent object`);
+            continue;
+        }
+
+        const steerPivot = new THREE.Object3D();
+
+        w.mesh.parent.attach(steerPivot);
+        steerPivot.attach(w.mesh);
+        w.mesh.position.set(0, 0, 0);
+        (w as any).steerPivot = steerPivot;
+    }
+
+    for (const w of wheels) {
         createWheelSuspensionJoint(
             physicsWorld,
             chassis.rigidBody,
@@ -102,7 +116,7 @@ export async function createCar(
 
     for (const w of frontWheels) {
         const entity = world.createEntity();
-        world.addComponent(entity, new Object3DComponent(w.mesh));
+        world.addComponent(entity, new Object3DComponent(w.mesh.parent!)); // set mesh joint as main object
         world.addComponent(entity, new ColliderComponent(w.collider));
         world.addComponent(entity, new RigidBodyComponent(w.rigidBody));
         const wheelComponent = world.addComponent(entity, new WheelComponent(chassisEntity));
@@ -114,7 +128,7 @@ export async function createCar(
 
     for (const w of rearWheels) {
         const entity = world.createEntity();
-        world.addComponent(entity, new Object3DComponent(w.mesh));
+        world.addComponent(entity, new Object3DComponent(w.mesh.parent!));
         world.addComponent(entity, new ColliderComponent(w.collider));
         world.addComponent(entity, new RigidBodyComponent(w.rigidBody));
         const wheelComponent = world.addComponent(entity, new WheelComponent(chassisEntity));
