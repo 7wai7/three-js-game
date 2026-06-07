@@ -7,6 +7,7 @@ import WheelComponent from "../components/vehicle/wheel";
 import Object3DComponent from "../components/object";
 import ColliderComponent from "../components/collider";
 import type RAPIER from "@dimforge/rapier3d";
+import moveTowards from "../../utils/move-towards";
 
 type WheelComponents = {
     wheel: WheelComponent;
@@ -55,11 +56,20 @@ export default class CarControllerSystem extends System {
                 if (w.wheel.isGrounded) hasGroundedWheel = true;
             }
 
+            for (const w of wheels) {
+                this.applyInputSteering(
+                    chassis,
+                    w.wheel
+                )
+            }
+
             if (hasGroundedWheel) {
                 chassisObject.getWorldQuaternion(this.chassisQuat);
                 this.chassisRight.copy(this.RIGHT).applyQuaternion(this.chassisQuat);
                 this.chassisUp.copy(this.UP).applyQuaternion(this.chassisQuat);
                 this.chassisForward.copy(this.FORWARD).applyQuaternion(this.chassisQuat);
+
+                const throttle = chassis.inputMoveDir.z;
 
                 for (const w of wheels) {
                     this.applyGroundPulling(
@@ -69,20 +79,24 @@ export default class CarControllerSystem extends System {
                     )
                 }
 
-                for (const w of wheels) {
-                    this.applyThrottle(
-                        chassis,
-                        rb,
-                        w
-                    )
+                if (!chassis.inputBrake || throttle !== 0) {
+                    for (const w of wheels) {
+                        this.applyThrottle(
+                            chassis,
+                            rb,
+                            w
+                        )
+                    }
                 }
 
-                for (const w of wheels) {
-                    this.applyWheelBrake(
-                        chassis,
-                        rb,
-                        w
-                    )
+                if (chassis.inputBrake) {
+                    for (const w of wheels) {
+                        this.applyWheelBrake(
+                            chassis,
+                            rb,
+                            w
+                        )
+                    }
                 }
 
                 for (const w of wheels) {
@@ -118,14 +132,36 @@ export default class CarControllerSystem extends System {
         );
     }
 
+    private applyInputSteering(
+        chassis: CarComponent,
+        wheel: WheelComponent,
+    ) {
+        if (wheel.maxSteerAngle === 0) return;
+
+        const steer = chassis.inputMoveDir.x;
+        const targetAngle =
+            wheel.maxSteerAngle *
+            steer *
+            (wheel.steerInverse ? 1 : -1);
+
+        const steerSpeed =
+            wheel.maxSteerAngle / 0.2;
+
+        wheel.currentSteerAngle = moveTowards(
+            wheel.currentSteerAngle,
+            targetAngle,
+            steerSpeed * this.dt,
+        );
+    }
+
     private applyThrottle(
         chassis: CarComponent,
         rb: RAPIER.RigidBody,
         wheel: WheelComponents,
     ) {
-        const throttle = chassis.inputMoveDir.z;
-        if (!wheel.wheel.isGrounded || !wheel.wheel.isRear || chassis.inputBrake || throttle === 0) return;
+        if (!wheel.wheel.isGrounded || !wheel.wheel.isRear) return;
 
+        const throttle = chassis.inputMoveDir.z;
         const wheelPos = wheel.rigidbody.translation();
 
         const forward = this.chassisForward.clone();
@@ -195,7 +231,7 @@ export default class CarControllerSystem extends System {
         rb: RAPIER.RigidBody,
         wheel: WheelComponents,
     ) {
-        if (!wheel.wheel.isGrounded || !chassis.inputBrake) return;
+        if (!wheel.wheel.isGrounded) return;
 
         const wheelPos = wheel.rigidbody.translation();
         const pointVelocity = rb.velocityAtPoint(wheelPos);

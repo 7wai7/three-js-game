@@ -2,7 +2,6 @@ import Query from "../ecs/query";
 import System from "./system";
 import PlayerInputComponent from "../components/player-input";
 import CarComponent from "../components/vehicle/car";
-import WheelComponent from "../components/vehicle/wheel";
 
 export default class VehicleInputSystem extends System {
     update(): void {
@@ -23,10 +22,5 @@ export default class VehicleInputSystem extends System {
 
         controller.inputMoveDir.set(right, 0, forward);
         controller.inputBrake = this.input.pressed("Space");
-
-        for (const entity of controller.wheels) {
-            const w = this.world.getComponent(entity, WheelComponent)!;
-            if (!w.isRear) w.currentSteerAngle = w.maxSteerAngle * -this.input.horizontal();
-        }
     }
 }

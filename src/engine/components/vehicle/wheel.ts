@@ -5,6 +5,7 @@ export default class WheelComponent extends Component {
     
     currentSteerAngle = 0;
     maxSteerAngle = 0;
+    steerInverse = false;
     isRear = false;
     isGrounded = false;
 
