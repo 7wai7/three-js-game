@@ -15,10 +15,19 @@ export function extractAndCreateCollidersByDefinitions(
     });
 
     const colliderDefinitions = extractCollidersDefinitions(root);
-    return createPhysicsFromDefinitions(
+    const physics = createPhysicsFromDefinitions(
         colliderDefinitions,
         physicsWorld
     )
+
+    const map = new Map(
+        physics.map((p) => [p.mesh.name, p]),
+    );
+
+    return {
+        physics,
+        map
+    }
 }
 
 export function extractCollidersDefinitions(root: THREE.Object3D) {
@@ -112,6 +121,7 @@ export function createPhysicsFromDefinitions(
                 break;
             }
 
+            case "CYLINDER":
             case "CAPSULE": {
                 const halfHeight =
                     Math.max(0, length * 0.5 - radius);
@@ -125,15 +135,15 @@ export function createPhysicsFromDefinitions(
                 break;
             }
 
-            case "CYLINDER": {
-                colliderDesc =
-                    RAPIER.ColliderDesc.cylinder(
-                        length * 0.5,
-                        radius,
-                    );
+            // case "CYLINDER": {
+            //     colliderDesc =
+            //         RAPIER.ColliderDesc.cylinder(
+            //             length * 0.5,
+            //             radius,
+            //         );
 
-                break;
-            }
+            //     break;
+            // }
 
             default: {
                 colliderDesc =

@@ -2,7 +2,7 @@ import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 
 export type CreatedPhysicsObject = {
-    mesh: any;
+    mesh: THREE.Object3D;
     rigidBody: RAPIER.RigidBody;
     collider: RAPIER.Collider;
 }
