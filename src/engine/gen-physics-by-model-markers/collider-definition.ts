@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import { AXIS, COLLIDER_SHAPE, RIGIDBODY_DESC, type Axis, type ColliderDefinition, type CreatedPhysicsObject } from "./types";
+import { type ColliderDefinition, type ColliderShape, type PhysicsObject, type RigidBodyType, type VehiclePhysicsObject } from "./types";
 import { getObjectSize } from "../../utils/get-object-size";
 import { getAxisDimensions, getColliderRotationByAxis } from "./utils";
 
-export function extractAndCreateCollidersByDefinitions(
+export function buildPhysicsBy3dDefinitions(
     root: THREE.Object3D,
     physicsWorld: RAPIER.World,
 ) {
@@ -14,20 +14,13 @@ export function extractAndCreateCollidersByDefinitions(
         }
     });
 
-    const colliderDefinitions = extractCollidersDefinitions(root);
-    const physics = createPhysicsFromDefinitions(
-        colliderDefinitions,
+    const definitions = extractCollidersDefinitions(root);
+    const physicsObjects = createCollidersFromDefinitions(
+        definitions,
         physicsWorld
     )
 
-    const map = new Map(
-        physics.map((p) => [p.mesh.name, p]),
-    );
-
-    return {
-        physics,
-        map
-    }
+    return physicsObjects;
 }
 
 export function extractCollidersDefinitions(root: THREE.Object3D) {
@@ -37,22 +30,17 @@ export function extractCollidersDefinitions(root: THREE.Object3D) {
         if (!obj.name.startsWith("COL_")) return;
         if (!obj.parent) return;
 
-        const parts = obj.name.split("_");
+        const data = obj.userData;
 
-        const shape = COLLIDER_SHAPE.find(shape => obj.name.includes(shape)) ?? "BOX";
-        const rigidBodyDesc = RIGIDBODY_DESC.find(desc => obj.name.includes(desc)) ?? "DYNAMIC";
-
-        const axis =
-            parts.find(
-                (part): part is Axis =>
-                    AXIS.includes(part as Axis),
-            ) ?? "Y";
+        const shape = data.shape ? (data.shape as string).toUpperCase() : "BOX";
+        const rigidbodyType = data.rigidbodyType ? (data.rigidbodyType as string).toUpperCase() : "DYNAMIC";
+        const axis = data.axis ? (data.axis as string).toUpperCase() : "Y";
 
         result.push({
             mesh: obj.parent,
             colliderMarker: obj,
-            shape,
-            rigidBodyDesc,
+            shape: shape as ColliderShape,
+            rigidbodyType: rigidbodyType as RigidBodyType,
             axis
         });
     });
@@ -60,10 +48,10 @@ export function extractCollidersDefinitions(root: THREE.Object3D) {
     return result;
 }
 
-export function createPhysicsFromDefinitions(
+export function createCollidersFromDefinitions(
     defs: ColliderDefinition[],
     physicsWorld: RAPIER.World,
-): CreatedPhysicsObject[] {
+): PhysicsObject[] {
     const result = [];
 
     for (const def of defs) {
@@ -77,7 +65,7 @@ export function createPhysicsFromDefinitions(
 
         let rbDesc: RAPIER.RigidBodyDesc;
 
-        switch (def.rigidBodyDesc) {
+        switch (def.rigidbodyType) {
             case "FIXED":
                 rbDesc = RAPIER.RigidBodyDesc.fixed();
                 break;
@@ -121,7 +109,6 @@ export function createPhysicsFromDefinitions(
                 break;
             }
 
-            case "CYLINDER":
             case "CAPSULE": {
                 const halfHeight =
                     Math.max(0, length * 0.5 - radius);
@@ -135,15 +122,15 @@ export function createPhysicsFromDefinitions(
                 break;
             }
 
-            // case "CYLINDER": {
-            //     colliderDesc =
-            //         RAPIER.ColliderDesc.cylinder(
-            //             length * 0.5,
-            //             radius,
-            //         );
+            case "CYLINDER": {
+                colliderDesc =
+                    RAPIER.ColliderDesc.cylinder(
+                        length * 0.5,
+                        radius,
+                    );
 
-            //     break;
-            // }
+                break;
+            }
 
             default: {
                 colliderDesc =
@@ -207,4 +194,29 @@ export function createPhysicsFromDefinitions(
     }
 
     return result;
+}
+
+export function prepareWheelSteeringPivots(physicsObjects: PhysicsObject[]) {
+    const wheels = [];
+    for (const obj of physicsObjects) {
+        if (!obj.mesh.name.startsWith("wheel")) continue;
+        if (!obj.mesh.parent) {
+            console.warn(`Wheel ${obj.mesh.name} doesn't have parent object`);
+            continue;
+        }
+
+        wheels.push(obj);
+
+        const steerPivot = new THREE.Object3D();
+
+        obj.mesh.parent.attach(steerPivot);
+        steerPivot.attach(obj.mesh);
+        obj.mesh.position.set(0, 0, 0);
+        (obj as VehiclePhysicsObject).steerPivot = steerPivot;
+    }
+
+    return {
+        vehiclePhysicsObjects: physicsObjects as VehiclePhysicsObject[],
+        wheels: wheels as VehiclePhysicsObject[]
+    }
 }

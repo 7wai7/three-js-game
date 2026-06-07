@@ -299,7 +299,7 @@ export default class CarControllerSystem extends System {
 
         const pullImpulse =
             down.clone()
-                .multiplyScalar(car.pullingGrip);
+                .multiplyScalar(car.pullingForce);
 
         rb.applyImpulseAtPoint(
             pullImpulse,

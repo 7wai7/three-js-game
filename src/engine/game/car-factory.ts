@@ -8,16 +8,27 @@ import ColliderComponent from "../components/collider";
 import type Engine from "../engine";
 import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroups } from "./physics-groups";
 import { resolveSpawnTransform, type SpawnTransform } from "../../utils/spawn-transform";
-import { extractAndCreateCollidersByDefinitions } from "../gen-physics-by-model-markers/collider-definition";
+import { buildPhysicsBy3dDefinitions, prepareWheelSteeringPivots } from "../gen-physics-by-model-markers/collider-definition";
 import { createWheelSuspensionJoint } from "../gen-physics-by-model-markers/utils";
-import CarComponent from "../components/vehicle/car";
+import CarComponent, { type CarParameters } from "../components/vehicle/car";
 import WheelComponent from "../components/vehicle/wheel";
 import PlayerInputComponent from "../components/player-input";
+
+type CreateCarData = {
+    transform?: Omit<SpawnTransform, "rotation">,
+    chassisMass?: number,
+    wheelMass?: number,
+} & Partial<CarParameters>
 
 export async function createCar(
     engine: Engine,
     path: string,
-    transform?: Omit<SpawnTransform, "rotation">
+    {
+        transform,
+        chassisMass = 700,
+        wheelMass = 100,
+        ...carParameters
+    }: CreateCarData
 ) {
     const { world, physicsWorld, scene, assets } = engine;
     const { position } = resolveSpawnTransform(transform);
@@ -33,33 +44,16 @@ export async function createCar(
     });
 
 
-    const { map } = extractAndCreateCollidersByDefinitions(
+    const physicsObjects = buildPhysicsBy3dDefinitions(
         root,
         physicsWorld
     )
+    const { vehiclePhysicsObjects, wheels } = prepareWheelSteeringPivots(physicsObjects);
 
-    const chassis = map.get("Chassis")!;
-    const fl = map.get("FL")!;
-    const fr = map.get("FR")!;
-    const bl = map.get("BL")!;
-    const br = map.get("BR")!;
+    const chassis = vehiclePhysicsObjects.find(data => data.mesh.name === "chassis");
 
-    const frontWheels = [fl, fr];
-    const rearWheels = [bl, br];
-    const wheels = [...frontWheels, ...rearWheels];
-
-    for (const w of wheels) {
-        if (!w.mesh.parent) {
-            console.warn(`Wheel ${w.mesh.name} doesn't have parent object`);
-            continue;
-        }
-
-        const steerPivot = new THREE.Object3D();
-
-        w.mesh.parent.attach(steerPivot);
-        steerPivot.attach(w.mesh);
-        w.mesh.position.set(0, 0, 0);
-        (w as any).steerPivot = steerPivot;
+    if (!chassis) {
+        throw new Error(`Chassis not found`);
     }
 
     for (const w of wheels) {
@@ -71,8 +65,7 @@ export async function createCar(
     }
 
     chassis.rigidBody.setTranslation(position, true);
-    chassis.collider.setMass(10);
-    chassis.collider.setDensity(100);
+    chassis.collider.setMass(chassisMass);
     chassis.collider.setRestitution(0);
     chassis.rigidBody.setLinearDamping(0.2);
     chassis.rigidBody.setAngularDamping(0.2);
@@ -88,8 +81,7 @@ export async function createCar(
         const pos = w.rigidBody.translation();
         const p = new THREE.Vector3(pos.x, pos.y, pos.z).add(position);
         w.rigidBody.setTranslation(p, true);
-        w.collider.setMass(20);
-        w.collider.setDensity(500);
+        w.collider.setMass(wheelMass);
         w.collider.setRestitution(0);
         w.collider.setFriction(0);
         w.collider.setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min);
@@ -112,32 +104,21 @@ export async function createCar(
     world.addComponent(chassisEntity, new Object3DComponent(chassis.mesh));
     world.addComponent(chassisEntity, new ColliderComponent(chassis.collider));
     world.addComponent(chassisEntity, new RigidBodyComponent(chassis.rigidBody));
-    const carComponent = world.addComponent(chassisEntity, new CarComponent());
+    const carComponent = world.addComponent(chassisEntity, new CarComponent(carParameters));
 
-    for (const w of frontWheels) {
+    for (const w of wheels) {
         const entity = world.createEntity();
-        world.addComponent(entity, new Object3DComponent(w.mesh.parent!)); // set mesh joint as main object
+
+        // set empty object as primary object for physics synchronization
+        world.addComponent(entity, new Object3DComponent(w.steerPivot));
         world.addComponent(entity, new ColliderComponent(w.collider));
         world.addComponent(entity, new RigidBodyComponent(w.rigidBody));
         const wheelComponent = world.addComponent(entity, new WheelComponent(chassisEntity));
 
         carComponent.wheels.push(entity);
-        wheelComponent.maxSteerAngle = THREE.MathUtils.DEG2RAD * 20;
-        wheelComponent.isRear = false;
+        if (w.mesh.userData.maxSteerAngleDeg) wheelComponent.maxSteerAngle = THREE.MathUtils.DEG2RAD * w.mesh.userData.maxSteerAngleDeg;
+        if (w.mesh.userData.isRear) wheelComponent.isRear = w.mesh.userData.isRear;
     }
-
-    for (const w of rearWheels) {
-        const entity = world.createEntity();
-        world.addComponent(entity, new Object3DComponent(w.mesh.parent!));
-        world.addComponent(entity, new ColliderComponent(w.collider));
-        world.addComponent(entity, new RigidBodyComponent(w.rigidBody));
-        const wheelComponent = world.addComponent(entity, new WheelComponent(chassisEntity));
-
-        carComponent.wheels.push(entity);
-        wheelComponent.maxSteerAngle = 0;
-        wheelComponent.isRear = true;
-    }
-
 
     scene.add(root);
     return {

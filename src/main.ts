@@ -44,7 +44,9 @@ createLight(scene);
 //     })
 
 createCar(engine, "src/assets/car.glb", {
-    position: new THREE.Vector3(0, 1, 0)
+    transform: {
+        position: new THREE.Vector3(0, 1, 0)
+    }
 })
     .then(({ entity, object3D }) => {
         cameraControllerSystem.followEntity = entity;
