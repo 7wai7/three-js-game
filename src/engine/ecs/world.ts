@@ -33,21 +33,20 @@ export default class World {
 
     addComponent<T extends Component>(entity: EntityId, component: T) {
         const componentClass = component.constructor as ComponentClass<T>;
-        if (!this.components.get(componentClass)) {
-            this.components.set(componentClass, new Map());
-        }
-        this.components.get(componentClass)!.set(entity, component);
+        let componentMap =
+            this.components.get(componentClass);
 
-        for (const query of this.queryCache.values()) {
-            const match =
-                Array.from(query.components).every(
-                    c => !!this.getComponent(entity, c),
-                );
-
-            if (match) {
-                query.entities.add(entity);
-            }
+        if (!componentMap) {
+            componentMap = new Map();
+            this.components.set(
+                componentClass,
+                componentMap,
+            );
         }
+
+        componentMap.set(entity, component);
+
+        this.markQueriesDirty();
 
         return component;
     }
@@ -61,13 +60,7 @@ export default class World {
         const component = componentMap.get(entity);
         componentMap.delete(entity);
 
-        for (const query of this.queryCache.values()) {
-            if (
-                query.components.includes(componentClass)
-            ) {
-                query.entities.delete(entity);
-            }
-        }
+        this.markQueriesDirty();
 
         return component as T | undefined;
     }
@@ -96,28 +89,46 @@ export default class World {
         let query = this.queryCache.get(key);
 
         if (!query) {
-            const entities = [...this.entites].filter(e =>
-                componentClasses.every(c =>
-                    this.getComponent(e, c)
-                )
-            )
+            const entities = new Set<EntityId>();
 
             query = {
-                components: componentClasses,
-                entities: new Set(entities)
+                components: [...componentClasses],
+                entities,
+                dirty: true,
+            };
+
+            this.queryCache.set(key, query);
+        }
+
+        if (query.dirty) {
+            query.entities.clear();
+
+            for (const entity of this.entites) {
+                const matches =
+                    query.components.every(
+                        c => this.getComponent(entity, c),
+                    );
+
+                if (matches) {
+                    query.entities.add(entity);
+                }
             }
 
-            this.queryCache.set(
-                key,
-                query,
-            );
+            query.dirty = false;
         }
 
         return query.entities;
     }
 
+    // UTILS
+    private markQueriesDirty() {
+        for (const query of this.queryCache.values()) {
+            query.dirty = true;
+        }
+    }
+
     private createQueryKey(componentClasses: ComponentClass<any>[]) {
-        return componentClasses.map(c => c.name).sort().join("-");
+        return componentClasses.map(c => c.name).sort().join("|");
     }
 
 
