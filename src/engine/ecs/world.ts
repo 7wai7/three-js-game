@@ -1,10 +1,14 @@
 import type System from "../systems/system";
 import Component from "./component";
-import type { ComponentClass, EntityId, SystemClass } from "./types";
+import type { ComponentClass, EntityId, QueryCache, SystemClass } from "./types";
 
 export default class World {
     readonly entites: Set<EntityId> = new Set();
     readonly components: Map<ComponentClass<any>, Map<EntityId, Component>> = new Map();
+    readonly queryCache = new Map<
+        string,
+        QueryCache
+    >();
     readonly systems: Map<SystemClass<any>, System> = new Map();
 
     private nextEntityId = 0;
@@ -16,8 +20,14 @@ export default class World {
     }
 
     destroyEntity(id: EntityId) {
-        for (const c of this.components.values()) {
-            c.delete(id)
+        this.entites.delete(id);
+
+        for (const componentMap of this.components.values()) {
+            componentMap.delete(id);
+        }
+
+        for (const query of this.queryCache.values()) {
+            query.entities.delete(id);
         }
     }
 
@@ -27,16 +37,39 @@ export default class World {
             this.components.set(componentClass, new Map());
         }
         this.components.get(componentClass)!.set(entity, component);
+
+        for (const query of this.queryCache.values()) {
+            const match =
+                Array.from(query.components).every(
+                    c => !!this.getComponent(entity, c),
+                );
+
+            if (match) {
+                query.entities.add(entity);
+            }
+        }
+
         return component;
     }
 
     removeComponent<T extends Component>(entity: EntityId, componentClass: ComponentClass<T>) {
         const componentMap = this.components.get(componentClass);
-        if (componentMap) {
-            const component = componentMap.get(entity);
-            componentMap.delete(entity);
-            if (component) return component;
+        if (!componentMap) {
+            return;
         }
+
+        const component = componentMap.get(entity);
+        componentMap.delete(entity);
+
+        for (const query of this.queryCache.values()) {
+            if (
+                query.components.includes(componentClass)
+            ) {
+                query.entities.delete(entity);
+            }
+        }
+
+        return component as T | undefined;
     }
 
     getComponent<T extends Component>(entity: EntityId, componentClass: ComponentClass<T>) {
@@ -55,6 +88,40 @@ export default class World {
         return this.systems.get(systemClass) as T;
     }
 
+
+    // QUERIES
+    entitiesWith(...componentClasses: ComponentClass<any>[]) {
+        const key = this.createQueryKey(componentClasses);
+
+        let query = this.queryCache.get(key);
+
+        if (!query) {
+            const entities = [...this.entites].filter(e =>
+                componentClasses.every(c =>
+                    this.getComponent(e, c)
+                )
+            )
+
+            query = {
+                components: componentClasses,
+                entities: new Set(entities)
+            }
+
+            this.queryCache.set(
+                key,
+                query,
+            );
+        }
+
+        return query.entities;
+    }
+
+    private createQueryKey(componentClasses: ComponentClass<any>[]) {
+        return componentClasses.map(c => c.name).sort().join("-");
+    }
+
+
+    // UPDATE SYSTEMS
     update() {
         for (const system of this.systems.values()) {
             if (system.started) {

@@ -1,7 +1,10 @@
 import type System from "../systems/system";
 import type Component from "./component";
 
-export type Point = { x: number, y: number, z: number };
+export type QueryCache = {
+    components: ComponentClass<any>[];
+    entities: Set<EntityId>;
+}
 
 export type EntityId = number;
 export type ComponentId = string;

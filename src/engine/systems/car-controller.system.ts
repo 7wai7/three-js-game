@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import RigidBodyComponent from "../components/rigidbody";
 import CarComponent from "../components/vehicle/car";
-import Query from "../ecs/query";
 import System from "./system";
 import WheelComponent from "../components/vehicle/wheel";
 import Object3DComponent from "../components/object";
@@ -28,7 +27,7 @@ export default class CarControllerSystem extends System {
     private chassisForward = new THREE.Vector3();
 
     update(): void {
-        const entities = Query.entitiesWith(this.world,
+        const entities = this.world.entitiesWith(
             CarComponent,
             RigidBodyComponent,
         );

@@ -1,19 +1,18 @@
-import Query from "../ecs/query";
 import System from "./system";
 import PlayerInputComponent from "../components/player-input";
 import CarComponent from "../components/vehicle/car";
 
 export default class VehicleInputSystem extends System {
     update(): void {
-        const entities = Query.entitiesWith(
-            this.world,
+        const entities = this.world.entitiesWith(
             CarComponent,
             PlayerInputComponent
         );
 
-        if (entities.length === 0) return;
+        // if (entities.size === 0) return;
 
-        const entity = entities[0];
+        const entity = entities.keys().next().value;
+        if(!entity) return;
 
         const controller = this.world.getComponent(entity, CarComponent)!;
 

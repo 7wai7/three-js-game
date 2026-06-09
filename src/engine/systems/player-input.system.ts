@@ -1,5 +1,4 @@
 import PlayerControllerComponent from "../components/player-controller";
-import Query from "../ecs/query";
 import System from "./system";
 import PlayerInputComponent from "../components/player-input";
 import * as THREE from "three";
@@ -9,15 +8,16 @@ export default class PlayerInputSystem extends System {
     private cameraRight = new THREE.Vector3();
 
     update(): void {
-        const entities = Query.entitiesWith(
-            this.world,
+        const entities = this.world.entitiesWith(
             PlayerControllerComponent,
             PlayerInputComponent
         );
 
-        if (entities.length === 0) return;
+        // if (entities.size === 0) return;
 
-        const entity = entities[0];
+        const entity = entities.keys().next().value;
+        if(!entity) return;
+        
         const camera = this.engine.camera;
 
         const controller = this.world.getComponent(entity, PlayerControllerComponent)!;

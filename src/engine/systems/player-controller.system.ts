@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import * as RAPIER from "@dimforge/rapier3d";
 import PlayerControllerComponent from "../components/player-controller";
-import Query from "../ecs/query";
 import System from "./system";
 import RigidBodyComponent from "../components/rigidbody";
 import ColliderComponent from "../components/collider";
@@ -12,7 +11,7 @@ export default class PlayerControllerSystem extends System {
     rightAxis = new THREE.Vector3(1, 0, 0);
 
     update(): void {
-        const entities = Query.entitiesWith(this.world,
+        const entities = this.world.entitiesWith(
             PlayerControllerComponent,
             RigidBodyComponent,
             ColliderComponent
