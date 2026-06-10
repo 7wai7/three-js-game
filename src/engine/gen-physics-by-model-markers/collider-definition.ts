@@ -1,67 +1,110 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import { type ColliderDefinition, type ColliderShape, type PhysicsObject, type RigidBodyType, type VehiclePhysicsObject } from "./types";
+import { PHYSICS_NAME_PREFIX, type ColliderDefinition, type ColliderDefUserData, type ColliderShape, type JointDefinition, type JointDefUserData, type PhysicsNodeMap, type RigidBodyType } from "./types";
 import { getObjectSize } from "../../utils/get-object-size";
-import { getAxisDimensions, getColliderRotationByAxis } from "./utils";
+import { createWheelSuspensionJoint, getAxisDimensions, getColliderRotationByAxis } from "./utils";
 
-export function buildPhysicsBy3dDefinitions(
+function isAllowedPhysicsNamePrefix(name: string) {
+    return Object.values(PHYSICS_NAME_PREFIX).some(prefix => name.startsWith(prefix));
+}
+
+export function extractPhysicsDefinitions(
     root: THREE.Object3D,
-    physicsWorld: RAPIER.World,
+    objectsMap: PhysicsNodeMap
 ) {
     root.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-            if (obj.name.startsWith("COL_")) obj.visible = false;
+        if (isAllowedPhysicsNamePrefix(obj.name)) {
+            objectsMap.set(
+                obj.name,
+                {
+                    source: obj
+                }
+            );
         }
     });
 
-    const definitions = extractCollidersDefinitions(root);
-    const physicsObjects = createCollidersFromDefinitions(
-        definitions,
-        physicsWorld
-    )
+    for (const value of objectsMap.values()) {
+        const obj = value.source;
 
-    return physicsObjects;
+        if (obj.name.startsWith(PHYSICS_NAME_PREFIX.COLLIDER)) {
+            const data = obj.userData as ColliderDefUserData;
+            obj.visible = false;
+
+            const def: ColliderDefinition = {
+                targetName: data.targetName,
+                shape: (data.shape ?? "BOX").toUpperCase() as ColliderShape,
+                rigidbodyType: (data.rigidbodyType ?? "DYNAMIC").toUpperCase() as RigidBodyType,
+                axis: (data.axis ?? "Y").toUpperCase(),
+            }
+
+            value.colliderDef = def;
+            continue;
+        }
+
+        if (obj.name.startsWith(PHYSICS_NAME_PREFIX.JOINT)) {
+            const data = obj.userData as JointDefUserData;
+
+            if (!data.targetName) {
+                console.warn(
+                    `Joint ${obj.name} missing userData.target`,
+                );
+                continue;
+            }
+
+            const target = objectsMap.get(data.targetName);
+            if (!target) {
+                console.warn(
+                    `Joint target object not found by name ${data.targetName}`,
+                );
+                continue;
+            }
+
+            const distance =
+                obj.position.distanceTo(
+                    target.source.position,
+                );
+
+            const direction =
+                target.source.position
+                    .clone()
+                    .sub(obj.position)
+                    .normalize();
+
+            const def: JointDefinition = {
+                targetName: target.source.name,
+                jointType:
+                    obj.userData.type ?? "suspension",
+                distance,
+                direction,
+            }
+
+            value.jointDef = def;
+        }
+    }
 }
 
-export function extractCollidersDefinitions(root: THREE.Object3D) {
-    const result: ColliderDefinition[] = [];
-
-    root.traverse((obj) => {
-        if (!obj.name.startsWith("COL_")) return;
-        if (!obj.parent) return;
-
-        const data = obj.userData;
-
-        const shape = data.shape ? (data.shape as string).toUpperCase() : "BOX";
-        const rigidbodyType = data.rigidbodyType ? (data.rigidbodyType as string).toUpperCase() : "DYNAMIC";
-        const axis = data.axis ? (data.axis as string).toUpperCase() : "Y";
-
-        result.push({
-            mesh: obj.parent,
-            colliderMarker: obj,
-            shape: shape as ColliderShape,
-            rigidbodyType: rigidbodyType as RigidBodyType,
-            axis
-        });
-    });
-
-    return result;
-}
-
-export function createCollidersFromDefinitions(
-    defs: ColliderDefinition[],
+export function createPhysicsObjectsFromDefinitions(
     physicsWorld: RAPIER.World,
-): PhysicsObject[] {
-    const result = [];
+    objectsMap: PhysicsNodeMap,
+) {
+    for (const value of objectsMap.values()) {
+        const def = value.colliderDef;
+        if (!def) continue;
 
-    for (const def of defs) {
+        const target = objectsMap.get(def.targetName);
+        if (!target) {
+            console.log("=== Creating Physics Objects From Definitions ===");
+            console.warn(`Target 3D Object not found by name "${def.targetName}"`);
+            continue;
+        }
+
         const meshWorldPos = new THREE.Vector3();
         const meshWorldQuat = new THREE.Quaternion();
 
-        def.mesh.getWorldPosition(meshWorldPos);
-        def.mesh.getWorldQuaternion(meshWorldQuat);
+        target.source.getWorldPosition(meshWorldPos);
+        target.source.getWorldQuaternion(meshWorldQuat);
 
-        const size = getObjectSize(def.colliderMarker);
+        const size = getObjectSize(value.source);
 
         let rbDesc: RAPIER.RigidBodyDesc;
 
@@ -146,15 +189,15 @@ export function createCollidersFromDefinitions(
 
         const localPos = new THREE.Vector3();
 
-        def.mesh.updateMatrixWorld(true);
-        def.colliderMarker.updateMatrixWorld(true);
+        target.source.updateMatrixWorld(true);
+        value.source.updateMatrixWorld(true);
 
         const inverseMeshMatrix =
-            def.mesh.matrixWorld.clone().invert();
+            target.source.matrixWorld.clone().invert();
 
         const localMatrix =
             inverseMeshMatrix.multiply(
-                def.colliderMarker.matrixWorld.clone(),
+                value.source.matrixWorld.clone(),
             );
 
         localMatrix.decompose(
@@ -186,37 +229,50 @@ export function createCollidersFromDefinitions(
             rb,
         );
 
-        result.push({
-            mesh: def.mesh,
-            rigidBody: rb,
-            collider,
-        });
-    }
 
-    return result;
+        value.rigidBody = rb;
+        value.collider = collider;
+    }
 }
 
-export function prepareWheelSteeringPivots(physicsObjects: PhysicsObject[]) {
-    const wheels = [];
-    for (const obj of physicsObjects) {
-        if (!obj.mesh.name.startsWith("wheel")) continue;
-        if (!obj.mesh.parent) {
-            console.warn(`Wheel ${obj.mesh.name} doesn't have parent object`);
+export function createJointsFromDefinitions(
+    physicsWorld: RAPIER.World,
+    objectsMap: PhysicsNodeMap
+) {
+    for (const value of objectsMap.values()) {
+        const def = value.jointDef;
+        if (!def) continue;
+
+        const target = objectsMap.get(def.targetName);
+        if (!target) {
+            console.log("=== Creating Joints From Definitions ===");
+            console.warn(`Target 3D Object not found by name "${def.targetName}"`);
             continue;
         }
 
-        wheels.push(obj);
 
-        const steerPivot = new THREE.Object3D();
+        if (!target.rigidBody || !value.rigidBody) continue;
 
-        obj.mesh.parent.attach(steerPivot);
-        steerPivot.attach(obj.mesh);
-        obj.mesh.position.set(0, 0, 0);
-        (obj as VehiclePhysicsObject).steerPivot = steerPivot;
-    }
+        switch (def.jointType) {
+            case "suspension":
+                const size = getObjectSize(value.source);
+                const { radius } =
+                    getAxisDimensions(size, value.colliderDef!.axis.toLowerCase() as "x" | "y" | "z");
 
-    return {
-        vehiclePhysicsObjects: physicsObjects as VehiclePhysicsObject[],
-        wheels: wheels as VehiclePhysicsObject[]
+                createWheelSuspensionJoint(
+                    physicsWorld,
+                    target.rigidBody,
+                    value.rigidBody,
+                    {
+                        max: def.distance - radius,
+                    },
+                );
+                break;
+
+            default:
+                console.warn(
+                    `Unknown joint type ${def.jointType}`,
+                );
+        }
     }
 }

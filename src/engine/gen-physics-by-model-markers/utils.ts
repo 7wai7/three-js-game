@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import type { Axis } from "./types";
+import type { Axis, PhysicsNodeMap } from "./types";
 
 export function getColliderRotationByAxis(axis: Axis) {
     switch (axis) {
@@ -49,9 +49,9 @@ export function createWheelSuspensionJoint(
     chassis: RAPIER.RigidBody,
     wheel: RAPIER.RigidBody,
     {
-        min = -0.25,
+        min = 0,
         max = 0.25,
-        targetPos = -0.25,
+        targetPos = 0,
         stiffness = 400,
         damping = 50
     }: {
@@ -110,4 +110,26 @@ export function createWheelSuspensionJoint(
     //     false,
     //     true,
     // );
+}
+
+export function prepareWheelSteeringPivots(objectsMap: PhysicsNodeMap) {
+    const wheels = [];
+    for (const value of objectsMap.values()) {
+        if (!value.source.name.startsWith("wheel")) continue;
+        if (!value.source.parent) {
+            console.warn(`Wheel ${value.source.name} doesn't have parent object`);
+            continue;
+        }
+
+        wheels.push(value);
+
+        const steerPivot = new THREE.Object3D();
+
+        value.source.parent.attach(steerPivot);
+        steerPivot.attach(value.source);
+        value.source.position.set(0, 0, 0);
+        value.steerPivot = steerPivot;
+    }
+
+    return wheels;
 }
