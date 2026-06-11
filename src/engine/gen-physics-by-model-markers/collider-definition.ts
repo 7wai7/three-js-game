@@ -251,6 +251,7 @@ export function createJointsFromDefinitions(
         }
 
 
+        // TODO: fix! here should be use two taggets
         if (!target.rigidBody || !value.rigidBody) continue;
 
         switch (def.jointType) {
