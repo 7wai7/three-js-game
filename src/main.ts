@@ -8,6 +8,7 @@ import { createCube, createFloor, createLight } from "./engine/game/terrain-fact
 import { createPlayer } from "./engine/game/player-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
 import { createCar } from "./engine/game/car-factory.js";
+import { createTurret } from "./engine/game/gun-factory.js";
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -33,7 +34,7 @@ const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 
 createEcsCamera(engine.world, camera);
 createFloor(engine, {
-    position: new THREE.Vector3(0, -1, 0),
+    position: new THREE.Vector3(0, 0, 0),
 });
 
 createLight(scene);
@@ -43,13 +44,15 @@ createLight(scene);
 //         cameraControllerSystem.followEntity = entity;
 //     })
 
-createCar(engine, "src/assets/car.glb", {
-    position: new THREE.Vector3(0, 1, 0)
-})
-    .then(({ entity, object3D }) => {
-        cameraControllerSystem.followEntity = entity;
-        // object3D.visible = false;
-    })
+// createCar(engine, "src/assets/car.glb", {
+//     position: new THREE.Vector3(0, 1, 0)
+// })
+//     .then(({ entity, object3D }) => {
+//         cameraControllerSystem.followEntity = entity;
+//         // object3D.visible = false;
+//     })
+
+createTurret(engine);
 
 
 
