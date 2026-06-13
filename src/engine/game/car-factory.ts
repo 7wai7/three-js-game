@@ -80,8 +80,7 @@ export async function createCar(
     // }
 
     if(!chassis.rigidBody || !chassis.collider) {
-        console.log("Error to create car");
-        return;
+        throw new Error("Error to create car");
     }
 
     chassis.rigidBody.setTranslation(position, true);

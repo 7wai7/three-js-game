@@ -142,7 +142,7 @@ export default class CarControllerSystem extends System {
         wheel: WheelComponent,
         wheelMesh: THREE.Object3D,
     ) {
-        if (wheel.maxSteerAngle === 0) return;
+        if (!wheel.maxSteerAngle) return;
 
         const steer = chassis.inputMoveDir.x;
         const targetAngle =

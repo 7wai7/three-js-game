@@ -1,16 +1,20 @@
 import Component from "../../ecs/component";
 
+export type WheelComponentProps = {
+    maxSteerAngle?: number;
+    isRear?: boolean;
+}
+
 export default class WheelComponent extends Component {
-    chassisEntity: number;
-    
+    maxSteerAngle?: number;
+    isRear?: boolean;
+
     currentSteerAngle = 0;
-    maxSteerAngle = 0;
     steerInverse = false;
-    isRear = false;
     isGrounded = false;
 
-    constructor(chassisEntity: number) {
+    constructor(initialData: Partial<WheelComponentProps>) {
         super();
-        this.chassisEntity = chassisEntity;
+        Object.assign(this, initialData);
     }
 }

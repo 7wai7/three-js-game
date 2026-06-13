@@ -1,6 +1,9 @@
 import EngineContext from "../contexts/engine.context";
+import type { EntityId } from "./types";
 
 export default abstract class Component {
+  entity!: EntityId;
+  
   protected get engine() {
     return EngineContext.engine;
   }
