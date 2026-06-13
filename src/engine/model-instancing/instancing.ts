@@ -5,15 +5,21 @@ import { getObjectSize } from "../../utils/get-object-size";
 import { getAxisDimensions, getColliderRotationByAxis } from "./utils";
 import type World from "../ecs/world";
 import { COMPONENT_FACTORY, type CreatedComponent, type RuntimeContext } from "./component-factory";
+import type GLTFAssetManager from "../assets/gltf-asset-manager";
 
-export function instanceModelByConfig(
+export async function instanceModelByConfig(
     world: World,
     physicsWorld: RAPIER.World,
+    assets: GLTFAssetManager,
     scene: THREE.Scene,
     config: ModelConfig,
-    objectsMap: InstanceNodeMap,
-    model: THREE.Object3D
+    objectsMap?: InstanceNodeMap,
 ) {
+    if(!objectsMap) objectsMap = new Map();
+
+    const gltf = await assets.loadModel(config.modelPath);
+    const model = gltf.scene;
+    
     fillObjectsMap(config, objectsMap, model);
 
     const runtimeContext: RuntimeContext = {
@@ -67,7 +73,7 @@ export function instanceModelByConfig(
 
     scene.add(model);
 
-    return runtimeContext.entitiesByName.values()
+    return runtimeContext.entitiesByName.values();
 }
 
 function fillObjectsMap(

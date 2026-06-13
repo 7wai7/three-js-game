@@ -8,7 +8,6 @@ import { createCube, createFloor, createLight } from "./engine/game/terrain-fact
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
 import { instanceModelByConfig } from "./engine/model-instancing/instancing.js";
 import { testCarConfig } from "./engine/model-instancing/configs/test-car.js";
-import type { InstanceNodeMap } from "./engine/model-instancing/config-types.js";
 import CarComponent from "./engine/components/vehicle/car.js";
 import PlayerInputComponent from "./engine/components/player-input.js";
 
@@ -41,22 +40,17 @@ createFloor(engine, {
 
 createLight(scene);
 
-engine.assets.gltf.loadModel("src/assets/car.glb")
-    .then(gltf => {
-        const root = gltf.scene;
 
-        const objectMap: InstanceNodeMap = new Map();
-        const entities = instanceModelByConfig(
-            engine.world,
-            engine.physicsWorld,
-            engine.scene,
-            testCarConfig,
-            objectMap,
-            root
-        );
-
-        const car = engine.world.getComponentsFromEntities(entities,  CarComponent)[0];
-        console.log(root)
+instanceModelByConfig(
+    engine.world,
+    engine.physicsWorld,
+    engine.assets.gltf,
+    engine.scene,
+    testCarConfig,
+    new Map(),
+)
+    .then(entities => {
+        const car = engine.world.getComponentsFromEntities(entities, CarComponent)[0];
         engine.world.addComponent(car.entity, new PlayerInputComponent());
         cameraControllerSystem.followEntity = car.entity;
     })

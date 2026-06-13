@@ -3,7 +3,7 @@ import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroup
 import type { ModelConfig } from "../config-types";
 
 export const testCarConfig: ModelConfig = {
-    modelPath: "src/assets/cer.glb",
+    modelPath: "src/assets/car.glb",
 
     entities: {
         chassis: {
