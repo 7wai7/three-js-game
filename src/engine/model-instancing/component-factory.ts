@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import type { InstanceNode, InstanceNodeMap, SceneRef } from "./config-types";
 import ColliderComponent from "../components/collider";
@@ -94,6 +95,25 @@ export const COMPONENT_FACTORY: ComponentFactory = {
     }),
 
     WheelComponent: ({ props }) => ({
-        component: new WheelComponent(props)
+        component: new WheelComponent(props),
+
+        initialize(component, ctx) {
+            const object3dComponent = ctx.world.getComponent(component.entity, Object3DComponent)!;
+            const object3d = object3dComponent.object;
+
+            if (!object3d.parent) {
+                console.warn(`Wheel ${object3d.name} doesn't have parent object`);
+                return;
+            }
+
+            const steerPivot = new THREE.Object3D();
+
+            object3d.parent.attach(steerPivot);
+            steerPivot.attach(object3d);
+            object3d.position.set(0, 0, 0);
+
+            object3dComponent.object = steerPivot;
+            component.steerMesh = object3d;
+        }
     }),
 };

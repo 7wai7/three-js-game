@@ -22,7 +22,7 @@ export const testCarConfig: ModelConfig = {
                     props: {
                         engineForce: 70,
                         brakeForce: 12,
-                        sideGrip: 17,
+                        sideGrip: 12,
                         pullingForce: 20,
                     }
                 }
@@ -52,7 +52,7 @@ export const testCarConfig: ModelConfig = {
                 {
                     type: "WheelComponent",
                     props: {
-                        maxSteerAngle: 30,
+                        maxSteerAngleDeg: 30,
                     }
                 }
             ],
@@ -84,7 +84,7 @@ export const testCarConfig: ModelConfig = {
                 {
                     type: "WheelComponent",
                     props: {
-                        maxSteerAngle: 30,
+                        maxSteerAngleDeg: 30,
                     }
                 }
             ],

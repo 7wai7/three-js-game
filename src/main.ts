@@ -5,15 +5,11 @@ import EngineContext from "./engine/contexts/engine.context.js";
 import { createEcsCamera, createMainCamera } from "./engine/game/global-factory.js";
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
 import { createCube, createFloor, createLight } from "./engine/game/terrain-factory.js";
-import { createPlayer } from "./engine/game/player-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
-import { createCar } from "./engine/game/car-factory.js";
 import { instanceModelByConfig } from "./engine/model-instancing/instancing.js";
 import { testCarConfig } from "./engine/model-instancing/configs/test-car.js";
 import type { InstanceNodeMap } from "./engine/model-instancing/config-types.js";
 import CarComponent from "./engine/components/vehicle/car.js";
-import Object3DComponent from "./engine/components/object.js";
-import RigidBodyComponent from "./engine/components/rigidbody.js";
 import PlayerInputComponent from "./engine/components/player-input.js";
 
 // Initialize Three.js renderer, scene, and camera

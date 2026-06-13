@@ -258,19 +258,19 @@ function createCollidersByConfig(
 
         collider.setRestitution(0);
 
-        if (colliderConfig.mass) {
+        if (colliderConfig.mass !== undefined) {
             collider.setMass(colliderConfig.mass);
         }
 
-        if (colliderConfig.friction) {
+        if (colliderConfig.friction !== undefined) {
             collider.setFriction(colliderConfig.friction);
         }
 
-        if (colliderConfig.frictionRule) {
+        if (colliderConfig.frictionRule !== undefined) {
             collider.setFrictionCombineRule(colliderConfig.frictionRule);
         }
 
-        if (colliderConfig.collisionGroups) {
+        if (colliderConfig.collisionGroups !== undefined) {
             collider.setCollisionGroups(colliderConfig.collisionGroups);
         }
 

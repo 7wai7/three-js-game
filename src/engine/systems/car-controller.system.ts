@@ -10,8 +10,8 @@ import moveTowards from "../../utils/move-towards";
 
 type WheelComponents = {
     wheel: WheelComponent;
-    objectJoint: THREE.Object3D;
-    objectMesh: THREE.Object3D;
+    object: THREE.Object3D;
+    steerMesh: THREE.Object3D;
     rigidbody: RAPIER.RigidBody;
     collider: RAPIER.Collider;
 }
@@ -37,17 +37,13 @@ export default class CarControllerSystem extends System {
             const chassisObject = this.world.getComponent(entity, Object3DComponent)!.object;
             const chassisCollider = this.world.getComponent(entity, ColliderComponent)!.collider;
             const rb = this.world.getComponent(entity, RigidBodyComponent)!.rigidBody;
-            const wheels: WheelComponents[] = chassis.wheels.map(entity => {
-                const objectJoint = this.world.getComponent(entity, Object3DComponent)!.object as THREE.Object3D;
-                return {
-                    wheel: this.world.getComponent(entity, WheelComponent)!,
-                    objectJoint,
-                    objectMesh: objectJoint,
-                    // objectMesh: objectJoint.children[0]!,
-                    rigidbody: this.world.getComponent(entity, RigidBodyComponent)!.rigidBody,
-                    collider: this.world.getComponent(entity, ColliderComponent)!.collider
-                }
-            });
+            const wheels: WheelComponents[] = chassis.wheels.map(entity => ({
+                wheel: this.world.getComponent(entity, WheelComponent)!,
+                object: this.world.getComponent(entity, Object3DComponent)!.object as THREE.Object3D,
+                steerMesh: this.world.getComponent(entity, WheelComponent)!.steerMesh,
+                rigidbody: this.world.getComponent(entity, RigidBodyComponent)!.rigidBody,
+                collider: this.world.getComponent(entity, ColliderComponent)!.collider
+            }));
 
             let hasGroundedWheel = false;
             for (const w of wheels) {
@@ -65,7 +61,7 @@ export default class CarControllerSystem extends System {
                 this.applyInputSteering(
                     chassis,
                     w.wheel,
-                    w.objectMesh
+                    w.steerMesh
                 )
             }
 
@@ -141,7 +137,7 @@ export default class CarControllerSystem extends System {
     private applyInputSteering(
         chassis: CarComponent,
         wheel: WheelComponent,
-        wheelMesh: THREE.Object3D,
+        steerMesh: THREE.Object3D,
     ) {
         if (!wheel.maxSteerAngle) return;
 
@@ -165,7 +161,7 @@ export default class CarControllerSystem extends System {
             wheel.currentSteerAngle,
         );
 
-        wheelMesh.quaternion.copy(steerQuat);
+        steerMesh.quaternion.copy(steerQuat);
     }
 
     private applyThrottle(
