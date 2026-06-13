@@ -9,13 +9,15 @@ export type ModelConfig = {
 
     entities: Record<
         SceneRef,
-        {
-            components: EntityComponentConfig[],
-            collider?: ColliderConfig
-        }
+        EntityConfig
     >;
 
     joints: JointConfig[];
+}
+
+export type EntityConfig = {
+    components: EntityComponentConfig[],
+    collider?: ColliderConfig
 }
 
 export type InstanceNode = {

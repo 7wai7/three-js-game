@@ -1,6 +1,64 @@
 import RAPIER from "@dimforge/rapier3d";
-import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroups } from "../../game/physics-groups";
-import type { ModelConfig } from "../config-types";
+import {
+    GROUP_PLAYER,
+    GROUP_VEHICLE,
+    GROUP_WHEEL,
+    GROUP_WORLD,
+    interactionGroups
+} from "../../game/physics-groups";
+import type { ColliderConfig, EntityConfig, ModelConfig, PrismaticJointConfig } from "../config-types";
+
+const baseComponents = [
+    { type: "Object3DComponent" },
+    { type: "RigidBodyComponent" },
+    { type: "ColliderComponent" },
+] as const;
+
+const wheelCollider: Omit<ColliderConfig, "source"> = {
+    shape: "BALL" as const,
+    axis: "X" as const,
+    mass: 100,
+    friction: 0,
+    frictionRule: RAPIER.CoefficientCombineRule.Min,
+    collisionGroups: interactionGroups(
+        GROUP_WHEEL,
+        GROUP_WORLD | GROUP_PLAYER
+    ),
+    enableCcd: true,
+};
+
+const prismaticJoint: Omit<PrismaticJointConfig, "bodyB"> = {
+    type: "prismatic",
+    bodyA: "chassis",
+    axis: { y: 1 },
+    limits: {
+        min: 0,
+        max: 0.15,
+    },
+    motorPosition: {
+        stiffness: 500,
+        damping: 70,
+    }
+};
+
+function createWheel(
+    source: string,
+    wheelProps?: Record<string, unknown>
+): EntityConfig {
+    return {
+        components: [
+            ...baseComponents,
+            {
+                type: "WheelComponent",
+                props: wheelProps,
+            },
+        ],
+        collider: {
+            ...wheelCollider,
+            source,
+        },
+    };
+}
 
 export const testCarConfig: ModelConfig = {
     modelPath: "src/assets/car.glb",
@@ -8,15 +66,7 @@ export const testCarConfig: ModelConfig = {
     entities: {
         chassis: {
             components: [
-                {
-                    type: "Object3DComponent"
-                },
-                {
-                    type: "RigidBodyComponent"
-                },
-                {
-                    type: "ColliderComponent"
-                },
+                ...baseComponents,
                 {
                     type: "CarComponent",
                     props: {
@@ -24,8 +74,8 @@ export const testCarConfig: ModelConfig = {
                         brakeForce: 12,
                         sideGrip: 12,
                         pullingForce: 20,
-                    }
-                }
+                    },
+                },
             ],
             collider: {
                 source: "COL_chassis",
@@ -34,204 +84,31 @@ export const testCarConfig: ModelConfig = {
                 collisionGroups: interactionGroups(
                     GROUP_VEHICLE,
                     GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER
-                )
+                ),
             },
         },
 
-        wheel_FR: {
-            components: [
-                {
-                    type: "Object3DComponent"
-                },
-                {
-                    type: "RigidBodyComponent"
-                },
-                {
-                    type: "ColliderComponent"
-                },
-                {
-                    type: "WheelComponent",
-                    props: {
-                        maxSteerAngleDeg: 30,
-                    }
-                }
-            ],
-            collider: {
-                shape: "BALL",
-                source: "COL_FR",
-                axis: 'X',
-                mass: 100,
-                friction: 0,
-                frictionRule: RAPIER.CoefficientCombineRule.Min,
-                collisionGroups: interactionGroups(
-                    GROUP_WHEEL,
-                    GROUP_WORLD | GROUP_PLAYER
-                ),
-                enableCcd: true,
-            }
-        },
-        wheel_FL: {
-            components: [
-                {
-                    type: "Object3DComponent"
-                },
-                {
-                    type: "RigidBodyComponent"
-                },
-                {
-                    type: "ColliderComponent"
-                },
-                {
-                    type: "WheelComponent",
-                    props: {
-                        maxSteerAngleDeg: 30,
-                    }
-                }
-            ],
-            collider: {
-                shape: "BALL",
-                source: "COL_FL",
-                axis: 'X',
-                mass: 100,
-                friction: 0,
-                frictionRule: RAPIER.CoefficientCombineRule.Min,
-                collisionGroups: interactionGroups(
-                    GROUP_WHEEL,
-                    GROUP_WORLD | GROUP_PLAYER
-                ),
-                enableCcd: true,
-            }
-        },
-        wheel_RR: {
-            components: [
-                {
-                    type: "Object3DComponent"
-                },
-                {
-                    type: "RigidBodyComponent"
-                },
-                {
-                    type: "ColliderComponent"
-                },
-                {
-                    type: "WheelComponent",
-                    props: {
-                        isRear: true
-                    }
-                }
-            ],
-            collider: {
-                shape: "BALL",
-                source: "COL_RR",
-                axis: 'X',
-                mass: 100,
-                friction: 0,
-                frictionRule: RAPIER.CoefficientCombineRule.Min,
-                collisionGroups: interactionGroups(
-                    GROUP_WHEEL,
-                    GROUP_WORLD | GROUP_PLAYER
-                ),
-                enableCcd: true,
-            }
-        },
-        wheel_RL: {
-            components: [
-                {
-                    type: "Object3DComponent"
-                },
-                {
-                    type: "RigidBodyComponent"
-                },
-                {
-                    type: "ColliderComponent"
-                },
-                {
-                    type: "WheelComponent",
-                    props: {
-                        isRear: true
-                    }
-                }
-            ],
-            collider: {
-                shape: "BALL",
-                source: "COL_RL",
-                axis: 'X',
-                mass: 100,
-                friction: 0,
-                frictionRule: RAPIER.CoefficientCombineRule.Min,
-                collisionGroups: interactionGroups(
-                    GROUP_WHEEL,
-                    GROUP_WORLD | GROUP_PLAYER
-                ),
-                enableCcd: true,
-            }
-        },
+        wheel_FR: createWheel("COL_FR", {
+            maxSteerAngleDeg: 30,
+        }),
+
+        wheel_FL: createWheel("COL_FL", {
+            maxSteerAngleDeg: 30,
+        }),
+
+        wheel_RR: createWheel("COL_RR", {
+            isRear: true,
+        }),
+
+        wheel_RL: createWheel("COL_RL", {
+            isRear: true,
+        }),
     },
 
     joints: [
-        {
-            type: "prismatic",
-            bodyA: "chassis",
-            bodyB: "wheel_FR",
-            axis: {
-                y: 1
-            },
-            limits: {
-                min: 0,
-                max: 0.15,
-            },
-            motorPosition: {
-                stiffness: 500,
-                damping: 70,
-            }
-        },
-        {
-            type: "prismatic",
-            bodyA: "chassis",
-            bodyB: "wheel_FL",
-            axis: {
-                y: 1
-            },
-            limits: {
-                min: 0,
-                max: 0.15,
-            },
-            motorPosition: {
-                stiffness: 500,
-                damping: 70,
-            }
-        },
-        {
-            type: "prismatic",
-            bodyA: "chassis",
-            bodyB: "wheel_RR",
-            axis: {
-                y: 1
-            },
-            limits: {
-                min: 0,
-                max: 0.15,
-            },
-            motorPosition: {
-                stiffness: 500,
-                damping: 70,
-            }
-        },
-        {
-            type: "prismatic",
-            bodyA: "chassis",
-            bodyB: "wheel_RL",
-            axis: {
-                y: 1
-            },
-            limits: {
-                min: 0,
-                max: 0.15,
-            },
-            motorPosition: {
-                stiffness: 500,
-                damping: 70,
-            }
-        },
-    ]
-}
+        { ...prismaticJoint, bodyB: "wheel_FR" },
+        { ...prismaticJoint, bodyB: "wheel_FL" },
+        { ...prismaticJoint, bodyB: "wheel_RR" },
+        { ...prismaticJoint, bodyB: "wheel_RL" },
+    ],
+};
