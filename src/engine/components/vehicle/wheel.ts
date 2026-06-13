@@ -1,16 +1,24 @@
+import * as THREE from "three";
 import Component from "../../ecs/component";
 
-export default class WheelComponent extends Component {
-    chassisEntity: number;
-    
-    currentSteerAngle = 0;
-    maxSteerAngle = 0;
-    steerInverse = false;
-    isRear = false;
-    isGrounded = false;
+export type WheelComponentProps = {
+    maxSteerAngleDeg?: number;
+    isRear?: boolean;
+    steerInverse?: boolean;
+}
 
-    constructor(chassisEntity: number) {
+export default class WheelComponent extends Component {
+    maxSteerAngle?: number;
+    isRear?: boolean;
+    steerInverse?: boolean;
+
+    currentSteerAngle = 0;
+    isGrounded = false;
+    steerMesh!: THREE.Object3D;
+
+    constructor(initialData: Partial<WheelComponentProps>) {
         super();
-        this.chassisEntity = chassisEntity;
+        Object.assign(this, initialData);
+        if(initialData.maxSteerAngleDeg) this.maxSteerAngle = THREE.MathUtils.DEG2RAD * initialData.maxSteerAngleDeg;
     }
 }

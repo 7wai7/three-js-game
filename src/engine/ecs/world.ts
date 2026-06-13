@@ -45,6 +45,7 @@ export default class World {
         }
 
         componentMap.set(entity, component);
+        component.entity = entity;
 
         this.markQueriesDirty();
 
@@ -118,6 +119,35 @@ export default class World {
         }
 
         return query.entities;
+    }
+
+    getComponentsFromEntities<
+        T extends readonly ComponentClass<Component>[]
+    >(
+        entities: Iterable<EntityId>,
+        ...componentClasses: T
+    ): InstanceType<T[number]>[] {
+        const result: InstanceType<T[number]>[] = [];
+
+        for (const componentClass of componentClasses) {
+            const componentMap = this.components.get(componentClass);
+
+            if (!componentMap) {
+                continue;
+            }
+
+            for (const entity of entities) {
+                const component = componentMap.get(entity);
+
+                if (component) {
+                    result.push(
+                        component as InstanceType<T[number]>,
+                    );
+                }
+            }
+        }
+
+        return result;
     }
 
     // UTILS

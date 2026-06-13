@@ -9,8 +9,6 @@ export default class VehicleInputSystem extends System {
             PlayerInputComponent
         );
 
-        // if (entities.size === 0) return;
-
         const entity = entities.keys().next().value;
         if(!entity) return;
 
