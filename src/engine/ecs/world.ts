@@ -1,10 +1,14 @@
 import type System from "../systems/system";
 import Component from "./component";
-import type { ComponentClass, EntityId, SystemClass } from "./types";
+import type { ComponentClass, EntityId, QueryCache, SystemClass } from "./types";
 
 export default class World {
     readonly entites: Set<EntityId> = new Set();
     readonly components: Map<ComponentClass<any>, Map<EntityId, Component>> = new Map();
+    readonly queryCache = new Map<
+        string,
+        QueryCache
+    >();
     readonly systems: Map<SystemClass<any>, System> = new Map();
 
     private nextEntityId = 0;
@@ -16,27 +20,50 @@ export default class World {
     }
 
     destroyEntity(id: EntityId) {
-        for (const c of this.components.values()) {
-            c.delete(id)
+        this.entites.delete(id);
+
+        for (const componentMap of this.components.values()) {
+            componentMap.delete(id);
+        }
+
+        for (const query of this.queryCache.values()) {
+            query.entities.delete(id);
         }
     }
 
     addComponent<T extends Component>(entity: EntityId, component: T) {
         const componentClass = component.constructor as ComponentClass<T>;
-        if (!this.components.get(componentClass)) {
-            this.components.set(componentClass, new Map());
+        let componentMap =
+            this.components.get(componentClass);
+
+        if (!componentMap) {
+            componentMap = new Map();
+            this.components.set(
+                componentClass,
+                componentMap,
+            );
         }
-        this.components.get(componentClass)!.set(entity, component);
+
+        componentMap.set(entity, component);
+        component.entity = entity;
+
+        this.markQueriesDirty();
+
         return component;
     }
 
     removeComponent<T extends Component>(entity: EntityId, componentClass: ComponentClass<T>) {
         const componentMap = this.components.get(componentClass);
-        if (componentMap) {
-            const component = componentMap.get(entity);
-            componentMap.delete(entity);
-            if (component) return component;
+        if (!componentMap) {
+            return;
         }
+
+        const component = componentMap.get(entity);
+        componentMap.delete(entity);
+
+        this.markQueriesDirty();
+
+        return component as T | undefined;
     }
 
     getComponent<T extends Component>(entity: EntityId, componentClass: ComponentClass<T>) {
@@ -55,6 +82,87 @@ export default class World {
         return this.systems.get(systemClass) as T;
     }
 
+
+    // QUERIES
+    entitiesWith(...componentClasses: ComponentClass<any>[]) {
+        const key = this.createQueryKey(componentClasses);
+
+        let query = this.queryCache.get(key);
+
+        if (!query) {
+            const entities = new Set<EntityId>();
+
+            query = {
+                components: [...componentClasses],
+                entities,
+                dirty: true,
+            };
+
+            this.queryCache.set(key, query);
+        }
+
+        if (query.dirty) {
+            query.entities.clear();
+
+            for (const entity of this.entites) {
+                const matches =
+                    query.components.every(
+                        c => this.getComponent(entity, c),
+                    );
+
+                if (matches) {
+                    query.entities.add(entity);
+                }
+            }
+
+            query.dirty = false;
+        }
+
+        return query.entities;
+    }
+
+    getComponentsFromEntities<
+        T extends readonly ComponentClass<Component>[]
+    >(
+        entities: Iterable<EntityId>,
+        ...componentClasses: T
+    ): InstanceType<T[number]>[] {
+        const result: InstanceType<T[number]>[] = [];
+
+        for (const componentClass of componentClasses) {
+            const componentMap = this.components.get(componentClass);
+
+            if (!componentMap) {
+                continue;
+            }
+
+            for (const entity of entities) {
+                const component = componentMap.get(entity);
+
+                if (component) {
+                    result.push(
+                        component as InstanceType<T[number]>,
+                    );
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // UTILS
+    private markQueriesDirty() {
+        for (const query of this.queryCache.values()) {
+            query.dirty = true;
+        }
+    }
+
+    private createQueryKey(componentClasses: ComponentClass<any>[]) {
+        return componentClasses.map(c => c.name).sort().join("|");
+    }
+
+
+    // UPDATE SYSTEMS
     update() {
         for (const system of this.systems.values()) {
             if (system.started) {

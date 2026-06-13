@@ -10,7 +10,7 @@ export default class CameraControllerSystem extends System {
     lookAtOffset = new THREE.Vector3(0, 0, 0);
 
     // internal state
-    dist = 4;
+    dist = 10;
     minDist = 2;
     maxDist = 10;
     zoomStep = 0.3;

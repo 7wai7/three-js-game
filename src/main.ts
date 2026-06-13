@@ -5,9 +5,11 @@ import EngineContext from "./engine/contexts/engine.context.js";
 import { createEcsCamera, createMainCamera } from "./engine/game/global-factory.js";
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
 import { createCube, createFloor, createLight } from "./engine/game/terrain-factory.js";
-import { createPlayer } from "./engine/game/player-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
-import { createCar } from "./engine/game/car-factory.js";
+import { instanceModelByConfig } from "./engine/model-instancing/instancing.js";
+import { testCarConfig } from "./engine/model-instancing/configs/test-car.js";
+import CarComponent from "./engine/components/vehicle/car.js";
+import PlayerInputComponent from "./engine/components/player-input.js";
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -33,20 +35,35 @@ const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 
 createEcsCamera(engine.world, camera);
 createFloor(engine, {
-    position: new THREE.Vector3(0, -1, 0),
-    // rotation: new THREE.Euler(Math.PI / 20, 0, 0)
+    position: new THREE.Vector3(0, -2, 0),
 });
 
 createLight(scene);
 
-createPlayer(engine)
-    .then(entity => {
-        cameraControllerSystem.followEntity = entity;
+
+instanceModelByConfig(
+    engine.world,
+    engine.physicsWorld,
+    engine.assets.gltf,
+    engine.scene,
+    testCarConfig,
+    new Map(),
+)
+    .then(entities => {
+        const car = engine.world.getComponentsFromEntities(entities, CarComponent)[0];
+        engine.world.addComponent(car.entity, new PlayerInputComponent());
+        cameraControllerSystem.followEntity = car.entity;
     })
 
-// createCar(engine)
-//     .then(entity => {
+
+// createCar(engine, "src/assets/car.glb", {
+//     transform: {
+//         position: new THREE.Vector3(0, 17, 0)
+//     }
+// })
+//     .then(({ entity, object3D }) => {
 //         cameraControllerSystem.followEntity = entity;
+//         object3D.visible = false;
 //     })
 
 

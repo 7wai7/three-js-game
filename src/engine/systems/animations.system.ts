@@ -1,12 +1,10 @@
 import AnimationComponent from "../components/animation";
-import Query from "../ecs/query";
 import System from "./system";
 import * as THREE from "three";
 
 export default class AnimationsSystem extends System {
-    postUpdate(): void { // update -> postUpdate
-        const entities = Query.entitiesWith(
-            this.world,
+    postUpdate(): void {
+        const entities = this.world.entitiesWith(
             AnimationComponent
         );
 
