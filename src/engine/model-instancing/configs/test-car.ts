@@ -1,3 +1,5 @@
+import RAPIER from "@dimforge/rapier3d";
+import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroups } from "../../game/physics-groups";
 import type { ModelConfig } from "../config-types";
 
 export const testCarConfig: ModelConfig = {
@@ -29,6 +31,10 @@ export const testCarConfig: ModelConfig = {
                 source: "COL_chassis",
                 shape: "BOX",
                 mass: 700,
+                collisionGroups: interactionGroups(
+                    GROUP_VEHICLE,
+                    GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER
+                )
             },
         },
 
@@ -55,6 +61,13 @@ export const testCarConfig: ModelConfig = {
                 source: "COL_FR",
                 axis: 'X',
                 mass: 100,
+                friction: 0,
+                frictionRule: RAPIER.CoefficientCombineRule.Min,
+                collisionGroups: interactionGroups(
+                    GROUP_WHEEL,
+                    GROUP_WORLD | GROUP_PLAYER
+                ),
+                enableCcd: true,
             }
         },
         wheel_FL: {
@@ -80,6 +93,13 @@ export const testCarConfig: ModelConfig = {
                 source: "COL_FL",
                 axis: 'X',
                 mass: 100,
+                friction: 0,
+                frictionRule: RAPIER.CoefficientCombineRule.Min,
+                collisionGroups: interactionGroups(
+                    GROUP_WHEEL,
+                    GROUP_WORLD | GROUP_PLAYER
+                ),
+                enableCcd: true,
             }
         },
         wheel_RR: {
@@ -105,6 +125,13 @@ export const testCarConfig: ModelConfig = {
                 source: "COL_RR",
                 axis: 'X',
                 mass: 100,
+                friction: 0,
+                frictionRule: RAPIER.CoefficientCombineRule.Min,
+                collisionGroups: interactionGroups(
+                    GROUP_WHEEL,
+                    GROUP_WORLD | GROUP_PLAYER
+                ),
+                enableCcd: true,
             }
         },
         wheel_RL: {
@@ -130,6 +157,13 @@ export const testCarConfig: ModelConfig = {
                 source: "COL_RL",
                 axis: 'X',
                 mass: 100,
+                friction: 0,
+                frictionRule: RAPIER.CoefficientCombineRule.Min,
+                collisionGroups: interactionGroups(
+                    GROUP_WHEEL,
+                    GROUP_WORLD | GROUP_PLAYER
+                ),
+                enableCcd: true,
             }
         },
     },

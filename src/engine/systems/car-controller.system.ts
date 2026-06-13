@@ -42,7 +42,8 @@ export default class CarControllerSystem extends System {
                 return {
                     wheel: this.world.getComponent(entity, WheelComponent)!,
                     objectJoint,
-                    objectMesh: objectJoint.children[0]!,
+                    objectMesh: objectJoint,
+                    // objectMesh: objectJoint.children[0]!,
                     rigidbody: this.world.getComponent(entity, RigidBodyComponent)!.rigidBody,
                     collider: this.world.getComponent(entity, ColliderComponent)!.collider
                 }

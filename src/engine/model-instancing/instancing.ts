@@ -16,11 +16,18 @@ export function instanceModelByConfig(
 ) {
     fillObjectsMap(config, objectsMap, model);
 
+    const runtimeContext: RuntimeContext = {
+        world,
+        physicsWorld,
+        entitiesByName: new Map<SceneRef, number>(),
+        nodesByName: objectsMap,
+    };
+
     createCollidersByConfig(physicsWorld, config, objectsMap);
 
-    const pendingInitializers: CreatedComponent<any>[] = [];
+    createJointsFromConfig(config, runtimeContext)
 
-    const entitiesByName = new Map<SceneRef, number>();
+    const pendingInitializers: CreatedComponent<any>[] = [];
 
     for (const [nodeName, entityConfig] of Object.entries(config.entities)) {
         const node = objectsMap.get(nodeName);
@@ -28,7 +35,7 @@ export function instanceModelByConfig(
 
         const entity = world.createEntity();
 
-        entitiesByName.set(nodeName, entity);
+        runtimeContext.entitiesByName.set(nodeName, entity);
 
         for (const componentConfig of entityConfig.components) {
             const created =
@@ -51,13 +58,6 @@ export function instanceModelByConfig(
         }
     }
 
-    const runtimeContext: RuntimeContext = {
-        world,
-        physicsWorld,
-        entitiesByName,
-        nodesByName: objectsMap,
-    };
-
     for (const item of pendingInitializers) {
         item.initialize?.(
             item.component,
@@ -67,7 +67,7 @@ export function instanceModelByConfig(
 
     scene.add(model);
 
-    return entitiesByName.values()
+    return runtimeContext.entitiesByName.values()
 }
 
 function fillObjectsMap(
@@ -160,6 +160,13 @@ function createCollidersByConfig(
 
         const rb = physicsWorld.createRigidBody(rbDesc);
 
+        rb.setLinearDamping(0.1);
+        rb.setAngularDamping(0.1);
+
+        if (colliderConfig.enableCcd) {
+            rb.enableCcd(true);
+        }
+
         let colliderDesc: RAPIER.ColliderDesc;
 
         const { length, radius } =
@@ -248,13 +255,88 @@ function createCollidersByConfig(
                 rb,
             );
 
+
+        collider.setRestitution(0);
+
         if (colliderConfig.mass) {
-            collider.setMass(
-                colliderConfig.mass,
-            );
+            collider.setMass(colliderConfig.mass);
+        }
+
+        if (colliderConfig.friction) {
+            collider.setFriction(colliderConfig.friction);
+        }
+
+        if (colliderConfig.frictionRule) {
+            collider.setFrictionCombineRule(colliderConfig.frictionRule);
+        }
+
+        if (colliderConfig.collisionGroups) {
+            collider.setCollisionGroups(colliderConfig.collisionGroups);
         }
 
         target.rigidBody = rb;
         target.collider = collider;
+    }
+}
+
+function createJointsFromConfig(
+    config: ModelConfig,
+    ctx: RuntimeContext
+) {
+    for (const joint of config.joints) {
+        const bodyA = ctx.nodesByName.get(joint.bodyA)?.rigidBody;
+        const bodyB = ctx.nodesByName.get(joint.bodyB)?.rigidBody;
+
+        if (!bodyA || !bodyB) continue;
+
+        switch (joint.type) {
+            case "prismatic": {
+                const axis = joint.axis;
+
+                const rapierAxis = {
+                    x: axis.x ?? 0,
+                    y: axis.y ?? 0,
+                    z: axis.z ?? 0,
+                };
+
+                const aPos = bodyA.translation();
+                const bPos = bodyB.translation();
+
+                const anchor1 = {
+                    x: bPos.x - aPos.x,
+                    y: bPos.y - aPos.y,
+                    z: bPos.z - aPos.z,
+                };
+
+                const anchor2 = { x: 0, y: 0, z: 0 };
+
+                const jointData = RAPIER.JointData.prismatic(
+                    anchor1,
+                    anchor2,
+                    rapierAxis,
+                );
+
+                const j = ctx.physicsWorld.createImpulseJoint(
+                    jointData,
+                    bodyA,
+                    bodyB,
+                    true,
+                ) as RAPIER.PrismaticImpulseJoint;
+
+                if (joint.limits) {
+                    j.setLimits(joint.limits.min, joint.limits.max);
+                }
+
+                if (joint.motorPosition) {
+                    j.configureMotorPosition(
+                        0,
+                        joint.motorPosition.stiffness,
+                        joint.motorPosition.damping,
+                    );
+                }
+
+                break;
+            }
+        }
     }
 }

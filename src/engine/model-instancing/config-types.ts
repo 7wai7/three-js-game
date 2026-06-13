@@ -32,7 +32,7 @@ export type InstanceNodeMap = Map<SceneRef, InstanceNode>;
 // COMPONENT TYPES
 export type ComponentName =
     keyof typeof COMPONENT_FACTORY;
-    
+
 type EntityComponentConfig = {
     type: ComponentName,
     props?: object
@@ -45,7 +45,11 @@ export type ColliderConfig = {
     shape?: ColliderShape;
     rigidBodyType?: RigidBodyType;
     axis?: Axis;
-    mass?: number
+    mass?: number;
+    collisionGroups?: number;
+    enableCcd?: boolean;
+    friction?: number;
+    frictionRule?: RAPIER.CoefficientCombineRule
 }
 
 // JOINT TYPES
@@ -72,14 +76,20 @@ export type PrismaticJointConfig = {
 
 export type RevoluteJointConfig = {
     type: "revolute-suspension",
+    bodyA: SceneRef,
+    bodyB: SceneRef,
 }
 
 export type FixedJointConfig = {
     type: "fixed",
+    bodyA: SceneRef,
+    bodyB: SceneRef,
 }
 
 export type SphericalJointConfig = {
     type: "spherical",
+    bodyA: SceneRef,
+    bodyB: SceneRef,
 }
 
 export const COLLIDER_SHAPE = ["BOX", "BALL", "CAPSULE", "CYLINDER"] as const;
