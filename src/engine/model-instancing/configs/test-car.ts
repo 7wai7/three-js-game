@@ -29,7 +29,7 @@ const wheelCollider: Omit<ColliderConfig, "source"> = {
 
 const prismaticJoint: Omit<PrismaticJointConfig, "bodyB"> = {
     type: "prismatic",
-    bodyA: "chassis",
+    bodyA: "PH_chassis",
     axis: { y: 1 },
     limits: {
         min: 0,
@@ -61,10 +61,10 @@ function createWheel(
 }
 
 export const testCarConfig: ModelConfig = {
-    modelPath: "src/assets/car.glb",
+    modelPath: "src/assets/test-car.glb",
 
     entities: {
-        chassis: {
+        PH_chassis: {
             components: [
                 ...baseComponents,
                 {
@@ -88,27 +88,27 @@ export const testCarConfig: ModelConfig = {
             },
         },
 
-        wheel_FR: createWheel("COL_FR", {
+        PH_wheel_FR: createWheel("COL_FR", {
             maxSteerAngleDeg: 30,
         }),
 
-        wheel_FL: createWheel("COL_FL", {
+        PH_wheel_FL: createWheel("COL_FL", {
             maxSteerAngleDeg: 30,
         }),
 
-        wheel_RR: createWheel("COL_RR", {
+        PH_wheel_RR: createWheel("COL_RR", {
             isRear: true,
         }),
 
-        wheel_RL: createWheel("COL_RL", {
+        PH_wheel_RL: createWheel("COL_RL", {
             isRear: true,
         }),
     },
 
     joints: [
-        { ...prismaticJoint, bodyB: "wheel_FR" },
-        { ...prismaticJoint, bodyB: "wheel_FL" },
-        { ...prismaticJoint, bodyB: "wheel_RR" },
-        { ...prismaticJoint, bodyB: "wheel_RL" },
+        { ...prismaticJoint, bodyB: "PH_wheel_FR" },
+        { ...prismaticJoint, bodyB: "PH_wheel_FL" },
+        { ...prismaticJoint, bodyB: "PH_wheel_RR" },
+        { ...prismaticJoint, bodyB: "PH_wheel_RL" },
     ],
 };
