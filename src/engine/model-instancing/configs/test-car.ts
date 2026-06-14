@@ -61,7 +61,7 @@ function createWheel(
 }
 
 export const testCarConfig: ModelConfig = {
-    modelPath: "src/assets/car.glb",
+    modelPath: "src/assets/test-car.glb",
 
     entities: {
         chassis: {
