@@ -49,7 +49,7 @@ instanceModelByConfig(
     testCarConfig,
     new Map(),
 )
-    .then(entities => {
+    .then(({ entities }) => {
         const car = engine.world.getComponentsFromEntities(entities, CarComponent)[0];
         engine.world.addComponent(car.entity, new PlayerInputComponent());
         cameraControllerSystem.followEntity = car.entity;

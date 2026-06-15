@@ -13,30 +13,30 @@ export async function instanceModelByConfig(
     assets: GLTFAssetManager,
     scene: THREE.Scene,
     config: ModelConfig,
-    objectsMap?: InstanceNodeMap,
+    nodesByName?: InstanceNodeMap,
 ) {
-    if(!objectsMap) objectsMap = new Map();
+    if (!nodesByName) nodesByName = new Map();
 
     const gltf = await assets.loadModel(config.modelPath);
     const model = gltf.scene;
-    
-    fillObjectsMap(config, objectsMap, model);
+
+    fillObjectsMap(config, nodesByName, model);
 
     const runtimeContext: RuntimeContext = {
         world,
         physicsWorld,
         entitiesByName: new Map<SceneRef, number>(),
-        nodesByName: objectsMap,
+        nodesByName,
     };
 
-    createCollidersByConfig(physicsWorld, config, objectsMap);
+    createCollidersByConfig(physicsWorld, config, nodesByName);
 
     createJointsFromConfig(config, runtimeContext)
 
     const pendingInitializers: CreatedComponent<any>[] = [];
 
     for (const [nodeName, entityConfig] of Object.entries(config.entities)) {
-        const node = objectsMap.get(nodeName);
+        const node = nodesByName.get(nodeName);
         if (!node) continue;
 
         const entity = world.createEntity();
@@ -73,7 +73,11 @@ export async function instanceModelByConfig(
 
     scene.add(model);
 
-    return runtimeContext.entitiesByName.values();
+    return {
+        entities: runtimeContext.entitiesByName.values(),
+        model: model,
+        nodesByName
+    };
 }
 
 function fillObjectsMap(
@@ -83,12 +87,20 @@ function fillObjectsMap(
 ) {
     model.traverse((obj) => {
         for (const [key, entity] of Object.entries(config.entities)) {
-            if (key === obj.name) {
+            if (key === obj.name && !objectsMap.has(obj.name)) {
                 objectsMap.set(obj.name, {
                     source: obj
                 })
             }
-            if (entity.collider && entity.collider.source === obj.name) {
+            if (entity.collider && entity.collider.source === obj.name && !objectsMap.has(obj.name)) {
+                objectsMap.set(obj.name, {
+                    source: obj
+                })
+            }
+        }
+
+        for (const jointConfig of config.joints) {
+            if (jointConfig.type === "revolute" && obj.name === jointConfig.anchor && !objectsMap.has(obj.name)) {
                 objectsMap.set(obj.name, {
                     source: obj
                 })
@@ -335,7 +347,76 @@ function createJointsFromConfig(
 
                 if (joint.motorPosition) {
                     j.configureMotorPosition(
-                        0,
+                        joint.motorPosition.target,
+                        joint.motorPosition.stiffness,
+                        joint.motorPosition.damping,
+                    );
+                }
+
+                break;
+            }
+
+            case "revolute": {
+                const pivot =
+                    ctx.nodesByName.get(joint.anchor);
+                
+                if(!pivot) {
+                    console.warn("Failed to create 'revolute' joint: anchor object not found");
+                    continue;
+                }
+
+                const pivotWorld = new THREE.Vector3();
+
+                pivot.source.getWorldPosition(
+                    pivotWorld
+                );
+
+                const bodyAPos =
+                    bodyA.translation();
+
+                const anchor1 = {
+                    x: pivotWorld.x - bodyAPos.x,
+                    y: pivotWorld.y - bodyAPos.y,
+                    z: pivotWorld.z - bodyAPos.z,
+                };
+
+                const bodyBPos =
+                    bodyB.translation();
+
+                const anchor2 = {
+                    x: pivotWorld.x - bodyBPos.x,
+                    y: pivotWorld.y - bodyBPos.y,
+                    z: pivotWorld.z - bodyBPos.z,
+                };
+
+                const axis = {
+                    x: joint.axis.x ?? 0,
+                    y: joint.axis.y ?? 0,
+                    z: joint.axis.z ?? 0,
+                };
+
+                const jointData =
+                    RAPIER.JointData.revolute(
+                        anchor1,
+                        anchor2,
+                        axis,
+                    );
+
+                const j =
+                    ctx.physicsWorld.createImpulseJoint(
+                        jointData,
+                        bodyA,
+                        bodyB,
+                        true,
+                    ) as RAPIER.RevoluteImpulseJoint;
+
+                if (joint.limits) {
+                    j.setLimits(joint.limits.min, joint.limits.max);
+                }
+
+                if (joint.motorPosition) {
+                    j.configureMotorPosition(
+                        joint.motorPosition.target,
                         joint.motorPosition.stiffness,
                         joint.motorPosition.damping,
                     );

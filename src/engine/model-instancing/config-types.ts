@@ -71,16 +71,32 @@ export type PrismaticJointConfig = {
         max: number,
     },
     motorPosition?: {
+        target: number,
         stiffness: number,
         damping: number,
     }
 }
 
 export type RevoluteJointConfig = {
-    type: "revolute-suspension",
-    bodyA: SceneRef,
-    bodyB: SceneRef,
-}
+    type: "revolute";
+    bodyA: SceneRef;
+    bodyB: SceneRef;
+    anchor: SceneRef;
+    axis: JointAxis;
+    limits?: {
+        min: number;
+        max: number;
+    };
+    motorVelocity?: {
+        target: number;
+        force: number;
+    };
+    motorPosition?: {
+        target: number;
+        stiffness: number;
+        damping: number;
+    };
+};
 
 export type FixedJointConfig = {
     type: "fixed",

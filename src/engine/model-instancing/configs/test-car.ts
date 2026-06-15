@@ -6,7 +6,7 @@ import {
     GROUP_WORLD,
     interactionGroups
 } from "../../game/physics-groups";
-import type { ColliderConfig, EntityConfig, ModelConfig, PrismaticJointConfig } from "../config-types";
+import type { ColliderConfig, EntityConfig, ModelConfig, PrismaticJointConfig, RevoluteJointConfig } from "../config-types";
 
 const baseComponents = [
     { type: "Object3DComponent" },
@@ -32,12 +32,28 @@ const prismaticJoint: Omit<PrismaticJointConfig, "bodyB"> = {
     bodyA: "PH_chassis",
     axis: { y: 1 },
     limits: {
-        min: 0,
+        min: -0.10,
         max: 0.15,
     },
     motorPosition: {
+        target: -0.05,
         stiffness: 500,
         damping: 70,
+    }
+};
+
+const revoluteJoint: Omit<RevoluteJointConfig, "bodyB" | "anchor"> = {
+    type: "revolute",
+    bodyA: "PH_chassis",
+    axis: { x: 1 },
+    limits: {
+        min: -0.10,
+        max: 0.35,
+    },
+    motorPosition: {
+        target: -0.05,
+        stiffness: 2000,
+        damping: 170,
     }
 };
 
@@ -108,7 +124,7 @@ export const testCarConfig: ModelConfig = {
     joints: [
         { ...prismaticJoint, bodyB: "PH_wheel_FR" },
         { ...prismaticJoint, bodyB: "PH_wheel_FL" },
-        { ...prismaticJoint, bodyB: "PH_wheel_RR" },
-        { ...prismaticJoint, bodyB: "PH_wheel_RL" },
+        { ...revoluteJoint, bodyB: "PH_wheel_RR", anchor: "JOINT_RR" },
+        { ...revoluteJoint, bodyB: "PH_wheel_RL", anchor: "JOINT_RL" },
     ],
 };
