@@ -4,7 +4,7 @@ import Engine from "./engine/engine.js";
 import EngineContext from "./engine/contexts/engine.context.js";
 import { createEcsCamera, createMainCamera } from "./engine/game/global-factory.js";
 import setupResizeHandler from "./listeners/setup-resize-listener.js";
-import { createCube, createFloor, createLight } from "./engine/game/terrain-factory.js";
+import { createFloor, createLight } from "./engine/game/terrain-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
 import { instanceModelByConfig } from "./engine/model-instancing/instancing.js";
 import { testCarConfig } from "./engine/model-instancing/configs/test-car.js";
@@ -42,10 +42,7 @@ createLight(scene);
 
 
 instanceModelByConfig(
-    engine.world,
-    engine.physicsWorld,
-    engine.assets.gltf,
-    engine.scene,
+    engine,
     testCarConfig,
     new Map(),
 )
@@ -54,18 +51,6 @@ instanceModelByConfig(
         engine.world.addComponent(car.entity, new PlayerInputComponent());
         cameraControllerSystem.followEntity = car.entity;
     })
-
-
-// createCar(engine, "src/assets/car.glb", {
-//     transform: {
-//         position: new THREE.Vector3(0, 17, 0)
-//     }
-// })
-//     .then(({ entity, object3D }) => {
-//         cameraControllerSystem.followEntity = entity;
-//         object3D.visible = false;
-//     })
-
 
 
 engine.start();

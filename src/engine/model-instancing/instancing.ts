@@ -3,21 +3,19 @@ import RAPIER from "@dimforge/rapier3d";
 import { type InstanceNodeMap, type ModelConfig, type SceneRef } from "./config-types";
 import { getObjectSize } from "../../utils/get-object-size";
 import { getAxisDimensions, getColliderRotationByAxis } from "./utils";
-import type World from "../ecs/world";
 import { COMPONENT_FACTORY, type CreatedComponent, type RuntimeContext } from "./component-factory";
-import type GLTFAssetManager from "../assets/gltf-asset-manager";
+import type Engine from "../engine";
 
 export async function instanceModelByConfig(
-    world: World,
-    physicsWorld: RAPIER.World,
-    assets: GLTFAssetManager,
-    scene: THREE.Scene,
+    engine: Engine,
     config: ModelConfig,
     nodesByName?: InstanceNodeMap,
 ) {
+    const { world, physicsWorld, scene, assets } = engine;
+
     if (!nodesByName) nodesByName = new Map();
 
-    const gltf = await assets.loadModel(config.modelPath);
+    const gltf = await assets.gltf.loadModel(config.modelPath);
     const model = gltf.scene;
 
     fillObjectsMap(config, nodesByName, model);
@@ -359,8 +357,8 @@ function createJointsFromConfig(
             case "revolute": {
                 const pivot =
                     ctx.nodesByName.get(joint.anchor);
-                
-                if(!pivot) {
+
+                if (!pivot) {
                     console.warn("Failed to create 'revolute' joint: anchor object not found");
                     continue;
                 }
