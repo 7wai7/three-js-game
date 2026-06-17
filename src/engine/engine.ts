@@ -9,9 +9,9 @@ import CameraControllerSystem from "./systems/camera-controller.system";
 import AnimationsSystem from "./systems/animations.system";
 import type { Assets } from "./assets/types";
 import TextureAssetManager from "./assets/texture-asset-manager";
-import PlayerInputSystem from "./systems/player-input.system";
+import PlayerInputSystem from "./systems/input-controllers/player-input.system";
 import RapierDebugRenderer from "./systems/rapier-debug-renderer.system";
-import VehicleInputSystem from "./systems/vehicle-input.system";
+import VehicleInputSystem from "./systems/input-controllers/vehicle-input.system";
 import CarControllerSystem from "./systems/car-controller.system";
 
 export default class Engine {

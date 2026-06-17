@@ -1,6 +1,6 @@
-import System from "./system";
-import PlayerInputComponent from "../components/player-input";
-import CarComponent from "../components/vehicle/car";
+import System from "../system";
+import PlayerInputComponent from "../../components/player-input";
+import CarComponent from "../../components/vehicle/car";
 
 export default class VehicleInputSystem extends System {
     update(): void {

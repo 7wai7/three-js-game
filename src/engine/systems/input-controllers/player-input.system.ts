@@ -1,6 +1,6 @@
-import PlayerControllerComponent from "../components/player-controller";
-import System from "./system";
-import PlayerInputComponent from "../components/player-input";
+import PlayerControllerComponent from "../../components/player-controller";
+import System from "../system";
+import PlayerInputComponent from "../../components/player-input";
 import * as THREE from "three";
 
 export default class PlayerInputSystem extends System {
@@ -12,8 +12,6 @@ export default class PlayerInputSystem extends System {
             PlayerControllerComponent,
             PlayerInputComponent
         );
-
-        // if (entities.size === 0) return;
 
         const entity = entities.keys().next().value;
         if(!entity) return;
