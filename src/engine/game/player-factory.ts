@@ -1,13 +1,13 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import Object3DComponent from "../components/object";
-import RigidBodyComponent from "../components/rigidbody";
-import PlayerControllerComponent from "../components/player-controller";
-import ColliderComponent from "../components/collider";
+import Object3D from "../components/object";
+import RigidBody from "../components/rigidbody";
+import PlayerController from "../components/player-controller";
+import Collider from "../components/collider";
 import getUniformScale from "../../utils/get-uniform-scale";
-import AnimationComponent from "../components/animation";
+import Animation from "../components/animation";
 import AnimationsSystem from "../systems/animations.system";
-import PlayerInputComponent from "../components/player-input";
+import PlayerInput from "../components/player-input";
 import { getObjectSizeBox3 } from "../../utils/get-object-size";
 import { GROUP_PLAYER, GROUP_WORLD, interactionGroups } from "./physics-groups";
 import type Engine from "../engine";
@@ -48,7 +48,7 @@ export async function createPlayer(
 
   // Load animations
   const mixer = new THREE.AnimationMixer(rootMesh);
-  world.addComponent(entity, new AnimationComponent(mixer));
+  world.addComponent(entity, new Animation(mixer));
   const animSystem = world.getSystem(AnimationsSystem);
   Promise.all([
     animSystem.loadAnimation(entity, "Idle", "src/assets/Player/Animations/Standing-Idle.glb"),
@@ -84,13 +84,13 @@ export async function createPlayer(
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
   // Add components to the world
-  world.addComponent(entity, new Object3DComponent(rootMesh));
-  world.addComponent(entity, new RigidBodyComponent(rb));
-  world.addComponent(entity, new ColliderComponent(collider));
-  world.addComponent(entity, new PlayerControllerComponent(controller, {
+  world.addComponent(entity, new Object3D(rootMesh));
+  world.addComponent(entity, new RigidBody(rb));
+  world.addComponent(entity, new Collider(collider));
+  world.addComponent(entity, new PlayerController(controller, {
     colliderHalfHeight: totalHeight / 2,
   }));
-  world.addComponent(entity, new PlayerInputComponent());
+  world.addComponent(entity, new PlayerInput());
 
   return entity;
 }

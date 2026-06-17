@@ -170,14 +170,14 @@ Example:
 
 ```ts
 {
-    type: "RigidBodyComponent"
+    type: "RigidBody"
 }
 ```
 
 creates:
 
 ```ts
-new RigidBodyComponent(
+new RigidBody(
     node.rigidBody
 )
 ```
@@ -186,7 +186,7 @@ while:
 
 ```ts
 {
-    type: "CarComponent",
+    type: "Car",
     props: {
         engineForce: 70
     }
@@ -196,7 +196,7 @@ while:
 creates:
 
 ```ts
-new CarComponent({
+new Car({
     engineForce: 70
 })
 ```
@@ -283,7 +283,7 @@ after all entities and components already exist.
 Example:
 
 ```ts
-CarComponent
+Car
 ```
 
 can automatically find wheel entities and populate:
@@ -379,7 +379,7 @@ Example:
 
 ```ts
 {
-    type: "WheelComponent",
+    type: "Wheel",
     props: {
         maxSteerAngle: 30
     }
@@ -503,7 +503,7 @@ Generated result:
 chassis
  ├─ RigidBody
  ├─ Collider
- ├─ CarComponent
+ ├─ Car
  │
  ├─ wheel_FR
  ├─ wheel_FL

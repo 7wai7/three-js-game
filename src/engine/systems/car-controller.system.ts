@@ -1,15 +1,15 @@
 import * as THREE from "three";
-import RigidBodyComponent from "../components/rigidbody";
-import CarComponent from "../components/vehicle/car";
+import RigidBody from "../components/rigidbody";
+import Car from "../components/vehicle/car";
 import System from "./system";
-import WheelComponent from "../components/vehicle/wheel";
-import Object3DComponent from "../components/object";
-import ColliderComponent from "../components/collider";
+import Wheel from "../components/vehicle/wheel";
+import Object3D from "../components/object";
+import Collider from "../components/collider";
 import type RAPIER from "@dimforge/rapier3d";
 import moveTowards from "../../utils/move-towards";
 
-type WheelComponents = {
-    wheel: WheelComponent;
+type Wheels = {
+    wheel: Wheel;
     object: THREE.Object3D;
     steerMesh: THREE.Object3D;
     rigidbody: RAPIER.RigidBody;
@@ -28,21 +28,21 @@ export default class CarControllerSystem extends System {
 
     update(): void {
         const entities = this.world.entitiesWith(
-            CarComponent,
-            RigidBodyComponent,
+            Car,
+            RigidBody,
         );
 
         for (const entity of entities) {
-            const chassis = this.world.getComponent(entity, CarComponent)!;
-            const chassisObject = this.world.getComponent(entity, Object3DComponent)!.object;
-            const chassisCollider = this.world.getComponent(entity, ColliderComponent)!.collider;
-            const rb = this.world.getComponent(entity, RigidBodyComponent)!.rigidBody;
-            const wheels: WheelComponents[] = chassis.wheels.map(entity => ({
-                wheel: this.world.getComponent(entity, WheelComponent)!,
-                object: this.world.getComponent(entity, Object3DComponent)!.object as THREE.Object3D,
-                steerMesh: this.world.getComponent(entity, WheelComponent)!.steerMesh,
-                rigidbody: this.world.getComponent(entity, RigidBodyComponent)!.rigidBody,
-                collider: this.world.getComponent(entity, ColliderComponent)!.collider
+            const chassis = this.world.getComponent(entity, Car)!;
+            const chassisObject = this.world.getComponent(entity, Object3D)!.object;
+            const chassisCollider = this.world.getComponent(entity, Collider)!.collider;
+            const rb = this.world.getComponent(entity, RigidBody)!.rigidBody;
+            const wheels: Wheels[] = chassis.wheels.map(entity => ({
+                wheel: this.world.getComponent(entity, Wheel)!,
+                object: this.world.getComponent(entity, Object3D)!.object as THREE.Object3D,
+                steerMesh: this.world.getComponent(entity, Wheel)!.steerMesh,
+                rigidbody: this.world.getComponent(entity, RigidBody)!.rigidBody,
+                collider: this.world.getComponent(entity, Collider)!.collider
             }));
 
             let hasGroundedWheel = false;
@@ -114,7 +114,7 @@ export default class CarControllerSystem extends System {
 
     private checkIsGroundedWheel(
         physicsWorld: RAPIER.World,
-        wheel: WheelComponent,
+        wheel: Wheel,
         collider: RAPIER.Collider,
         excludeColliders?: RAPIER.Collider[]
     ) {
@@ -135,8 +135,8 @@ export default class CarControllerSystem extends System {
     }
 
     private applyInputSteering(
-        chassis: CarComponent,
-        wheel: WheelComponent,
+        chassis: Car,
+        wheel: Wheel,
         steerMesh: THREE.Object3D,
     ) {
         if (!wheel.maxSteerAngle) return;
@@ -165,9 +165,9 @@ export default class CarControllerSystem extends System {
     }
 
     private applyThrottle(
-        chassis: CarComponent,
+        chassis: Car,
         rb: RAPIER.RigidBody,
-        wheel: WheelComponents,
+        wheel: Wheels,
     ) {
         if (!wheel.wheel.isGrounded || !wheel.wheel.isRear) return;
 
@@ -190,9 +190,9 @@ export default class CarControllerSystem extends System {
     }
 
     private applyWheelLateralGrip(
-        chassis: CarComponent,
+        chassis: Car,
         rb: RAPIER.RigidBody,
-        wheel: WheelComponents,
+        wheel: Wheels,
     ) {
         if (!wheel.wheel.isGrounded) return;
 
@@ -237,9 +237,9 @@ export default class CarControllerSystem extends System {
     }
 
     private applyWheelBrake(
-        chassis: CarComponent,
+        chassis: Car,
         rb: RAPIER.RigidBody,
-        wheel: WheelComponents,
+        wheel: Wheels,
     ) {
         if (!wheel.wheel.isGrounded) return;
 
@@ -285,9 +285,9 @@ export default class CarControllerSystem extends System {
     }
 
     private applyGroundPulling(
-        car: CarComponent,
+        car: Car,
         rb: RAPIER.RigidBody,
-        wheel: WheelComponents
+        wheel: Wheels
     ) {
         if (!wheel.wheel.isGrounded) return;
 

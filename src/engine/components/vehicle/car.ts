@@ -1,14 +1,14 @@
 import { Vector3 } from "three";
 import Component from "../../ecs/component";
 
-export type CarComponentProps = {
+export type CarProps = {
     engineForce: number,
     brakeForce: number,
     sideGrip: number,
     pullingForce: number,
 }
 
-export default class CarComponent extends Component {
+export default class Car extends Component {
     inputMoveDir = new Vector3();
     inputBrake = false;
 
@@ -19,7 +19,7 @@ export default class CarComponent extends Component {
 
     wheels: number[] = [];
 
-    constructor(initialData: Partial<CarComponentProps>) {
+    constructor(initialData: Partial<CarProps>) {
         super();
         Object.assign(this, initialData);
     }

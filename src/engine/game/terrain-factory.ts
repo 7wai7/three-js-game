@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import Object3DComponent from "../components/object";
-import ColliderComponent from "../components/collider";
-import RigidBodyComponent from "../components/rigidbody";
+import Object3D from "../components/object";
+import Collider from "../components/collider";
+import RigidBody from "../components/rigidbody";
 import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroups } from "./physics-groups";
 import type Engine from "../engine";
 import { resolveSpawnTransform, type SpawnTransform } from "../../utils/spawn-transform";
@@ -43,7 +43,7 @@ export async function createFloor(
 
   world.addComponent(
     entity,
-    new Object3DComponent(mesh),
+    new Object3D(mesh),
   );
 
   const collider = physicsWorld.createCollider(
@@ -66,7 +66,7 @@ export async function createFloor(
 
   world.addComponent(
     entity,
-    new ColliderComponent(
+    new Collider(
       collider,
     ),
   );
@@ -118,9 +118,9 @@ export function createCube(
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
-  world.addComponent(entity, new Object3DComponent(mesh));
-  world.addComponent(entity, new RigidBodyComponent(rb));
-  world.addComponent(entity, new ColliderComponent(collider));
+  world.addComponent(entity, new Object3D(mesh));
+  world.addComponent(entity, new RigidBody(rb));
+  world.addComponent(entity, new Collider(collider));
 
   return entity;
 }

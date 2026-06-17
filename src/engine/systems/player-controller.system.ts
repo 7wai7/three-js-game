@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import * as RAPIER from "@dimforge/rapier3d";
-import PlayerControllerComponent from "../components/player-controller";
+import PlayerController from "../components/player-controller";
 import System from "./system";
-import RigidBodyComponent from "../components/rigidbody";
-import ColliderComponent from "../components/collider";
-import AnimationComponent from "../components/animation";
+import RigidBody from "../components/rigidbody";
+import Collider from "../components/collider";
+import Animation from "../components/animation";
 
 export default class PlayerControllerSystem extends System {
     forwardAxis = new THREE.Vector3(0, 0, 1);
@@ -12,17 +12,17 @@ export default class PlayerControllerSystem extends System {
 
     update(): void {
         const entities = this.world.entitiesWith(
-            PlayerControllerComponent,
-            RigidBodyComponent,
-            ColliderComponent
+            PlayerController,
+            RigidBody,
+            Collider
         );
 
         for (const entity of entities) {
-            const controller = this.world.getComponent(entity, PlayerControllerComponent)!;
+            const controller = this.world.getComponent(entity, PlayerController)!;
             const characterController = controller.characterController;
-            const rigidbody = this.world.getComponent(entity, RigidBodyComponent)!.rigidBody;
-            const collider = this.world.getComponent(entity, ColliderComponent)!.collider;
-            const anim = this.world.getComponent(entity, AnimationComponent)!;
+            const rigidbody = this.world.getComponent(entity, RigidBody)!.rigidBody;
+            const collider = this.world.getComponent(entity, Collider)!.collider;
+            const anim = this.world.getComponent(entity, Animation)!;
             let isMove = false;
 
             if (controller.inputMoveDir.lengthSq() > 0) {
@@ -131,7 +131,7 @@ export default class PlayerControllerSystem extends System {
         }
     }
 
-    private turnCharacter(controller: PlayerControllerComponent, rigidbody: RAPIER.RigidBody) {
+    private turnCharacter(controller: PlayerController, rigidbody: RAPIER.RigidBody) {
         const targetAngle = Math.atan2(
             controller.inputMoveDir.x,
             controller.inputMoveDir.z,

@@ -1,8 +1,8 @@
-import type { Camera } from "three";
-import Object3DComponent from "./object";
+import type { Camera as ThreeCamera } from "three";
+import Object3D from "./object";
 
-export default class CameraComponent extends Object3DComponent<Camera> {
-    constructor(camera: Camera) {
+export default class Camera extends Object3D<ThreeCamera> {
+    constructor(camera: ThreeCamera) {
         super(camera);
     }
 }

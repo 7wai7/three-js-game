@@ -1,24 +1,24 @@
-import Object3DComponent from "../components/object";
-import RigidBodyComponent from "../components/rigidbody";
+import Object3D from "../components/object";
+import RigidBody from "../components/rigidbody";
 import System from "./system";
 
 export default class PhysicsSyncSystem extends System {
 
     preRender(): void {
         const entities = this.world.entitiesWith(
-            Object3DComponent,
-            RigidBodyComponent,
+            Object3D,
+            RigidBody,
         );
 
         for (const entity of entities) {
             const object = this.world.getComponent(
                 entity,
-                Object3DComponent,
+                Object3D,
             )!.object;
 
             const rb = this.world.getComponent(
                 entity,
-                RigidBodyComponent,
+                RigidBody,
             )!.rigidBody;
 
             const pos = rb.translation();

@@ -1,14 +1,11 @@
-import type {
-  RigidBody,
-} from "@dimforge/rapier3d";
-
+import type RAPIER from "@dimforge/rapier3d";
 import Component from "../ecs/component";
 
-export default class RigidBodyComponent extends Component {
-  rigidBody: RigidBody;
+export default class RigidBody extends Component {
+  rigidBody: RAPIER.RigidBody;
 
   constructor(
-    rigidBody: RigidBody,
+    rigidBody: RAPIER.RigidBody,
   ) {
     super();
     this.rigidBody = rigidBody;
