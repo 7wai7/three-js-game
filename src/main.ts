@@ -8,8 +8,9 @@ import { createFloor, createLight } from "./engine/game/terrain-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
 import { instanceModelByConfig } from "./engine/model-instancing/instancing.js";
 import { testCarConfig } from "./engine/model-instancing/configs/test-car.js";
-import Car from "./engine/components/vehicle/car.js";
-import PlayerInput from "./engine/components/player-input.js";
+import CarComponent from "./engine/components/vehicle/car.js";
+import PlayerInputComponent from "./engine/components/player-input.js";
+import { axial_XR9_config } from "./engine/model-instancing/configs/Axial-XR9.js";
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -43,12 +44,13 @@ createLight(scene);
 
 instanceModelByConfig(
     engine,
-    testCarConfig,
+    axial_XR9_config,
     new Map(),
 )
-    .then(({ entities }) => {
-        const car = engine.world.getComponentsFromEntities(entities, Car)[0];
-        engine.world.addComponent(car.entity, new PlayerInput());
+    .then(({ entities, model }) => {
+        console.log(model)
+        const car = engine.world.getComponentsFromEntities(entities, CarComponent)[0];
+        engine.world.addComponent(car.entity, new PlayerInputComponent());
         cameraControllerSystem.followEntity = car.entity;
     })
 
