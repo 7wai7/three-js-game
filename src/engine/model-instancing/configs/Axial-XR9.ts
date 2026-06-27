@@ -33,7 +33,7 @@ function createWheelRevoluteJoint(
     anchor: string,
     isFront = false
 ) {
-    const min = -10 * DEG2RAD;
+    const min = -20 * DEG2RAD;
     const max = 13 * DEG2RAD;
 
     const revoluteJoint: Omit<RevoluteJointConfig, "bodyB" | "anchor"> = {
@@ -53,7 +53,7 @@ function createWheelRevoluteJoint(
         motorPosition: {
             target: !isFront ? min : min * -1,
             stiffness: 500,
-            damping: 50,
+            damping: 70,
         }
     };
 
@@ -94,8 +94,8 @@ export const axial_XR9_config: ModelConfig = {
                     type: "CarComponent",
                     props: {
                         engineForce: 90,
-                        brakeForce: 12,
-                        sideGrip: 12,
+                        brakeForce: 22,
+                        sideGrip: 24,
                         pullingForce: 20,
                     },
                 },
@@ -103,7 +103,7 @@ export const axial_XR9_config: ModelConfig = {
             collider: {
                 source: "COL_chassis",
                 shape: "BOX",
-                mass: 400,
+                mass: 300,
                 collisionGroups: interactionGroups(
                     GROUP_VEHICLE,
                     GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER

@@ -196,7 +196,7 @@ export default class CarControllerSystem extends System {
     ) {
         if (!wheel.wheel.isGrounded) return;
 
-        const wheelPos = wheel.rigidbody.translation();
+        const wheelPos = wheel.rigidbody.translation(); // TODO: use object3d wheel position if will use couple wheels in single frame
         const pointVelocity = rb.velocityAtPoint(wheelPos);
 
         const side = this.chassisRight.clone();
