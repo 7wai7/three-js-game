@@ -1,13 +1,11 @@
-import type {
-  Collider,
-} from "@dimforge/rapier3d";
+import type RAPIER from "@dimforge/rapier3d";
 import Component from "../ecs/component";
 
-export default class MultipleCollidersComponent extends Component {
-  colliders: Collider[];
+export default class MultipleColliders extends Component {
+  colliders: RAPIER.Collider[];
 
   constructor(
-    colliders: Collider[],
+    colliders: RAPIER.Collider[],
   ) {
     super();
     this.colliders = colliders;

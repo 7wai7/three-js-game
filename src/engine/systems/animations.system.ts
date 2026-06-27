@@ -1,15 +1,15 @@
-import AnimationComponent from "../components/animation";
+import Animation from "../components/animation";
 import System from "./system";
 import * as THREE from "three";
 
 export default class AnimationsSystem extends System {
     postUpdate(): void {
         const entities = this.world.entitiesWith(
-            AnimationComponent
+            Animation
         );
 
         for (const entity of entities) {
-            const anim = this.world.getComponent(entity, AnimationComponent)!;
+            const anim = this.world.getComponent(entity, Animation)!;
             const mixer = anim.mixer;
             mixer.update(this.engine.deltaTime);
 
@@ -18,7 +18,7 @@ export default class AnimationsSystem extends System {
     }
 
     async loadAnimation(entity: number, name: string, path: string) {
-        const anim = this.world.getComponent(entity, AnimationComponent);
+        const anim = this.world.getComponent(entity, Animation);
         if (!anim) {
             console.warn(`Entity ${entity} has no animation component`);
             return;
@@ -39,7 +39,7 @@ export default class AnimationsSystem extends System {
         }
     }
 
-    private playAnimation(anim: AnimationComponent) {
+    private playAnimation(anim: Animation) {
         if(!anim.requestedAnimationName || anim.currentAnimation === anim.requestedAnimationName) return;
 
         const next = anim.actions[anim.requestedAnimationName];

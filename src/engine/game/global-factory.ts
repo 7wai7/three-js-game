@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import EngineContext from "../contexts/engine.context";
-import Object3DComponent from "../components/object";
-import CameraComponent from "../components/camera";
+import Object3D from "../components/object";
+import Camera from "../components/camera";
 import type World from "../ecs/world";
 
 export function createMainCamera(scene: THREE.Scene) {
@@ -24,7 +24,7 @@ export function createEcsCamera(world: World, camera: THREE.Camera) {
 
     world.addComponent(
         entity,
-        new CameraComponent(camera),
+        new Camera(camera),
     );
 
     return { entity, camera };
@@ -56,7 +56,7 @@ export function createEmpty({
 
     world.addComponent(
         entity,
-        new Object3DComponent(object),
+        new Object3D(object),
     );
 
     return entity;

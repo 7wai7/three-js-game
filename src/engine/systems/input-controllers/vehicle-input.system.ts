@@ -1,18 +1,18 @@
 import System from "../system";
-import PlayerInputComponent from "../../components/player-input";
-import CarComponent from "../../components/vehicle/car";
+import PlayerInput from "../../components/player-input";
+import Car from "../../components/vehicle/car";
 
 export default class VehicleInputSystem extends System {
     update(): void {
         const entities = this.world.entitiesWith(
-            CarComponent,
-            PlayerInputComponent
+            Car,
+            PlayerInput
         );
 
         const entity = entities.keys().next().value;
         if(!entity) return;
 
-        const controller = this.world.getComponent(entity, CarComponent)!;
+        const controller = this.world.getComponent(entity, Car)!;
 
         const forward = this.input.vertical();
         const right = this.input.horizontal();

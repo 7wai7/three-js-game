@@ -9,7 +9,7 @@ import CameraControllerSystem from "./systems/camera-controller.system";
 import AnimationsSystem from "./systems/animations.system";
 import type { Assets } from "./assets/types";
 import TextureAssetManager from "./assets/texture-asset-manager";
-import PlayerInputSystem from "./systems/input-controllers/player-input.system";
+import CharacterInputSystem from "./systems/input-controllers/player-input.system";
 import RapierDebugRenderer from "./systems/rapier-debug-renderer.system";
 import VehicleInputSystem from "./systems/input-controllers/vehicle-input.system";
 import CarControllerSystem from "./systems/car-controller.system";
@@ -44,7 +44,7 @@ export default class Engine {
     this.camera = camera;
 
     this.world.addSystem(new PhysicsSyncSystem());
-    this.world.addSystem(new PlayerInputSystem());
+    this.world.addSystem(new CharacterInputSystem());
     this.world.addSystem(new VehicleInputSystem());
     this.world.addSystem(new CarControllerSystem());
     this.world.addSystem(new PlayerControllerSystem());

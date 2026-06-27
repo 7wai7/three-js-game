@@ -1,49 +1,49 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import type { InstanceNode, InstanceNodeMap, SceneRef } from "./config-types";
-import ColliderComponent from "../components/collider";
-import Object3DComponent from "../components/object";
-import RigidBodyComponent from "../components/rigidbody";
-import CarComponent from "../components/vehicle/car";
-import WheelComponent from "../components/vehicle/wheel";
+import Collider from "../components/collider";
+import Object3D from "../components/object";
+import RigidBody from "../components/rigidbody";
+import Car from "../components/vehicle/car";
+import Wheel from "../components/vehicle/wheel";
 import type Component from "../ecs/component";
 import type World from "../ecs/world";
 import type { EntityId } from "../ecs/types";
 
 export const COMPONENT_FACTORY: ComponentFactory = {
-    Object3DComponent: ({ node }) => ({
-        component: new Object3DComponent(node.source),
+    Object3D: ({ node }) => ({
+        component: new Object3D(node.source),
     }),
 
-    RigidBodyComponent: ({ node }) => {
+    RigidBody: ({ node }) => {
         if (!node.rigidBody) {
             throw new Error("RigidBody not found");
         }
 
         return {
-            component: new RigidBodyComponent(node.rigidBody)
+            component: new RigidBody(node.rigidBody)
         };
     },
 
-    ColliderComponent: ({ node }) => {
+    Collider: ({ node }) => {
         if (!node.collider) {
             throw new Error("Collider not found");
         }
 
         return {
-            component: new ColliderComponent(node.collider)
+            component: new Collider(node.collider)
         };
     },
 
-    CarComponent: ({ props }) => ({
-        component: new CarComponent(props),
+    Car: ({ props }) => ({
+        component: new Car(props),
 
         initialize(component, ctx) {
             for (const entity of ctx.entitiesByName.values()) {
                 const wheel =
                     ctx.world.getComponent(
                         entity,
-                        WheelComponent,
+                        Wheel,
                     );
 
                 if (!wheel) continue;
@@ -53,12 +53,12 @@ export const COMPONENT_FACTORY: ComponentFactory = {
         }
     }),
 
-    WheelComponent: ({ props }) => ({
-        component: new WheelComponent(props),
+    Wheel: ({ props }) => ({
+        component: new Wheel(props),
 
         initialize(component, ctx) {
-            const object3dComponent = ctx.world.getComponent(component.entity, Object3DComponent)!;
-            const object3d = object3dComponent.object;
+            const object3DComponent = ctx.world.getComponent(component.entity, Object3D)!;
+            const object3d = object3DComponent.object;
 
             if (!object3d.parent) {
                 console.warn(`Wheel ${object3d.name} doesn't have parent object`);
@@ -71,7 +71,7 @@ export const COMPONENT_FACTORY: ComponentFactory = {
             steerPivot.attach(object3d);
             object3d.position.set(0, 0, 0);
 
-            object3dComponent.object = steerPivot;
+            object3DComponent.object = steerPivot;
             component.steerMesh = object3d;
         }
     }),
@@ -107,11 +107,11 @@ type ComponentFactoryItem<
 ) => CreatedComponent<T>;
 
 type ComponentTypeMap = {
-    Object3DComponent: Object3DComponent;
-    RigidBodyComponent: RigidBodyComponent;
-    ColliderComponent: ColliderComponent;
-    CarComponent: CarComponent;
-    WheelComponent: WheelComponent;
+    Object3D: Object3D;
+    RigidBody: RigidBody;
+    Collider: Collider;
+    Car: Car;
+    Wheel: Wheel;
 };
 
 type ComponentFactory = {

@@ -9,9 +9,9 @@ import {
 import type { ColliderConfig, EntityConfig, ModelConfig, PrismaticJointConfig, RevoluteJointConfig } from "../config-types";
 
 const baseComponents = [
-    { type: "Object3DComponent" },
-    { type: "RigidBodyComponent" },
-    { type: "ColliderComponent" },
+    { type: "Object3D" },
+    { type: "RigidBody" },
+    { type: "Collider" },
 ] as const;
 
 const wheelCollider: Omit<ColliderConfig, "source"> = {
@@ -65,7 +65,7 @@ function createWheel(
         components: [
             ...baseComponents,
             {
-                type: "WheelComponent",
+                type: "Wheel",
                 props: wheelProps,
             },
         ],
@@ -84,7 +84,7 @@ export const testCarConfig: ModelConfig = {
             components: [
                 ...baseComponents,
                 {
-                    type: "CarComponent",
+                    type: "Car",
                     props: {
                         engineForce: 70,
                         brakeForce: 12,

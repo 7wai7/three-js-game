@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { clamp, DEG2RAD } from "three/src/math/MathUtils.js";
 import System from "./system";
-import Object3DComponent from "../components/object";
+import Object3D from "../components/object";
 
 export default class CameraControllerSystem extends System {
     followEntity?: number;
@@ -94,7 +94,7 @@ export default class CameraControllerSystem extends System {
         if (typeof this.followEntity === "number") {
             const target = this.world.getComponent(
                 this.followEntity!,
-                Object3DComponent,
+                Object3D,
             )?.object as THREE.Object3D;
 
             if (!target) {
