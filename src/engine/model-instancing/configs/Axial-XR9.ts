@@ -10,9 +10,9 @@ import type { ColliderConfig, EntityConfig, ModelConfig, RevoluteJointConfig } f
 import { DEG2RAD } from "three/src/math/MathUtils.js";
 
 const baseComponents = [
-    { type: "Object3DComponent" },
-    { type: "RigidBodyComponent" },
-    { type: "ColliderComponent" },
+    { type: "Object3D" },
+    { type: "RigidBody" },
+    { type: "Collider" },
 ] as const;
 
 const wheelCollider: Omit<ColliderConfig, "source"> = {
@@ -52,8 +52,8 @@ function createWheelRevoluteJoint(
             },
         motorPosition: {
             target: !isFront ? min : min * -1,
-            stiffness: 500,
-            damping: 70,
+            stiffness: 300,
+            damping: 90,
         }
     };
 
@@ -72,8 +72,11 @@ function createWheel(
         components: [
             ...baseComponents,
             {
-                type: "WheelComponent",
-                props: wheelProps,
+                type: "Wheel",
+                props: {
+                    ...wheelProps,
+                    radius: 0.66,
+                },
             },
         ],
         collider: {
@@ -91,19 +94,19 @@ export const axial_XR9_config: ModelConfig = {
             components: [
                 ...baseComponents,
                 {
-                    type: "CarComponent",
+                    type: "Car",
                     props: {
-                        engineForce: 90,
+                        engineForce: 120,
                         brakeForce: 22,
                         sideGrip: 24,
-                        pullingForce: 20,
+                        pullingForce: 5,
                     },
                 },
             ],
             collider: {
                 source: "COL_chassis",
                 shape: "BOX",
-                mass: 300,
+                mass: 400,
                 collisionGroups: interactionGroups(
                     GROUP_VEHICLE,
                     GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER
@@ -111,27 +114,47 @@ export const axial_XR9_config: ModelConfig = {
             },
         },
 
-        wheel_steerFR: createWheel("COL_wheelFR", {
+        wheel_baseFR: createWheel("COL_wheelFR", {
             maxSteerAngleDeg: 30,
+            bones: {
+                base: "wheel_baseFR",
+                steer: "wheel_steerFR",
+                roll: "wheel_rollFR",
+            },
         }),
 
-        wheel_steerFL: createWheel("COL_wheelFL", {
+        wheel_baseFL: createWheel("COL_wheelFL", {
             maxSteerAngleDeg: 30,
+            bones: {
+                base: "wheel_baseFL",
+                steer: "wheel_steerFL",
+                roll: "wheel_rollFL",
+            },
         }),
 
-        wheel_steerRR: createWheel("COL_wheelRR", {
+        wheel_baseRR: createWheel("COL_wheelRR", {
             isRear: true,
+            bones: {
+                base: "wheel_baseRR",
+                steer: "wheel_steerRR",
+                roll: "wheel_rollRR",
+            },
         }),
 
-        wheel_steerRL: createWheel("COL_wheelRL", {
+        wheel_baseRL: createWheel("COL_wheelRL", {
             isRear: true,
+            bones: {
+                base: "wheel_baseRL",
+                steer: "wheel_steerRL",
+                roll: "wheel_rollRL",
+            },
         }),
     },
 
     joints: [
-        createWheelRevoluteJoint("wheel_steerFR", "wheel_armFR", true),
-        createWheelRevoluteJoint("wheel_steerFL", "wheel_armFL", true),
-        createWheelRevoluteJoint("wheel_steerRR", "wheel_armRR"),
-        createWheelRevoluteJoint("wheel_steerRL", "wheel_armRL"),
+        createWheelRevoluteJoint("wheel_baseFR", "wheel_armFR", true),
+        createWheelRevoluteJoint("wheel_baseFL", "wheel_armFL", true),
+        createWheelRevoluteJoint("wheel_baseRR", "wheel_armRR"),
+        createWheelRevoluteJoint("wheel_baseRL", "wheel_armRL"),
     ],
 };

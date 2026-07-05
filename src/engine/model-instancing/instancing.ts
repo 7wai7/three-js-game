@@ -19,6 +19,7 @@ export async function instanceModelByConfig(
     const model = gltf.scene;
 
     fillObjectsMap(config, nodesByName, model);
+    fillArmatureObjects(nodesByName, model); 
 
     const runtimeContext: RuntimeContext = {
         world,
@@ -104,6 +105,25 @@ function fillObjectsMap(
                 })
             }
         }
+    });
+}
+
+function fillArmatureObjects(
+    objectsMap: InstanceNodeMap,
+    model: THREE.Object3D,
+) {
+    model.traverse((obj) => {
+        const isBone =
+            obj.type === "Bone" ||
+            (obj as THREE.Bone).isBone === true;
+
+        if (!isBone) return;
+        if (!obj.name) return;
+        if (objectsMap.has(obj.name)) return;
+
+        objectsMap.set(obj.name, {
+            source: obj,
+        });
     });
 }
 

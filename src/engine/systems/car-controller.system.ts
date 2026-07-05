@@ -6,12 +6,9 @@ import Wheel from "../components/vehicle/wheel";
 import Object3D from "../components/object";
 import Collider from "../components/collider";
 import type RAPIER from "@dimforge/rapier3d";
-import moveTowards from "../../utils/move-towards";
 
 type Wheels = {
     wheel: Wheel;
-    object: THREE.Object3D;
-    steerMesh: THREE.Object3D;
     rigidbody: RAPIER.RigidBody;
     collider: RAPIER.Collider;
 }
@@ -39,8 +36,6 @@ export default class CarControllerSystem extends System {
             const rb = this.world.getComponent(entity, RigidBody)!.rigidBody;
             const wheels: Wheels[] = chassis.wheels.map(entity => ({
                 wheel: this.world.getComponent(entity, Wheel)!,
-                object: this.world.getComponent(entity, Object3D)!.object as THREE.Object3D,
-                steerMesh: this.world.getComponent(entity, Wheel)!.steerMesh,
                 rigidbody: this.world.getComponent(entity, RigidBody)!.rigidBody,
                 collider: this.world.getComponent(entity, Collider)!.collider
             }));
@@ -57,20 +52,20 @@ export default class CarControllerSystem extends System {
                 if (w.wheel.isGrounded) hasGroundedWheel = true;
             }
 
+            chassisObject.getWorldQuaternion(this.chassisQuat);
+            this.chassisRight.copy(this.RIGHT).applyQuaternion(this.chassisQuat);
+            this.chassisUp.copy(this.UP).applyQuaternion(this.chassisQuat);
+            this.chassisForward.copy(this.FORWARD).applyQuaternion(this.chassisQuat);
+
             for (const w of wheels) {
-                this.applyInputSteering(
+                this.applyWheelVisualization(
                     chassis,
-                    w.wheel,
-                    w.steerMesh
+                    rb,
+                    w,
                 )
             }
 
             if (hasGroundedWheel) {
-                chassisObject.getWorldQuaternion(this.chassisQuat);
-                this.chassisRight.copy(this.RIGHT).applyQuaternion(this.chassisQuat);
-                this.chassisUp.copy(this.UP).applyQuaternion(this.chassisQuat);
-                this.chassisForward.copy(this.FORWARD).applyQuaternion(this.chassisQuat);
-
                 const throttle = chassis.inputMoveDir.z;
 
                 for (const w of wheels) {
@@ -81,7 +76,7 @@ export default class CarControllerSystem extends System {
                     )
                 }
 
-                if (!chassis.inputBrake || throttle !== 0) {
+                if (!chassis.inputBrake && throttle !== 0) {
                     for (const w of wheels) {
                         this.applyThrottle(
                             chassis,
@@ -134,34 +129,28 @@ export default class CarControllerSystem extends System {
         );
     }
 
-    private applyInputSteering(
+    private applyWheelVisualization(
         chassis: Car,
-        wheel: Wheel,
-        steerMesh: THREE.Object3D,
+        rb: RAPIER.RigidBody,
+        w: Wheels,
     ) {
-        if (!wheel.maxSteerAngle) return;
+        w.wheel.solveSteer(chassis.inputMoveDir.x);
 
-        const steer = chassis.inputMoveDir.x;
-        const targetAngle =
-            wheel.maxSteerAngle *
-            steer *
-            (wheel.steerInverse ? 1 : -1);
+        const pointVelocity =
+            rb.velocityAtPoint(w.rigidbody.translation());
 
-        const steerSpeed =
-            wheel.maxSteerAngle / 0.2;
+        const groundSpeed =
+            new THREE.Vector3(
+                pointVelocity.x,
+                pointVelocity.y,
+                pointVelocity.z,
+            ).dot(this.chassisForward);
 
-        wheel.currentSteerAngle = moveTowards(
-            wheel.currentSteerAngle,
-            targetAngle,
-            steerSpeed * this.dt,
-        );
-
-        const steerQuat = new THREE.Quaternion().setFromAxisAngle(
-            this.UP,
-            wheel.currentSteerAngle,
-        );
-
-        steerMesh.quaternion.copy(steerQuat);
+        w.wheel.solveRoll({
+            groundSpeed,
+            throttle: chassis.inputMoveDir.z,
+            brake: chassis.inputBrake,
+        });
     }
 
     private applyThrottle(
@@ -289,7 +278,7 @@ export default class CarControllerSystem extends System {
         rb: RAPIER.RigidBody,
         wheel: Wheels
     ) {
-        if (!wheel.wheel.isGrounded) return;
+        if (!wheel.wheel.isGrounded || car.pullingForce <= 0) return;
 
         const wheelPos = wheel.rigidbody.translation();
         const down = this.chassisUp.clone().negate();

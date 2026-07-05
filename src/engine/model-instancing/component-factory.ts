@@ -1,14 +1,13 @@
-import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import type { InstanceNode, InstanceNodeMap, SceneRef } from "./config-types";
 import Collider from "../components/collider";
 import Object3D from "../components/object";
 import RigidBody from "../components/rigidbody";
 import Car from "../components/vehicle/car";
-import Wheel from "../components/vehicle/wheel";
 import type Component from "../ecs/component";
 import type World from "../ecs/world";
 import type { EntityId } from "../ecs/types";
+import Wheel from "../components/vehicle/wheel";
 
 export const COMPONENT_FACTORY: ComponentFactory = {
     Object3D: ({ node }) => ({
@@ -40,15 +39,12 @@ export const COMPONENT_FACTORY: ComponentFactory = {
 
         initialize(component, ctx) {
             for (const entity of ctx.entitiesByName.values()) {
-                const wheel =
-                    ctx.world.getComponent(
+                if (
+                    !!ctx.world.getComponent(
                         entity,
                         Wheel,
-                    );
-
-                if (!wheel) continue;
-
-                component.wheels.push(entity);
+                    )
+                ) component.wheels.push(entity);
             }
         }
     }),
@@ -57,22 +53,18 @@ export const COMPONENT_FACTORY: ComponentFactory = {
         component: new Wheel(props),
 
         initialize(component, ctx) {
-            const object3DComponent = ctx.world.getComponent(component.entity, Object3D)!;
-            const object3d = object3DComponent.object;
+            const bones = component.bones;
 
-            if (!object3d.parent) {
-                console.warn(`Wheel ${object3d.name} doesn't have parent object`);
+            if (!bones) {
+                console.warn("Wheel bones config is missing");
                 return;
             }
 
-            const steerPivot = new THREE.Object3D();
-
-            object3d.parent.attach(steerPivot);
-            steerPivot.attach(object3d);
-            object3d.position.set(0, 0, 0);
-
-            object3DComponent.object = steerPivot;
-            component.steerMesh = object3d;
+            component.setBoneObjects({
+                base: ctx.nodesByName.get(bones.base)?.source,
+                steer: ctx.nodesByName.get(bones.steer)?.source,
+                roll: ctx.nodesByName.get(bones.roll)?.source,
+            });
         }
     }),
 };
