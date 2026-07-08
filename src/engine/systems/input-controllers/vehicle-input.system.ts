@@ -1,12 +1,12 @@
 import System from "../system";
-import PlayerInput from "../../components/player-input";
+import PlayerController from "../../components/player-control";
 import Car from "../../components/vehicle/car";
 
 export default class VehicleInputSystem extends System {
     update(): void {
         const entities = this.world.entitiesWith(
             Car,
-            PlayerInput
+            PlayerController
         );
 
         const entity = entities.keys().next().value;

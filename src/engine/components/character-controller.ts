@@ -2,7 +2,7 @@ import RAPIER from "@dimforge/rapier3d";
 import Component from "../ecs/component";
 import { Vector3 } from "three";
 
-export default class PlayerController extends Component {
+export default class CharacterController extends Component {
     characterController: RAPIER.KinematicCharacterController;
 
     inputMoveDir = new Vector3();
@@ -24,7 +24,7 @@ export default class PlayerController extends Component {
 
     constructor(
         characterController: RAPIER.KinematicCharacterController,
-        values?: Omit<Partial<PlayerController>, "characterController">
+        values?: Omit<Partial<CharacterController>, "characterController">
     ) {
         super();
         this.characterController = characterController;

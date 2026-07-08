@@ -1,24 +1,24 @@
 import * as THREE from "three";
 import * as RAPIER from "@dimforge/rapier3d";
-import PlayerController from "../components/player-controller";
+import CharacterController from "../components/character-controller";
 import System from "./system";
 import RigidBody from "../components/rigidbody";
 import Collider from "../components/collider";
 import Animation from "../components/animation";
 
-export default class PlayerControllerSystem extends System {
+export default class CharacterControllerSystem extends System {
     forwardAxis = new THREE.Vector3(0, 0, 1);
     rightAxis = new THREE.Vector3(1, 0, 0);
 
     update(): void {
         const entities = this.world.entitiesWith(
-            PlayerController,
+            CharacterController,
             RigidBody,
             Collider
         );
 
         for (const entity of entities) {
-            const controller = this.world.getComponent(entity, PlayerController)!;
+            const controller = this.world.getComponent(entity, CharacterController)!;
             const characterController = controller.characterController;
             const rigidbody = this.world.getComponent(entity, RigidBody)!.rigidBody;
             const collider = this.world.getComponent(entity, Collider)!.collider;
@@ -131,7 +131,7 @@ export default class PlayerControllerSystem extends System {
         }
     }
 
-    private turnCharacter(controller: PlayerController, rigidbody: RAPIER.RigidBody) {
+    private turnCharacter(controller: CharacterController, rigidbody: RAPIER.RigidBody) {
         const targetAngle = Math.atan2(
             controller.inputMoveDir.x,
             controller.inputMoveDir.z,

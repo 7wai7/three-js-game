@@ -1,6 +1,6 @@
-import PlayerController from "../../components/player-controller";
+import CharacterController from "../../components/character-controller";
 import System from "../system";
-import PlayerInput from "../../components/player-input";
+import PlayerController from "../../components/player-control";
 import * as THREE from "three";
 
 export default class CharacterInputSystem extends System {
@@ -9,8 +9,8 @@ export default class CharacterInputSystem extends System {
 
     update(): void {
         const entities = this.world.entitiesWith(
-            PlayerController,
-            PlayerInput
+            CharacterController,
+            PlayerController
         );
 
         const entity = entities.keys().next().value;
@@ -18,7 +18,7 @@ export default class CharacterInputSystem extends System {
         
         const camera = this.engine.camera;
 
-        const controller = this.world.getComponent(entity, PlayerController)!;
+        const controller = this.world.getComponent(entity, CharacterController)!;
 
         const forward = this.input.vertical();
         const right = this.input.horizontal();

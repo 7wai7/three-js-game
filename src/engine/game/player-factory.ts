@@ -2,12 +2,12 @@ import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import Object3D from "../components/object";
 import RigidBody from "../components/rigidbody";
-import PlayerController from "../components/player-controller";
+import CharacterController from "../components/character-controller";
 import Collider from "../components/collider";
 import getUniformScale from "../../utils/get-uniform-scale";
 import Animation from "../components/animation";
 import AnimationsSystem from "../systems/animations.system";
-import PlayerInput from "../components/player-input";
+import PlayerController from "../components/player-control";
 import { getObjectSizeBox3 } from "../../utils/get-object-size";
 import { GROUP_PLAYER, GROUP_WORLD, interactionGroups } from "./physics-groups";
 import type Engine from "../engine";
@@ -87,10 +87,10 @@ export async function createPlayer(
   world.addComponent(entity, new Object3D(rootMesh));
   world.addComponent(entity, new RigidBody(rb));
   world.addComponent(entity, new Collider(collider));
-  world.addComponent(entity, new PlayerController(controller, {
+  world.addComponent(entity, new CharacterController(controller, {
     colliderHalfHeight: totalHeight / 2,
   }));
-  world.addComponent(entity, new PlayerInput());
+  world.addComponent(entity, new PlayerController());
 
   return entity;
 }
