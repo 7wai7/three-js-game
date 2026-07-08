@@ -7,7 +7,7 @@ import Collider from "../components/collider";
 import getUniformScale from "../../utils/get-uniform-scale";
 import Animation from "../components/animation";
 import AnimationsSystem from "../systems/animations.system";
-import PlayerController from "../components/player-control";
+import PlayerController from "../components/player-controller";
 import { getObjectSizeBox3 } from "../../utils/get-object-size";
 import { GROUP_PLAYER, GROUP_WORLD, interactionGroups } from "./physics-groups";
 import type Engine from "../engine";

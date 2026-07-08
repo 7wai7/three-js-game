@@ -1,6 +1,6 @@
 import CharacterController from "../../components/character-controller";
 import System from "../system";
-import PlayerController from "../../components/player-control";
+import PlayerController from "../../components/player-controller";
 import * as THREE from "three";
 
 export default class CharacterInputSystem extends System {

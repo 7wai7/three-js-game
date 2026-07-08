@@ -1,5 +1,5 @@
 import System from "../system";
-import PlayerController from "../../components/player-control";
+import PlayerController from "../../components/player-controller";
 import Car from "../../components/vehicle/car";
 
 export default class VehicleInputSystem extends System {

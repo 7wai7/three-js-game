@@ -8,7 +8,7 @@ import { createFloor, createLight } from "./engine/game/terrain-factory.js";
 import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
 import { instanceModelByConfig } from "./engine/model-instancing/instancing.js";
 import CarComponent from "./engine/components/vehicle/car.js";
-import PlayerControllerComponent from "./engine/components/player-control.js";
+import PlayerControllerComponent from "./engine/components/player-controller.js";
 import { axial_XR9_config } from "./engine/model-instancing/configs/Axial-XR9.js";
 
 // Initialize Three.js renderer, scene, and camera
