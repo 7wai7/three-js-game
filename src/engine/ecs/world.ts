@@ -3,7 +3,7 @@ import Component from "./component";
 import type { ComponentClass, EntityId, QueryCache, SystemClass } from "./types";
 
 export default class World {
-    readonly entites: Set<EntityId> = new Set();
+    readonly entities: Set<EntityId> = new Set();
     readonly components: Map<ComponentClass<any>, Map<EntityId, Component>> = new Map();
     readonly queryCache = new Map<
         string,
@@ -11,16 +11,20 @@ export default class World {
     >();
     readonly systems: Map<SystemClass<any>, System> = new Map();
 
-    private nextEntityId = 0;
+    createEntity(id: EntityId) {
+        if (this.entities.has(id)) {
+            throw new Error(
+                `Entity '${id}' already exists`,
+            );
+        }
 
-    createEntity() {
-        const n = this.nextEntityId++;
-        this.entites.add(n);
-        return n;
+        this.entities.add(id);
+
+        return id;
     }
 
     destroyEntity(id: EntityId) {
-        this.entites.delete(id);
+        this.entities.delete(id);
 
         for (const componentMap of this.components.values()) {
             componentMap.delete(id);
@@ -104,7 +108,7 @@ export default class World {
         if (query.dirty) {
             query.entities.clear();
 
-            for (const entity of this.entites) {
+            for (const entity of this.entities) {
                 const matches =
                     query.components.every(
                         c => this.getComponent(entity, c),

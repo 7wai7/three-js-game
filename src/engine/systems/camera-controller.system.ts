@@ -4,7 +4,7 @@ import System from "./system";
 import Object3D from "../components/object";
 
 export default class CameraControllerSystem extends System {
-    followEntity?: number;
+    followEntity?: string;
 
     mouseSensitivity = 0.01;
     lookAtOffset = new THREE.Vector3(0, 0, 0);
@@ -91,7 +91,7 @@ export default class CameraControllerSystem extends System {
     private follow() {
         const camera = this.engine.camera;
 
-        if (typeof this.followEntity === "number") {
+        if (typeof this.followEntity === "string") {
             const target = this.world.getComponent(
                 this.followEntity!,
                 Object3D,

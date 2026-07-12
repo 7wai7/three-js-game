@@ -17,7 +17,7 @@ export default class AnimationsSystem extends System {
         }
     }
 
-    async loadAnimation(entity: number, name: string, path: string) {
+    async loadAnimation(entity: string, name: string, path: string) {
         const anim = this.world.getComponent(entity, Animation);
         if (!anim) {
             console.warn(`Entity ${entity} has no animation component`);

@@ -24,7 +24,7 @@ export async function instanceModelByConfig(
     const runtimeContext: RuntimeContext = {
         world,
         physicsWorld,
-        entitiesByName: new Map<SceneRef, number>(),
+        entitiesByName: new Map<SceneRef, string>(),
         nodesByName,
     };
 
@@ -38,7 +38,7 @@ export async function instanceModelByConfig(
         const node = nodesByName.get(nodeName);
         if (!node) continue;
 
-        const entity = world.createEntity();
+        const entity = world.createGameObject(node.source);
 
         runtimeContext.entitiesByName.set(nodeName, entity);
 

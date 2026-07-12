@@ -2,7 +2,7 @@ import * as THREE from "three";
 import EngineContext from "../contexts/engine.context";
 import Object3D from "../components/object";
 import Camera from "../components/camera";
-import type World from "../ecs/world";
+import type GameWorld from "./game-world";
 
 export function createMainCamera(scene: THREE.Scene) {
     const aspect = window.innerWidth / window.innerHeight;
@@ -19,8 +19,8 @@ export function createMainCamera(scene: THREE.Scene) {
     return camera;
 }
 
-export function createEcsCamera(world: World, camera: THREE.Camera) {
-    const entity = world.createEntity();
+export function createEcsCamera(world: GameWorld, camera: THREE.Camera) {
+    const entity = world.createGameObject(camera);
 
     world.addComponent(
         entity,
@@ -42,8 +42,6 @@ export function createEmpty({
     const world = EngineContext.engine.world;
     const scene = EngineContext.engine.scene;
 
-    const entity = world.createEntity();
-
     const object = new THREE.Object3D();
     const helper = new THREE.AxesHelper(0.5);
     object.add(helper);
@@ -54,6 +52,7 @@ export function createEmpty({
 
     scene.add(object);
 
+    const entity = world.createGameObject(object);
     world.addComponent(
         entity,
         new Object3D(object),

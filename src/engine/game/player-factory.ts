@@ -19,7 +19,6 @@ export async function createPlayer(
 ) {
   const { world, physicsWorld, scene, assets } = engine;
   const { position, rotation } = resolveSpawnTransform(transform);
-  const entity = world.createEntity();
 
   // Load the player model
   const gltf = await assets.gltf.loadModel("src/assets/Player/Mesh.glb");
@@ -45,6 +44,7 @@ export async function createPlayer(
 
   scene.add(rootMesh);
 
+  const entity = world.createGameObject(mesh);
 
   // Load animations
   const mixer = new THREE.AnimationMixer(rootMesh);

@@ -3,7 +3,7 @@ import type { EntityId } from "./types";
 
 export default abstract class Component {
   entity!: EntityId;
-  
+
   protected get engine() {
     return EngineContext.engine;
   }
@@ -30,5 +30,9 @@ export default abstract class Component {
 
   protected get dt() {
     return this.engine.deltaTime;
+  }
+
+  get gameObject() {
+    return this.world.getGameObject(this.entity);
   }
 }

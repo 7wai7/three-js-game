@@ -11,7 +11,7 @@ describe("ecs tests", () => {
     it("returns entities with required components", () => {
         const world = new World();
 
-        const entity = world.createEntity();
+        const entity = world.createEntity("test");
 
         const mockRigidBody = {} as RAPIER.RigidBody;
 

@@ -17,7 +17,7 @@ export default class Car extends Component {
     sideGrip = 17;
     pullingForce = 20;
 
-    wheels: number[] = [];
+    wheels: string[] = [];
 
     constructor(initialData: Partial<CarProps>) {
         super();
