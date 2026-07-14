@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import Object3D from "../components/object";
 import Collider from "../components/collider";
 import RigidBody from "../components/rigidbody";
 import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroups } from "./physics-groups";
@@ -41,10 +40,6 @@ export async function createFloor(
   scene.add(mesh);
 
   const entity = world.createGameObject(mesh);
-  world.addComponent(
-    entity,
-    new Object3D(mesh),
-  );
 
   const collider = physicsWorld.createCollider(
     RAPIER.ColliderDesc.cuboid(
@@ -117,7 +112,6 @@ export function createCube(
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
   const entity = world.createGameObject(mesh);
-  world.addComponent(entity, new Object3D(mesh));
   world.addComponent(entity, new RigidBody(rb));
   world.addComponent(entity, new Collider(collider));
 

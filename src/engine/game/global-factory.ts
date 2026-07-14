@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import EngineContext from "../contexts/engine.context";
-import Object3D from "../components/object";
 import Camera from "../components/camera";
 import type GameWorld from "./game-world";
 
@@ -53,10 +52,6 @@ export function createEmpty({
     scene.add(object);
 
     const entity = world.createGameObject(object);
-    world.addComponent(
-        entity,
-        new Object3D(object),
-    );
 
     return entity;
 }

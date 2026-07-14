@@ -1,7 +1,6 @@
 import RAPIER from "@dimforge/rapier3d";
 import type { InstanceNode, InstanceNodeMap, SceneRef } from "./config-types";
 import Collider from "../components/collider";
-import Object3D from "../components/object";
 import RigidBody from "../components/rigidbody";
 import Car from "../components/vehicle/car";
 import type Component from "../ecs/component";
@@ -10,10 +9,6 @@ import type { EntityId } from "../ecs/types";
 import Wheel from "../components/vehicle/wheel";
 
 export const COMPONENT_FACTORY: ComponentFactory = {
-    Object3D: ({ node }) => ({
-        component: new Object3D(node.source),
-    }),
-
     RigidBody: ({ node }) => {
         if (!node.rigidBody) {
             throw new Error("RigidBody not found");
@@ -36,17 +31,6 @@ export const COMPONENT_FACTORY: ComponentFactory = {
 
     Car: ({ props }) => ({
         component: new Car(props),
-
-        initialize(component, ctx) {
-            for (const entity of ctx.entitiesByName.values()) {
-                if (
-                    !!ctx.world.getComponent(
-                        entity,
-                        Wheel,
-                    )
-                ) component.wheels.push(entity);
-            }
-        }
     }),
 
     Wheel: ({ props }) => ({
@@ -99,7 +83,6 @@ type ComponentFactoryItem<
 ) => CreatedComponent<T>;
 
 type ComponentTypeMap = {
-    Object3D: Object3D;
     RigidBody: RigidBody;
     Collider: Collider;
     Car: Car;

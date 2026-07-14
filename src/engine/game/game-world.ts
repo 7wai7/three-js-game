@@ -40,6 +40,34 @@ export default class GameWorld extends World {
         recursive = false,
     ): EntityId[] {
         const object = this.getGameObject(entity);
+        return this.getChildEntitiesFromObject(object, recursive);
+    }
+
+    getChildComponents<T extends Component>(
+        entity: EntityId,
+        componentClass: ComponentClass<T>,
+        recursive = true,
+    ): T[] {
+        const result: T[] = [];
+
+        for (const child of this.getChildEntities(entity, recursive)) {
+            const component = this.getComponent(
+                child,
+                componentClass,
+            );
+
+            if (component) {
+                result.push(component);
+            }
+        }
+
+        return result;
+    }
+
+    getChildEntitiesFromObject(
+        object: THREE.Object3D,
+        recursive = false,
+    ): EntityId[] {
         const result: EntityId[] = [];
 
         if (recursive) {
@@ -61,14 +89,14 @@ export default class GameWorld extends World {
         return result;
     }
 
-    getChildComponents<T extends Component>(
-        entity: EntityId,
+    getChildComponentsFromObject<T extends Component>(
+        gameObject: THREE.Object3D,
         componentClass: ComponentClass<T>,
         recursive = true,
     ): T[] {
         const result: T[] = [];
 
-        for (const child of this.getChildEntities(entity, recursive)) {
+        for (const child of this.getChildEntitiesFromObject(gameObject, recursive)) {
             const component = this.getComponent(
                 child,
                 componentClass,

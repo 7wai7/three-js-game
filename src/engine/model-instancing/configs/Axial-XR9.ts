@@ -10,7 +10,6 @@ import type { ColliderConfig, EntityConfig, ModelConfig, RevoluteJointConfig } f
 import { DEG2RAD } from "three/src/math/MathUtils.js";
 
 const baseComponents = [
-    { type: "Object3D" },
     { type: "RigidBody" },
     { type: "Collider" },
 ] as const;

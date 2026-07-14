@@ -3,7 +3,6 @@ import RigidBody from "../components/rigidbody";
 import Car from "../components/vehicle/car";
 import System from "./system";
 import Wheel from "../components/vehicle/wheel";
-import Object3D from "../components/object";
 import Collider from "../components/collider";
 import type RAPIER from "@dimforge/rapier3d";
 
@@ -31,9 +30,13 @@ export default class CarControllerSystem extends System {
 
         for (const entity of entities) {
             const chassis = this.world.getComponent(entity, Car)!;
-            const chassisObject = this.world.getComponent(entity, Object3D)!.object;
             const chassisCollider = this.world.getComponent(entity, Collider)!.collider;
             const rb = this.world.getComponent(entity, RigidBody)!.rigidBody;
+
+            if (chassis.wheels.length === 0) {
+                chassis.wheels = this.world.getChildComponentsFromObject(chassis.gameObject.parent!, Wheel, true).map(w => w.entity);
+            }
+
             const wheels: Wheels[] = chassis.wheels.map(entity => ({
                 wheel: this.world.getComponent(entity, Wheel)!,
                 rigidbody: this.world.getComponent(entity, RigidBody)!.rigidBody,
@@ -52,7 +55,7 @@ export default class CarControllerSystem extends System {
                 if (w.wheel.isGrounded) hasGroundedWheel = true;
             }
 
-            chassisObject.getWorldQuaternion(this.chassisQuat);
+            chassis.gameObject.getWorldQuaternion(this.chassisQuat);
             this.chassisRight.copy(this.RIGHT).applyQuaternion(this.chassisQuat);
             this.chassisUp.copy(this.UP).applyQuaternion(this.chassisQuat);
             this.chassisForward.copy(this.FORWARD).applyQuaternion(this.chassisQuat);

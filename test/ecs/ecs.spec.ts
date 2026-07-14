@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
 
-import * as THREE from "three";
 import type RAPIER from "@dimforge/rapier3d";
 
-import Object3D from "../../src/engine/components/object";
 import World from "../../src/engine/ecs/world";
 import RigidBody from "../../src/engine/components/rigidbody";
+import Collider from "../../src/engine/components/collider";
 
 describe("ecs tests", () => {
     it("returns entities with required components", () => {
@@ -14,13 +13,14 @@ describe("ecs tests", () => {
         const entity = world.createEntity("test");
 
         const mockRigidBody = {} as RAPIER.RigidBody;
+        const mockCollider = {} as RAPIER.Collider;
 
-        world.addComponent(entity, new Object3D(new THREE.Object3D()));
         world.addComponent(entity, new RigidBody(mockRigidBody));
+        world.addComponent(entity, new Collider(mockCollider));
 
         const entities = world.entitiesWith(
-            Object3D,
             RigidBody,
+            Collider
         );
 
         expect([...entities]).toEqual([entity]);

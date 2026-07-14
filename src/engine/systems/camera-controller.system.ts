@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { clamp, DEG2RAD } from "three/src/math/MathUtils.js";
 import System from "./system";
-import Object3D from "../components/object";
 
 export default class CameraControllerSystem extends System {
     followEntity?: string;
@@ -92,10 +91,7 @@ export default class CameraControllerSystem extends System {
         const camera = this.engine.camera;
 
         if (typeof this.followEntity === "string") {
-            const target = this.world.getComponent(
-                this.followEntity!,
-                Object3D,
-            )?.object as THREE.Object3D;
+            const target = this.world.getGameObject(this.followEntity);
 
             if (!target) {
                 console.warn("Camera target not found");

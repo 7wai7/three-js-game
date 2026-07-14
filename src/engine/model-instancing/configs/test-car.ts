@@ -9,7 +9,6 @@ import {
 import type { ColliderConfig, EntityConfig, ModelConfig, PrismaticJointConfig, RevoluteJointConfig } from "../config-types";
 
 const baseComponents = [
-    { type: "Object3D" },
     { type: "RigidBody" },
     { type: "Collider" },
 ] as const;
