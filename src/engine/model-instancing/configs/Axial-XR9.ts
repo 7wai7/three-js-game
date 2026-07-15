@@ -6,13 +6,10 @@ import {
     GROUP_WORLD,
     interactionGroups
 } from "../../game/physics-groups";
-import type { ColliderConfig, EntityConfig, ModelConfig, RevoluteJointConfig } from "../config-types";
+import Car from "../../components/vehicle/car";
+import Wheel from "../../components/vehicle/wheel";
+import { component, type ColliderConfig, type ComponentObjectRefs, type ComponentProps, type EntityConfig, type ModelConfig, type RevoluteJointConfig } from "../config-types";
 import { DEG2RAD } from "three/src/math/MathUtils.js";
-
-const baseComponents = [
-    { type: "RigidBody" },
-    { type: "Collider" },
-] as const;
 
 const wheelCollider: Omit<ColliderConfig, "source"> = {
     shape: "BALL" as const,
@@ -65,18 +62,19 @@ function createWheelRevoluteJoint(
 
 function createWheel(
     collider: string,
-    wheelProps?: Record<string, unknown>
+    wheelProps: ComponentProps<typeof Wheel>,
+    objectRefs: ComponentObjectRefs<typeof Wheel>,
 ): EntityConfig {
     return {
         components: [
-            ...baseComponents,
-            {
-                type: "Wheel",
-                props: {
+            component(
+                Wheel,
+                {
                     ...wheelProps,
                     radius: 0.66,
                 },
-            },
+                { objectRefs },
+            ),
         ],
         collider: {
             ...wheelCollider,
@@ -91,16 +89,15 @@ export const axial_XR9_config: ModelConfig = {
     entities: {
         Chassis: {
             components: [
-                ...baseComponents,
-                {
-                    type: "Car",
-                    props: {
+                component(
+                    Car,
+                    {
                         engineForce: 120,
                         brakeForce: 22,
                         sideGrip: 24,
                         pullingForce: 5,
                     },
-                },
+                ),
             ],
             collider: {
                 source: "COL_chassis",
@@ -115,38 +112,34 @@ export const axial_XR9_config: ModelConfig = {
 
         wheel_baseFR: createWheel("COL_wheelFR", {
             maxSteerAngleDeg: 30,
-            bones: {
-                base: "wheel_baseFR",
-                steer: "wheel_steerFR",
-                roll: "wheel_rollFR",
-            },
+        }, {
+            baseObject: "wheel_baseFR",
+            steerObject: "wheel_steerFR",
+            rollObject: "wheel_rollFR",
         }),
 
         wheel_baseFL: createWheel("COL_wheelFL", {
             maxSteerAngleDeg: 30,
-            bones: {
-                base: "wheel_baseFL",
-                steer: "wheel_steerFL",
-                roll: "wheel_rollFL",
-            },
+        }, {
+            baseObject: "wheel_baseFL",
+            steerObject: "wheel_steerFL",
+            rollObject: "wheel_rollFL",
         }),
 
         wheel_baseRR: createWheel("COL_wheelRR", {
             isRear: true,
-            bones: {
-                base: "wheel_baseRR",
-                steer: "wheel_steerRR",
-                roll: "wheel_rollRR",
-            },
+        }, {
+            baseObject: "wheel_baseRR",
+            steerObject: "wheel_steerRR",
+            rollObject: "wheel_rollRR",
         }),
 
         wheel_baseRL: createWheel("COL_wheelRL", {
             isRear: true,
-            bones: {
-                base: "wheel_baseRL",
-                steer: "wheel_steerRL",
-                roll: "wheel_rollRL",
-            },
+        }, {
+            baseObject: "wheel_baseRL",
+            steerObject: "wheel_steerRL",
+            rollObject: "wheel_rollRL",
         }),
     },
 

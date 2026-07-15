@@ -36,6 +36,8 @@ export default class World {
     }
 
     addComponent<T extends Component>(entity: EntityId, component: T) {
+        if (!this.entities.has(entity)) throw new Error(`Entity '${entity}' not found`);
+        
         const componentClass = component.constructor as ComponentClass<T>;
         let componentMap =
             this.components.get(componentClass);

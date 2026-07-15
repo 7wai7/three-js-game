@@ -19,7 +19,7 @@ export default class Car extends Component {
 
     wheels: string[] = [];
 
-    constructor(initialData: Partial<CarProps>) {
+    constructor(initialData: Partial<CarProps> = {}) {
         super();
         Object.assign(this, initialData);
     }

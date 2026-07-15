@@ -2,12 +2,6 @@ import * as THREE from "three";
 import Component from "../../ecs/component";
 import moveTowards from "../../../utils/move-towards";
 
-export type WheelBoneRefs = {
-    base: string;
-    steer: string;
-    roll: string;
-};
-
 export type WheelRollContext = {
     groundSpeed: number;
     throttle: number;
@@ -19,7 +13,6 @@ export type WheelProps = {
     isRear?: boolean;
     steerInverse?: boolean;
     radius?: number;
-    bones?: WheelBoneRefs;
 
     freeRollAngularSpeed?: number;
     rollStopSpeed?: number;
@@ -44,14 +37,11 @@ export default class Wheel extends Component {
     steerObject?: THREE.Object3D;
     rollObject?: THREE.Object3D;
 
-    bones?: WheelBoneRefs;
-
     constructor(initialData: Partial<WheelProps> = {}) {
         super();
 
         this.isRear = initialData.isRear;
         this.steerInverse = initialData.steerInverse;
-        this.bones = initialData.bones;
 
         if (initialData.radius !== undefined) {
             this.radius = initialData.radius;
@@ -69,16 +59,6 @@ export default class Wheel extends Component {
         if (initialData.rollStopSpeed !== undefined) {
             this.rollStopSpeed = initialData.rollStopSpeed;
         }
-    }
-
-    setBoneObjects(objects: {
-        base?: THREE.Object3D;
-        steer?: THREE.Object3D;
-        roll?: THREE.Object3D;
-    }) {
-        this.baseObject = objects.base;
-        this.steerObject = objects.steer;
-        this.rollObject = objects.roll;
     }
 
     protected resolveTargetAngle(steer: number) {
