@@ -9,6 +9,7 @@ import type { EntityId } from "../ecs/types";
 import type Component from "../ecs/component";
 import RigidBody from "../components/rigidbody";
 import Collider from "../components/collider";
+import type GameWorld from "../game/game-world";
 
 type RuntimeContext = {
     physicsWorld: RAPIER.World;
@@ -30,7 +31,7 @@ export async function instanceModelByConfig(
     const model = gltf.scene;
 
     fillObjectsMap(config, nodesByName, model);
-    fillArmatureObjects(nodesByName, model); 
+    fillArmatureObjects(nodesByName, model);
 
     const runtimeContext: RuntimeContext = {
         physicsWorld,
@@ -38,26 +39,11 @@ export async function instanceModelByConfig(
         nodesByName,
     };
 
-    createCollidersByConfig(physicsWorld, config, nodesByName);
+    createColliders(physicsWorld, config, nodesByName);
 
-    createJointsFromConfig(config, runtimeContext)
+    createJoints(config, runtimeContext)
 
-    for (const [nodeName, entityConfig] of Object.entries(config.entities)) {
-        const node = nodesByName.get(nodeName);
-        if (!node) continue;
-
-        const entity = world.createGameObject(node.source);
-
-        runtimeContext.entitiesByName.set(nodeName, entity);
-
-        addPhysicsComponents(world, entity, node);
-
-        for (const componentConfig of entityConfig.components ?? []) {
-            const component = createComponent(componentConfig);
-            bindObjectRefs(component, componentConfig, runtimeContext);
-            world.addComponent(entity, component);
-        }
-    }
+    createEntities(world, config, runtimeContext);
 
     scene.add(model);
 
@@ -171,7 +157,7 @@ function fillArmatureObjects(
     });
 }
 
-function createCollidersByConfig(
+function createColliders(
     physicsWorld: RAPIER.World,
     config: ModelConfig,
     objectsMap: InstanceNodeMap,
@@ -359,7 +345,7 @@ function createCollidersByConfig(
     }
 }
 
-function createJointsFromConfig(
+function createJoints(
     config: ModelConfig,
     ctx: RuntimeContext
 ) {
@@ -486,6 +472,29 @@ function createJointsFromConfig(
 
                 break;
             }
+        }
+    }
+}
+
+function createEntities(
+    world: GameWorld,
+    config: ModelConfig,
+    runtimeContext: RuntimeContext
+) {
+    for (const [nodeName, entityConfig] of Object.entries(config.entities)) {
+        const node = runtimeContext.nodesByName.get(nodeName);
+        if (!node) continue;
+
+        const entity = world.createGameObject(node.source);
+
+        runtimeContext.entitiesByName.set(nodeName, entity);
+
+        addPhysicsComponents(world, entity, node);
+
+        for (const componentConfig of entityConfig.components ?? []) {
+            const component = createComponent(componentConfig);
+            bindObjectRefs(component, componentConfig, runtimeContext);
+            world.addComponent(entity, component);
         }
     }
 }
