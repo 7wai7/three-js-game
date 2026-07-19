@@ -10,4 +10,14 @@ export default class Collider extends Component {
     super();
     this.collider = collider;
   }
+
+  dispose() {
+    const collider = this.collider;
+
+    if (!collider.isValid()) {
+      return;
+    }
+
+    this.physicsWorld.removeCollider(collider, true);
+  }
 }

@@ -1,9 +1,10 @@
 import type System from "../systems/system";
 import Component from "./component";
+import { isDisposableComponent, type DisposableComponent } from "./component-disposal";
 import type { ComponentClass, EntityId, QueryCache, SystemClass } from "./types";
 
 export default class World {
-    readonly entites: Set<EntityId> = new Set();
+    readonly entities: Set<EntityId> = new Set();
     readonly components: Map<ComponentClass<any>, Map<EntityId, Component>> = new Map();
     readonly queryCache = new Map<
         string,
@@ -11,18 +12,31 @@ export default class World {
     >();
     readonly systems: Map<SystemClass<any>, System> = new Map();
 
-    private nextEntityId = 0;
+    private readonly disposeQueue: DisposableComponent[] = [];
+    private readonly queuedForDispose = new Set<DisposableComponent>();
 
-    createEntity() {
-        const n = this.nextEntityId++;
-        this.entites.add(n);
-        return n;
+    createEntity(id: EntityId) {
+        if (this.entities.has(id)) {
+            throw new Error(
+                `Entity '${id}' already exists`,
+            );
+        }
+
+        this.entities.add(id);
+
+        return id;
     }
 
     destroyEntity(id: EntityId) {
-        this.entites.delete(id);
+        this.entities.delete(id);
 
         for (const componentMap of this.components.values()) {
+            const component = componentMap.get(id);
+
+            if (component) {
+                this.queueComponentDispose(component);
+            }
+
             componentMap.delete(id);
         }
 
@@ -32,6 +46,8 @@ export default class World {
     }
 
     addComponent<T extends Component>(entity: EntityId, component: T) {
+        if (!this.entities.has(entity)) throw new Error(`Entity '${entity}' not found`);
+        
         const componentClass = component.constructor as ComponentClass<T>;
         let componentMap =
             this.components.get(componentClass);
@@ -44,8 +60,15 @@ export default class World {
             );
         }
 
+        const previousComponent = componentMap.get(entity);
+
+        if (previousComponent && previousComponent !== component) {
+            this.queueComponentDispose(previousComponent);
+        }
+
         componentMap.set(entity, component);
         component.entity = entity;
+        this.cancelComponentDispose(component);
 
         this.markQueriesDirty();
 
@@ -60,6 +83,10 @@ export default class World {
 
         const component = componentMap.get(entity);
         componentMap.delete(entity);
+
+        if (component) {
+            this.queueComponentDispose(component);
+        }
 
         this.markQueriesDirty();
 
@@ -104,7 +131,7 @@ export default class World {
         if (query.dirty) {
             query.entities.clear();
 
-            for (const entity of this.entites) {
+            for (const entity of this.entities) {
                 const matches =
                     query.components.every(
                         c => this.getComponent(entity, c),
@@ -155,6 +182,45 @@ export default class World {
         for (const query of this.queryCache.values()) {
             query.dirty = true;
         }
+    }
+
+    private queueComponentDispose(component: Component) {
+        if (!isDisposableComponent(component)) {
+            return;
+        }
+
+        if (this.queuedForDispose.has(component)) {
+            return;
+        }
+
+        this.queuedForDispose.add(component);
+        this.disposeQueue.push(component);
+    }
+
+    private cancelComponentDispose(component: Component) {
+        if (isDisposableComponent(component)) {
+            this.queuedForDispose.delete(component);
+        }
+    }
+
+    flushDisposedComponents() {
+        for (const component of this.disposeQueue) {
+            if (!this.queuedForDispose.delete(component)) {
+                continue;
+            }
+
+            try {
+                component.dispose();
+            } catch (error) {
+                console.error(
+                    `Failed to dispose component "${component.constructor.name}"`,
+                    error,
+                );
+            }
+        }
+
+        this.disposeQueue.length = 0;
+        this.queuedForDispose.clear();
     }
 
     private createQueryKey(componentClasses: ComponentClass<any>[]) {

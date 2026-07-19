@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import type { COMPONENT_FACTORY } from "./component-factory";
+import type Component from "../ecs/component";
 
 export type SceneRef = string;
 
@@ -16,7 +16,7 @@ export type ModelConfig = {
 }
 
 export type EntityConfig = {
-    components: EntityComponentConfig[],
+    components?: EntityComponentConfig[],
     collider?: ColliderConfig
 }
 
@@ -32,12 +32,72 @@ export type InstanceNode = {
 export type InstanceNodeMap = Map<SceneRef, InstanceNode>;
 
 // COMPONENT TYPES
-export type ComponentName =
-    keyof typeof COMPONENT_FACTORY;
+export type ComponentConstructor<T extends Component = Component> =
+    new (...args: any[]) => T;
 
-type EntityComponentConfig = {
-    type: ComponentName,
-    props?: object
+type FirstConstructorArg<C extends ComponentConstructor> =
+    ConstructorParameters<C> extends []
+    ? never
+    : ConstructorParameters<C>[0];
+
+export type ComponentProps<C extends ComponentConstructor> =
+    Exclude<FirstConstructorArg<C>, undefined>;
+
+type IfEquals<X, Y, A = X, B = never> =
+    (<T>() => T extends X ? 1 : 2) extends
+    (<T>() => T extends Y ? 1 : 2)
+    ? A
+    : B;
+
+type WritableKey<T> = {
+    [K in keyof T]-?: IfEquals<
+        { [Q in K]: T[K] },
+        { -readonly [Q in K]: T[K] },
+        K
+    >;
+}[keyof T];
+
+type ObjectRefKey<C extends ComponentConstructor> = {
+    [K in WritableKey<InstanceType<C>>]-?:
+    NonNullable<InstanceType<C>[K]> extends THREE.Object3D
+    ? K
+    : never;
+}[WritableKey<InstanceType<C>>] & string;
+
+export type ComponentObjectRefs<C extends ComponentConstructor> =
+    Partial<Record<ObjectRefKey<C>, SceneRef>>;
+
+type ComponentConfigOptions<C extends ComponentConstructor> = {
+    objectRefs?: ComponentObjectRefs<C>;
+};
+
+type ComponentConfigArgs<C extends ComponentConstructor> =
+    [ComponentProps<C>] extends [never]
+    ? [props?: never, options?: ComponentConfigOptions<C>]
+    : undefined extends FirstConstructorArg<C>
+    ? [props?: ComponentProps<C>, options?: ComponentConfigOptions<C>]
+    : [props: ComponentProps<C>, options?: ComponentConfigOptions<C>];
+
+export type EntityComponentConfig<C extends ComponentConstructor = ComponentConstructor> = {
+    type: C;
+    props?: ComponentProps<C>;
+    objectRefs?: ComponentObjectRefs<C>;
+};
+
+export function component<C extends ComponentConstructor>(
+    type: C,
+    ...args: ComponentConfigArgs<C>
+): EntityComponentConfig<C> {
+    const [props, options] = args as [
+        ComponentProps<C> | undefined,
+        ComponentConfigOptions<C> | undefined,
+    ];
+
+    return {
+        type,
+        ...(props === undefined ? {} : { props }),
+        ...options,
+    };
 }
 
 

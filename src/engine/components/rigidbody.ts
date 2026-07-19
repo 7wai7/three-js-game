@@ -10,4 +10,14 @@ export default class RigidBody extends Component {
     super();
     this.rigidBody = rigidBody;
   }
+
+  dispose() {
+    const rigidBody = this.rigidBody;
+
+    if (!rigidBody.isValid()) {
+      return;
+    }
+
+    this.physicsWorld.removeRigidBody(rigidBody);
+  }
 }

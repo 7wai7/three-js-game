@@ -6,13 +6,9 @@ import {
     GROUP_WORLD,
     interactionGroups
 } from "../../game/physics-groups";
-import type { ColliderConfig, EntityConfig, ModelConfig, PrismaticJointConfig, RevoluteJointConfig } from "../config-types";
-
-const baseComponents = [
-    { type: "Object3D" },
-    { type: "RigidBody" },
-    { type: "Collider" },
-] as const;
+import Car from "../../components/vehicle/car";
+import Wheel from "../../components/vehicle/wheel";
+import { component, type ColliderConfig, type ComponentProps, type EntityConfig, type ModelConfig, type PrismaticJointConfig, type RevoluteJointConfig } from "../config-types";
 
 const wheelCollider: Omit<ColliderConfig, "source"> = {
     shape: "BALL" as const,
@@ -59,15 +55,11 @@ const revoluteJoint: Omit<RevoluteJointConfig, "bodyB" | "anchor"> = {
 
 function createWheel(
     source: string,
-    wheelProps?: Record<string, unknown>
+    wheelProps?: ComponentProps<typeof Wheel>
 ): EntityConfig {
     return {
         components: [
-            ...baseComponents,
-            {
-                type: "Wheel",
-                props: wheelProps,
-            },
+            component(Wheel, wheelProps),
         ],
         collider: {
             ...wheelCollider,
@@ -82,16 +74,15 @@ export const testCarConfig: ModelConfig = {
     entities: {
         PH_chassis: {
             components: [
-                ...baseComponents,
-                {
-                    type: "Car",
-                    props: {
+                component(
+                    Car,
+                    {
                         engineForce: 70,
                         brakeForce: 12,
                         sideGrip: 12,
                         pullingForce: 20,
                     },
-                },
+                ),
             ],
             collider: {
                 source: "COL_chassis",

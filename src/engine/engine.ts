@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
 import GLTFAssetManager from "./assets/gltf-asset-manager";
-import World from "./ecs/world";
 import PhysicsSyncSystem from "./systems/physics-sync.system";
 import InputManager from "./input/input-manager";
 import CharacterControllerSystem from "./systems/character-controller.system";
@@ -13,9 +12,10 @@ import CharacterInputSystem from "./systems/input-controllers/character-input.sy
 import RapierDebugRenderer from "./systems/rapier-debug-renderer.system";
 import VehicleInputSystem from "./systems/input-controllers/vehicle-input.system";
 import CarControllerSystem from "./systems/car-controller.system";
+import GameWorld from "./game/game-world";
 
 export default class Engine {
-  readonly world: World = new World();
+  readonly world: GameWorld = new GameWorld();
   readonly input: InputManager = new InputManager();
 
   readonly assets: Assets = {
@@ -66,6 +66,7 @@ export default class Engine {
     this.physicsWorld.step();
     this.world.update();
     this.renderer.render(this.scene, this.camera);
+    this.world.flushDisposedComponents();
     this.input.endFrame();
   };
 }

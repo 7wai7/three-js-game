@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import Object3D from "../components/object";
 import RigidBody from "../components/rigidbody";
 import CharacterController from "../components/character-controller";
 import Collider from "../components/collider";
@@ -19,7 +18,6 @@ export async function createPlayer(
 ) {
   const { world, physicsWorld, scene, assets } = engine;
   const { position, rotation } = resolveSpawnTransform(transform);
-  const entity = world.createEntity();
 
   // Load the player model
   const gltf = await assets.gltf.loadModel("src/assets/Player/Mesh.glb");
@@ -45,6 +43,7 @@ export async function createPlayer(
 
   scene.add(rootMesh);
 
+  const entity = world.createGameObject(rootMesh);
 
   // Load animations
   const mixer = new THREE.AnimationMixer(rootMesh);
@@ -84,7 +83,6 @@ export async function createPlayer(
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
   // Add components to the world
-  world.addComponent(entity, new Object3D(rootMesh));
   world.addComponent(entity, new RigidBody(rb));
   world.addComponent(entity, new Collider(collider));
   world.addComponent(entity, new CharacterController(controller, {

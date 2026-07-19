@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import Object3D from "../components/object";
 import Collider from "../components/collider";
 import RigidBody from "../components/rigidbody";
 import { GROUP_PLAYER, GROUP_VEHICLE, GROUP_WHEEL, GROUP_WORLD, interactionGroups } from "./physics-groups";
@@ -13,7 +12,6 @@ export async function createFloor(
 ) {
   const { world, physicsWorld, scene, assets } = engine;
   const { position, rotation } = resolveSpawnTransform(transform);
-  const entity = world.createEntity();
 
   const size = 1000;
   const texture = await assets.textures.load("src/assets/textures/grid.png");
@@ -41,10 +39,7 @@ export async function createFloor(
 
   scene.add(mesh);
 
-  world.addComponent(
-    entity,
-    new Object3D(mesh),
-  );
+  const entity = world.createGameObject(mesh);
 
   const collider = physicsWorld.createCollider(
     RAPIER.ColliderDesc.cuboid(
@@ -93,8 +88,6 @@ export function createCube(
   const { world, physicsWorld, scene } = engine;
   const { position, rotation } = resolveSpawnTransform(transform);
 
-  const entity = world.createEntity();
-
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshStandardMaterial({ color: 0x66cc00 }),
@@ -118,7 +111,7 @@ export function createCube(
   const rb = physicsWorld.createRigidBody(rbDesc);
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
-  world.addComponent(entity, new Object3D(mesh));
+  const entity = world.createGameObject(mesh);
   world.addComponent(entity, new RigidBody(rb));
   world.addComponent(entity, new Collider(collider));
 

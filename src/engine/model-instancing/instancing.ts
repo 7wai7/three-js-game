@@ -1,10 +1,22 @@
 import * as THREE from "three";
 import RAPIER from "@dimforge/rapier3d";
-import { type InstanceNodeMap, type ModelConfig, type SceneRef } from "./config-types";
+import { type EntityComponentConfig, type InstanceNode, type InstanceNodeMap, type ModelConfig, type SceneRef } from "./config-types";
 import { getObjectSize } from "../../utils/get-object-size";
 import { getAxisDimensions, getColliderRotationByAxis } from "./utils";
-import { COMPONENT_FACTORY, type CreatedComponent, type RuntimeContext } from "./component-factory";
 import type Engine from "../engine";
+import type World from "../ecs/world";
+import type { EntityId } from "../ecs/types";
+import type Component from "../ecs/component";
+import RigidBody from "../components/rigidbody";
+import Collider from "../components/collider";
+import type GameWorld from "../game/game-world";
+
+type RuntimeContext = {
+    physicsWorld: RAPIER.World;
+
+    entitiesByName: Map<SceneRef, EntityId>;
+    nodesByName: InstanceNodeMap;
+};
 
 export async function instanceModelByConfig(
     engine: Engine,
@@ -19,56 +31,19 @@ export async function instanceModelByConfig(
     const model = gltf.scene;
 
     fillObjectsMap(config, nodesByName, model);
-    fillArmatureObjects(nodesByName, model); 
+    fillArmatureObjects(nodesByName, model);
 
     const runtimeContext: RuntimeContext = {
-        world,
         physicsWorld,
-        entitiesByName: new Map<SceneRef, number>(),
+        entitiesByName: new Map<SceneRef, string>(),
         nodesByName,
     };
 
-    createCollidersByConfig(physicsWorld, config, nodesByName);
+    createColliders(physicsWorld, config, nodesByName);
 
-    createJointsFromConfig(config, runtimeContext)
+    createJoints(config, runtimeContext)
 
-    const pendingInitializers: CreatedComponent<any>[] = [];
-
-    for (const [nodeName, entityConfig] of Object.entries(config.entities)) {
-        const node = nodesByName.get(nodeName);
-        if (!node) continue;
-
-        const entity = world.createEntity();
-
-        runtimeContext.entitiesByName.set(nodeName, entity);
-
-        for (const componentConfig of entityConfig.components) {
-            const created =
-                COMPONENT_FACTORY[componentConfig.type]({
-                    node,
-                    props: componentConfig.props,
-                });
-
-            world.addComponent(
-                entity,
-                created.component,
-            );
-
-            if (created.initialize) {
-                pendingInitializers.push({
-                    component: created.component,
-                    initialize: created.initialize,
-                });
-            }
-        }
-    }
-
-    for (const item of pendingInitializers) {
-        item.initialize?.(
-            item.component,
-            runtimeContext,
-        );
-    }
+    createEntities(world, config, runtimeContext);
 
     scene.add(model);
 
@@ -77,6 +52,51 @@ export async function instanceModelByConfig(
         model: model,
         nodesByName
     };
+}
+
+function addPhysicsComponents(
+    world: World,
+    entity: EntityId,
+    node: InstanceNode,
+) {
+    if (node.rigidBody) {
+        world.addComponent(
+            entity,
+            new RigidBody(node.rigidBody),
+        );
+    }
+
+    if (node.collider) {
+        world.addComponent(
+            entity,
+            new Collider(node.collider),
+        );
+    }
+}
+
+function createComponent(config: EntityComponentConfig): Component {
+    return new config.type(config.props);
+}
+
+function bindObjectRefs(
+    component: Component,
+    config: EntityComponentConfig,
+    ctx: RuntimeContext,
+) {
+    if (!config.objectRefs) return;
+
+    for (const [field, nodeName] of Object.entries(config.objectRefs)) {
+        const node = ctx.nodesByName.get(nodeName as string);
+
+        if (!node) {
+            console.warn(
+                `Object ref "${nodeName}" not found for component "${component.constructor.name}"`,
+            );
+            continue;
+        }
+
+        (component as Record<string, any>)[field] = node.source;
+    }
 }
 
 function fillObjectsMap(
@@ -95,6 +115,16 @@ function fillObjectsMap(
                 objectsMap.set(obj.name, {
                     source: obj
                 })
+            }
+
+            for (const componentConfig of entity.components ?? []) {
+                for (const objectRef of Object.values(componentConfig.objectRefs ?? {})) {
+                    if (objectRef === obj.name && !objectsMap.has(obj.name)) {
+                        objectsMap.set(obj.name, {
+                            source: obj
+                        })
+                    }
+                }
             }
         }
 
@@ -127,7 +157,7 @@ function fillArmatureObjects(
     });
 }
 
-function createCollidersByConfig(
+function createColliders(
     physicsWorld: RAPIER.World,
     config: ModelConfig,
     objectsMap: InstanceNodeMap,
@@ -315,7 +345,7 @@ function createCollidersByConfig(
     }
 }
 
-function createJointsFromConfig(
+function createJoints(
     config: ModelConfig,
     ctx: RuntimeContext
 ) {
@@ -442,6 +472,29 @@ function createJointsFromConfig(
 
                 break;
             }
+        }
+    }
+}
+
+function createEntities(
+    world: GameWorld,
+    config: ModelConfig,
+    runtimeContext: RuntimeContext
+) {
+    for (const [nodeName, entityConfig] of Object.entries(config.entities)) {
+        const node = runtimeContext.nodesByName.get(nodeName);
+        if (!node) continue;
+
+        const entity = world.createGameObject(node.source);
+
+        runtimeContext.entitiesByName.set(nodeName, entity);
+
+        addPhysicsComponents(world, entity, node);
+
+        for (const componentConfig of entityConfig.components ?? []) {
+            const component = createComponent(componentConfig);
+            bindObjectRefs(component, componentConfig, runtimeContext);
+            world.addComponent(entity, component);
         }
     }
 }
