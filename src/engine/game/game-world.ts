@@ -27,12 +27,29 @@ export default class GameWorld extends World {
     destroyEntity(entity: EntityId) {
         const object = this.gameObjects.get(entity);
 
-        if (object) {
-            object.removeFromParent();
-            this.gameObjects.delete(entity);
+        if (!object) {
+            super.destroyEntity(entity);
+            return;
         }
 
-        super.destroyEntity(entity);
+        const entitiesToDestroy = new Set<EntityId>();
+
+        object.traverse((child) => {
+            if (this.gameObjects.has(child.uuid)) {
+                entitiesToDestroy.add(child.uuid);
+            }
+        });
+
+        object.removeFromParent();
+
+        for (const childEntity of entitiesToDestroy) {
+            this.gameObjects.delete(childEntity);
+            super.destroyEntity(childEntity);
+        }
+    }
+
+    destroyGameObject(entity: EntityId) {
+        this.destroyEntity(entity);
     }
 
     getChildEntities(

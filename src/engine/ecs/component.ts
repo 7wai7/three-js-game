@@ -4,20 +4,8 @@ import type { EntityId } from "./types";
 export default abstract class Component {
   entity!: EntityId;
 
-  protected get engine() {
+  private get engine() {
     return EngineContext.engine;
-  }
-
-  protected get input() {
-    return this.engine.input;
-  }
-
-  protected get assets() {
-    return this.engine.assets;
-  }
-
-  protected get scene() {
-    return this.engine.scene;
   }
 
   protected get physicsWorld() {

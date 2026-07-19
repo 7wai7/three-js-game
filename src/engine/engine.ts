@@ -66,6 +66,7 @@ export default class Engine {
     this.physicsWorld.step();
     this.world.update();
     this.renderer.render(this.scene, this.camera);
+    this.world.flushDisposedComponents();
     this.input.endFrame();
   };
 }
