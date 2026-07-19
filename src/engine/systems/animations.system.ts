@@ -34,7 +34,7 @@ export default class AnimationsSystem extends System {
 
             const clip = gltf.animations[0];
             anim.actions[name] = anim.mixer.clipAction(clip);
-        } catch (error) {
+        } catch {
             console.error(`Failed to load gltf scene for animation ${name} by path ${path}`);
         }
     }
