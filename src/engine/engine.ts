@@ -1,18 +1,18 @@
-import * as THREE from "three";
-import RAPIER from "@dimforge/rapier3d";
-import GLTFAssetManager from "./assets/gltf-asset-manager";
-import PhysicsSyncSystem from "./systems/physics-sync.system";
-import InputManager from "./input/input-manager";
-import CharacterControllerSystem from "./systems/character-controller.system";
-import CameraControllerSystem from "./systems/camera-controller.system";
-import AnimationsSystem from "./systems/animations.system";
-import type { Assets } from "./assets/types";
-import TextureAssetManager from "./assets/texture-asset-manager";
-import CharacterInputSystem from "./systems/input-controllers/character-input.system";
-import RapierDebugRenderer from "./systems/rapier-debug-renderer.system";
-import VehicleInputSystem from "./systems/input-controllers/vehicle-input.system";
-import CarControllerSystem from "./systems/car-controller.system";
-import GameWorld from "./game/game-world";
+import * as THREE from 'three';
+import RAPIER from '@dimforge/rapier3d';
+import GLTFAssetManager from './assets/gltf-asset-manager';
+import PhysicsSyncSystem from './systems/physics-sync.system';
+import InputManager from './input/input-manager';
+import CharacterControllerSystem from './systems/character-controller.system';
+import CameraControllerSystem from './systems/camera-controller.system';
+import AnimationsSystem from './systems/animations.system';
+import type { Assets } from './assets/types';
+import TextureAssetManager from './assets/texture-asset-manager';
+import CharacterInputSystem from './systems/input-controllers/character-input.system';
+import RapierDebugRenderer from './systems/rapier-debug-renderer.system';
+import VehicleInputSystem from './systems/input-controllers/vehicle-input.system';
+import CarControllerSystem from './systems/car-controller.system';
+import GameWorld from './game/game-world';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
@@ -20,8 +20,8 @@ export default class Engine {
 
   readonly assets: Assets = {
     gltf: new GLTFAssetManager(),
-    textures: new TextureAssetManager()
-  }
+    textures: new TextureAssetManager(),
+  };
 
   readonly renderer: THREE.WebGLRenderer;
   readonly scene: THREE.Scene<THREE.Object3DEventMap>;
@@ -34,11 +34,7 @@ export default class Engine {
 
   deltaTime = 0;
 
-  constructor(
-    renderer: THREE.WebGLRenderer,
-    scene: THREE.Scene,
-    camera: THREE.Camera,
-  ) {
+  constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
     this.renderer = renderer;
     this.scene = scene;
     this.camera = camera;

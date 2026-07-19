@@ -1,254 +1,236 @@
-import type System from "../systems/system";
-import Component from "./component";
-import { isDisposableComponent, type DisposableComponent } from "./component-disposal";
-import type { ComponentClass, EntityId, QueryCache, SystemClass } from "./types";
+import type System from '../systems/system';
+import Component from './component';
+import { isDisposableComponent, type DisposableComponent } from './component-disposal';
+import type { ComponentClass, EntityId, QueryCache, SystemClass } from './types';
 
 export default class World {
-    readonly entities: Set<EntityId> = new Set();
-    readonly components: Map<ComponentClass<any>, Map<EntityId, Component>> = new Map();
-    readonly queryCache = new Map<
-        string,
-        QueryCache
-    >();
-    readonly systems: Map<SystemClass<any>, System> = new Map();
+  readonly entities: Set<EntityId> = new Set();
+  readonly components: Map<ComponentClass<any>, Map<EntityId, Component>> = new Map();
+  readonly queryCache = new Map<string, QueryCache>();
+  readonly systems: Map<SystemClass<any>, System> = new Map();
 
-    private readonly disposeQueue: DisposableComponent[] = [];
-    private readonly queuedForDispose = new Set<DisposableComponent>();
+  private readonly disposeQueue: DisposableComponent[] = [];
+  private readonly queuedForDispose = new Set<DisposableComponent>();
 
-    createEntity(id: EntityId) {
-        if (this.entities.has(id)) {
-            throw new Error(
-                `Entity '${id}' already exists`,
-            );
-        }
-
-        this.entities.add(id);
-
-        return id;
+  createEntity(id: EntityId) {
+    if (this.entities.has(id)) {
+      throw new Error(`Entity '${id}' already exists`);
     }
 
-    destroyEntity(id: EntityId) {
-        this.entities.delete(id);
+    this.entities.add(id);
 
-        for (const componentMap of this.components.values()) {
-            const component = componentMap.get(id);
+    return id;
+  }
 
-            if (component) {
-                this.queueComponentDispose(component);
-            }
+  destroyEntity(id: EntityId) {
+    this.entities.delete(id);
 
-            componentMap.delete(id);
-        }
+    for (const componentMap of this.components.values()) {
+      const component = componentMap.get(id);
 
-        for (const query of this.queryCache.values()) {
-            query.entities.delete(id);
-        }
+      if (component) {
+        this.queueComponentDispose(component);
+      }
+
+      componentMap.delete(id);
     }
 
-    addComponent<T extends Component>(entity: EntityId, component: T) {
-        if (!this.entities.has(entity)) throw new Error(`Entity '${entity}' not found`);
-        
-        const componentClass = component.constructor as ComponentClass<T>;
-        let componentMap =
-            this.components.get(componentClass);
+    for (const query of this.queryCache.values()) {
+      query.entities.delete(id);
+    }
+  }
 
-        if (!componentMap) {
-            componentMap = new Map();
-            this.components.set(
-                componentClass,
-                componentMap,
-            );
-        }
+  addComponent<T extends Component>(entity: EntityId, component: T) {
+    if (!this.entities.has(entity)) throw new Error(`Entity '${entity}' not found`);
 
-        const previousComponent = componentMap.get(entity);
+    const componentClass = component.constructor as ComponentClass<T>;
+    let componentMap = this.components.get(componentClass);
 
-        if (previousComponent && previousComponent !== component) {
-            this.queueComponentDispose(previousComponent);
-        }
-
-        componentMap.set(entity, component);
-        component.entity = entity;
-        this.cancelComponentDispose(component);
-
-        this.markQueriesDirty();
-
-        return component;
+    if (!componentMap) {
+      componentMap = new Map();
+      this.components.set(componentClass, componentMap);
     }
 
-    removeComponent<T extends Component>(entity: EntityId, componentClass: ComponentClass<T>) {
-        const componentMap = this.components.get(componentClass);
-        if (!componentMap) {
-            return;
-        }
+    const previousComponent = componentMap.get(entity);
 
+    if (previousComponent && previousComponent !== component) {
+      this.queueComponentDispose(previousComponent);
+    }
+
+    componentMap.set(entity, component);
+    component.entity = entity;
+    this.cancelComponentDispose(component);
+
+    this.markQueriesDirty();
+
+    return component;
+  }
+
+  removeComponent<T extends Component>(entity: EntityId, componentClass: ComponentClass<T>) {
+    const componentMap = this.components.get(componentClass);
+    if (!componentMap) {
+      return;
+    }
+
+    const component = componentMap.get(entity);
+    componentMap.delete(entity);
+
+    if (component) {
+      this.queueComponentDispose(component);
+    }
+
+    this.markQueriesDirty();
+
+    return component as T | undefined;
+  }
+
+  getComponent<T extends Component>(entity: EntityId, componentClass: ComponentClass<T>) {
+    const componentMap = this.components.get(componentClass);
+    if (componentMap) {
+      return componentMap.get(entity) as T;
+    }
+  }
+
+  addSystem<T extends System>(system: T) {
+    const systemClass = system.constructor as SystemClass<T>;
+    this.systems.set(systemClass, system);
+  }
+
+  getSystem<T extends System>(systemClass: SystemClass<T>) {
+    return this.systems.get(systemClass) as T;
+  }
+
+  // QUERIES
+  entitiesWith(...componentClasses: ComponentClass<any>[]) {
+    const key = this.createQueryKey(componentClasses);
+
+    let query = this.queryCache.get(key);
+
+    if (!query) {
+      const entities = new Set<EntityId>();
+
+      query = {
+        components: [...componentClasses],
+        entities,
+        dirty: true,
+      };
+
+      this.queryCache.set(key, query);
+    }
+
+    if (query.dirty) {
+      query.entities.clear();
+
+      for (const entity of this.entities) {
+        const matches = query.components.every((c) => this.getComponent(entity, c));
+
+        if (matches) {
+          query.entities.add(entity);
+        }
+      }
+
+      query.dirty = false;
+    }
+
+    return query.entities;
+  }
+
+  getComponentsFromEntities<T extends readonly ComponentClass<Component>[]>(
+    entities: Iterable<EntityId>,
+    ...componentClasses: T
+  ): InstanceType<T[number]>[] {
+    const result: InstanceType<T[number]>[] = [];
+
+    for (const componentClass of componentClasses) {
+      const componentMap = this.components.get(componentClass);
+
+      if (!componentMap) {
+        continue;
+      }
+
+      for (const entity of entities) {
         const component = componentMap.get(entity);
-        componentMap.delete(entity);
 
         if (component) {
-            this.queueComponentDispose(component);
+          result.push(component as InstanceType<T[number]>);
         }
-
-        this.markQueriesDirty();
-
-        return component as T | undefined;
+      }
     }
 
-    getComponent<T extends Component>(entity: EntityId, componentClass: ComponentClass<T>) {
-        const componentMap = this.components.get(componentClass);
-        if (componentMap) {
-            return componentMap.get(entity) as T;
-        }
+    return result;
+  }
+
+  // UTILS
+  private markQueriesDirty() {
+    for (const query of this.queryCache.values()) {
+      query.dirty = true;
+    }
+  }
+
+  private queueComponentDispose(component: Component) {
+    if (!isDisposableComponent(component)) {
+      return;
     }
 
-    addSystem<T extends System>(system: T) {
-        const systemClass = system.constructor as SystemClass<T>;
-        this.systems.set(systemClass, system);
+    if (this.queuedForDispose.has(component)) {
+      return;
     }
 
-    getSystem<T extends System>(systemClass: SystemClass<T>) {
-        return this.systems.get(systemClass) as T;
+    this.queuedForDispose.add(component);
+    this.disposeQueue.push(component);
+  }
+
+  private cancelComponentDispose(component: Component) {
+    if (isDisposableComponent(component)) {
+      this.queuedForDispose.delete(component);
+    }
+  }
+
+  flushDisposedComponents() {
+    for (const component of this.disposeQueue) {
+      if (!this.queuedForDispose.delete(component)) {
+        continue;
+      }
+
+      try {
+        component.dispose();
+      } catch (error) {
+        console.error(`Failed to dispose component "${component.constructor.name}"`, error);
+      }
     }
 
+    this.disposeQueue.length = 0;
+    this.queuedForDispose.clear();
+  }
 
-    // QUERIES
-    entitiesWith(...componentClasses: ComponentClass<any>[]) {
-        const key = this.createQueryKey(componentClasses);
+  private createQueryKey(componentClasses: ComponentClass<any>[]) {
+    return componentClasses
+      .map((c) => c.name)
+      .sort()
+      .join('|');
+  }
 
-        let query = this.queryCache.get(key);
-
-        if (!query) {
-            const entities = new Set<EntityId>();
-
-            query = {
-                components: [...componentClasses],
-                entities,
-                dirty: true,
-            };
-
-            this.queryCache.set(key, query);
-        }
-
-        if (query.dirty) {
-            query.entities.clear();
-
-            for (const entity of this.entities) {
-                const matches =
-                    query.components.every(
-                        c => this.getComponent(entity, c),
-                    );
-
-                if (matches) {
-                    query.entities.add(entity);
-                }
-            }
-
-            query.dirty = false;
-        }
-
-        return query.entities;
+  // UPDATE SYSTEMS
+  update() {
+    for (const system of this.systems.values()) {
+      if (system.started) {
+        system.update?.();
+      } else {
+        system.start?.();
+        system.started = true;
+      }
     }
 
-    getComponentsFromEntities<
-        T extends readonly ComponentClass<Component>[]
-    >(
-        entities: Iterable<EntityId>,
-        ...componentClasses: T
-    ): InstanceType<T[number]>[] {
-        const result: InstanceType<T[number]>[] = [];
-
-        for (const componentClass of componentClasses) {
-            const componentMap = this.components.get(componentClass);
-
-            if (!componentMap) {
-                continue;
-            }
-
-            for (const entity of entities) {
-                const component = componentMap.get(entity);
-
-                if (component) {
-                    result.push(
-                        component as InstanceType<T[number]>,
-                    );
-                }
-            }
-        }
-
-        return result;
+    for (const system of this.systems.values()) {
+      system.postUpdate?.();
     }
 
-    // UTILS
-    private markQueriesDirty() {
-        for (const query of this.queryCache.values()) {
-            query.dirty = true;
-        }
+    for (const system of this.systems.values()) {
+      system.preRender?.();
     }
 
-    private queueComponentDispose(component: Component) {
-        if (!isDisposableComponent(component)) {
-            return;
-        }
-
-        if (this.queuedForDispose.has(component)) {
-            return;
-        }
-
-        this.queuedForDispose.add(component);
-        this.disposeQueue.push(component);
+    for (const system of this.systems.values()) {
+      system.render?.();
     }
-
-    private cancelComponentDispose(component: Component) {
-        if (isDisposableComponent(component)) {
-            this.queuedForDispose.delete(component);
-        }
-    }
-
-    flushDisposedComponents() {
-        for (const component of this.disposeQueue) {
-            if (!this.queuedForDispose.delete(component)) {
-                continue;
-            }
-
-            try {
-                component.dispose();
-            } catch (error) {
-                console.error(
-                    `Failed to dispose component "${component.constructor.name}"`,
-                    error,
-                );
-            }
-        }
-
-        this.disposeQueue.length = 0;
-        this.queuedForDispose.clear();
-    }
-
-    private createQueryKey(componentClasses: ComponentClass<any>[]) {
-        return componentClasses.map(c => c.name).sort().join("|");
-    }
-
-
-    // UPDATE SYSTEMS
-    update() {
-        for (const system of this.systems.values()) {
-            if (system.started) {
-                system.update?.();
-            } else {
-                system.start?.();
-                system.started = true;
-            }
-        }
-
-        for (const system of this.systems.values()) {
-            system.postUpdate?.();
-        }
-
-        for (const system of this.systems.values()) {
-            system.preRender?.();
-        }
-
-        for (const system of this.systems.values()) {
-            system.render?.();
-        }
-    }
+  }
 }

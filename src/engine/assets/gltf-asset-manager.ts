@@ -1,14 +1,11 @@
-import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { SkeletonUtils } from "three/examples/jsm/Addons.js";
-import type { Group } from "three";
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { SkeletonUtils } from 'three/examples/jsm/Addons.js';
+import type { Group } from 'three';
 
 export default class GLTFAssetManager {
   private gltfLoader = new GLTFLoader();
   private loadedModels = new Map<string, GLTF>();
-  private loadingModels = new Map<
-    string,
-    Promise<GLTF>
-  >();
+  private loadingModels = new Map<string, Promise<GLTF>>();
 
   async loadModel(path: string): Promise<GLTF> {
     const loaded = this.loadedModels.get(path);
@@ -35,9 +32,7 @@ export default class GLTFAssetManager {
     return this.cloneGltf(gltf);
   }
 
-  private async loadAndCache(
-    path: string,
-  ): Promise<GLTF> {
+  private async loadAndCache(path: string): Promise<GLTF> {
     const gltf = await this.gltfLoader.loadAsync(path);
     this.loadedModels.set(path, gltf);
     return gltf;
@@ -47,9 +42,7 @@ export default class GLTFAssetManager {
     return {
       ...gltf,
       scene: SkeletonUtils.clone(gltf.scene) as Group,
-      scenes: gltf.scenes.map(
-        (s) => SkeletonUtils.clone(s) as Group,
-      ),
+      scenes: gltf.scenes.map((s) => SkeletonUtils.clone(s) as Group),
       animations: gltf.animations,
     };
   }

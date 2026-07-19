@@ -1,49 +1,42 @@
-import CharacterController from "../../components/character-controller";
-import System from "../system";
-import PlayerController from "../../components/player-controller";
-import * as THREE from "three";
+import CharacterController from '../../components/character-controller';
+import System from '../system';
+import PlayerController from '../../components/player-controller';
+import * as THREE from 'three';
 
 export default class CharacterInputSystem extends System {
-    private cameraForward = new THREE.Vector3();
-    private cameraRight = new THREE.Vector3();
+  private cameraForward = new THREE.Vector3();
+  private cameraRight = new THREE.Vector3();
 
-    update(): void {
-        const entities = this.world.entitiesWith(
-            CharacterController,
-            PlayerController
-        );
+  update(): void {
+    const entities = this.world.entitiesWith(CharacterController, PlayerController);
 
-        const entity = entities.keys().next().value;
-        if(!entity) return;
-        
-        const camera = this.engine.camera;
+    const entity = entities.keys().next().value;
+    if (!entity) return;
 
-        const controller = this.world.getComponent(entity, CharacterController)!;
+    const camera = this.engine.camera;
 
-        const forward = this.input.vertical();
-        const right = this.input.horizontal();
+    const controller = this.world.getComponent(entity, CharacterController)!;
 
-        // camera forward
-        camera.getWorldDirection(this.cameraForward);
+    const forward = this.input.vertical();
+    const right = this.input.horizontal();
 
-        // flatten
-        this.cameraForward.y = 0;
-        this.cameraForward.normalize();
+    // camera forward
+    camera.getWorldDirection(this.cameraForward);
 
-        // right vector
-        this.cameraRight
-            .crossVectors(this.cameraForward, new THREE.Vector3(0, 1, 0))
-            .normalize();
+    // flatten
+    this.cameraForward.y = 0;
+    this.cameraForward.normalize();
 
-        controller.inputMoveDir
-            .set(0, 0, 0)
-            .addScaledVector(this.cameraForward, forward)
-            .addScaledVector(this.cameraRight, right);
+    // right vector
+    this.cameraRight.crossVectors(this.cameraForward, new THREE.Vector3(0, 1, 0)).normalize();
 
-        controller.isRunning =
-            this.input.pressed("ShiftLeft") ||
-            this.input.pressed("ShiftRight");
+    controller.inputMoveDir
+      .set(0, 0, 0)
+      .addScaledVector(this.cameraForward, forward)
+      .addScaledVector(this.cameraRight, right);
 
-        if(this.input.clicked("Space")) controller.jumpRequested = true;
-    }
+    controller.isRunning = this.input.pressed('ShiftLeft') || this.input.pressed('ShiftRight');
+
+    if (this.input.clicked('Space')) controller.jumpRequested = true;
+  }
 }

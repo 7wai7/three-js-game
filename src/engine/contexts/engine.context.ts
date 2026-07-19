@@ -1,4 +1,4 @@
-import type Engine from "../engine";
+import type Engine from '../engine';
 
 export default class EngineContext {
   private static _engine: Engine;
@@ -9,7 +9,7 @@ export default class EngineContext {
 
   static get engine(): Engine {
     if (!this._engine) {
-      throw new Error("Engine is not initialized");
+      throw new Error('Engine is not initialized');
     }
 
     return this._engine;

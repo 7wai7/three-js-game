@@ -3,11 +3,8 @@ export const GROUP_WORLD = 1 << 1;
 export const GROUP_VEHICLE = 1 << 2;
 export const GROUP_WHEEL = 1 << 3;
 
-export function interactionGroups(
-    memberships: number,
-    filter: number,
-) {
-    return (memberships << 16) | filter;
+export function interactionGroups(memberships: number, filter: number) {
+  return (memberships << 16) | filter;
 }
 
 // example:

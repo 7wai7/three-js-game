@@ -1,8 +1,8 @@
-import EngineContext from "../contexts/engine.context";
+import EngineContext from '../contexts/engine.context';
 
 export default abstract class System {
   started = false;
-  
+
   start?(): void;
 
   update?(): void;
@@ -12,7 +12,6 @@ export default abstract class System {
   preRender?(): void;
 
   render?(): void;
-
 
   protected get engine() {
     return EngineContext.engine;
