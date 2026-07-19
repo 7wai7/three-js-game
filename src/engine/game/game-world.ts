@@ -42,14 +42,17 @@ export default class GameWorld extends World {
 
         object.removeFromParent();
 
-        for (const childEntity of entitiesToDestroy) {
-            this.gameObjects.delete(childEntity);
-            super.destroyEntity(childEntity);
+        for (const entityToDestroy of entitiesToDestroy) {
+            this.gameObjects.delete(entityToDestroy);
+        }
+
+        for (const entityToDestroy of entitiesToDestroy) {
+            super.destroyEntity(entityToDestroy);
         }
     }
 
-    destroyGameObject(entity: EntityId) {
-        this.destroyEntity(entity);
+    destroyGameObject(object: THREE.Object3D) {
+        this.destroyEntity(object.uuid);
     }
 
     getChildEntities(
@@ -125,5 +128,38 @@ export default class GameWorld extends World {
         }
 
         return result;
+    }
+
+    getParentEntities(entity: EntityId): EntityId[] {
+        const object = this.getGameObject(entity);
+        const result: EntityId[] = [];
+
+        let parent = object.parent;
+
+        while (parent) {
+            if (this.gameObjects.has(parent.uuid)) {
+                result.push(parent.uuid);
+            }
+
+            parent = parent.parent;
+        }
+
+        return result;
+    }
+
+    getParentComponent<T extends Component>(
+        entity: EntityId,
+        componentClass: ComponentClass<T>,
+    ): T | undefined {
+        for (const parentEntity of this.getParentEntities(entity)) {
+            const component = this.getComponent(
+                parentEntity,
+                componentClass,
+            );
+
+            if (component) {
+                return component;
+            }
+        }
     }
 }
