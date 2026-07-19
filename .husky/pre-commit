@@ -1,0 +1,7 @@
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+
+npm run lint:fix
+
+if [ -n "$staged_files" ]; then
+  echo "$staged_files" | git add --pathspec-from-file=-
+fi

@@ -1,5 +1,5 @@
-import EngineContext from "../contexts/engine.context";
-import type { EntityId } from "./types";
+import EngineContext from '../contexts/engine.context';
+import type { EntityId } from './types';
 
 export default abstract class Component {
   entity!: EntityId;

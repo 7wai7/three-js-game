@@ -1,15 +1,15 @@
-import "./style.css";
-import * as THREE from "three";
-import Engine from "./engine/engine.js";
-import EngineContext from "./engine/contexts/engine.context.js";
-import { createEcsCamera, createMainCamera } from "./engine/game/global-factory.js";
-import setupResizeHandler from "./listeners/setup-resize-listener.js";
-import { createFloor, createLight } from "./engine/game/terrain-factory.js";
-import CameraControllerSystem from "./engine/systems/camera-controller.system.js";
-import { instanceModelByConfig } from "./engine/model-instancing/instancing.js";
-import CarComponent from "./engine/components/vehicle/car.js";
-import PlayerControllerComponent from "./engine/components/player-controller.js";
-import { axial_XR9_config } from "./engine/model-instancing/configs/Axial-XR9.js";
+import './style.css';
+import * as THREE from 'three';
+import Engine from './engine/engine.js';
+import EngineContext from './engine/contexts/engine.context.js';
+import { createEcsCamera, createMainCamera } from './engine/game/global-factory.js';
+import setupResizeHandler from './listeners/setup-resize-listener.js';
+import { createFloor, createLight } from './engine/game/terrain-factory.js';
+import CameraControllerSystem from './engine/systems/camera-controller.system.js';
+import { instanceModelByConfig } from './engine/model-instancing/instancing.js';
+import CarComponent from './engine/components/vehicle/car.js';
+import PlayerControllerComponent from './engine/components/player-controller.js';
+import { axial_XR9_config } from './engine/model-instancing/configs/Axial-XR9.js';
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -25,32 +25,21 @@ const engine = new Engine(renderer, scene, camera);
 EngineContext.setEngine(engine);
 
 // Handle window resize
-setupResizeHandler(
-    renderer,
-    camera,
-);
-
+setupResizeHandler(renderer, camera);
 
 const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
 
 createEcsCamera(engine.world, camera);
 createFloor(engine, {
-    position: new THREE.Vector3(0, -2, 0),
+  position: new THREE.Vector3(0, -2, 0),
 });
 
 createLight(scene);
 
-
-instanceModelByConfig(
-    engine,
-    axial_XR9_config,
-    new Map(),
-)
-    .then(({ entities }) => {
-        const car = engine.world.getComponentsFromEntities(entities, CarComponent)[0];
-        engine.world.addComponent(car.entity, new PlayerControllerComponent());
-        cameraControllerSystem.followEntity = car.entity;
-    })
-
+instanceModelByConfig(engine, axial_XR9_config, new Map()).then(({ entities }) => {
+  const car = engine.world.getComponentsFromEntities(entities, CarComponent)[0];
+  engine.world.addComponent(car.entity, new PlayerControllerComponent());
+  cameraControllerSystem.followEntity = car.entity;
+});
 
 engine.start();

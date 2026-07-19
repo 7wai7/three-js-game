@@ -1,11 +1,9 @@
-import type Component from "./component";
+import type Component from './component';
 
 export type DisposableComponent = Component & {
-    dispose(): void;
+  dispose(): void;
 };
 
-export function isDisposableComponent(
-    component: Component,
-): component is DisposableComponent {
-    return typeof (component as Partial<DisposableComponent>).dispose === "function";
+export function isDisposableComponent(component: Component): component is DisposableComponent {
+  return typeof (component as Partial<DisposableComponent>).dispose === 'function';
 }

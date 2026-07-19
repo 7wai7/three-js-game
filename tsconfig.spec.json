@@ -1,19 +1,12 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-        "module": "ES2022",
-        "target": "ES2022",
-        "moduleResolution": "bundler",
-        "types": [
-            "vite/client",
-            "node",
-            "vitest/globals"
-        ],
-        "isolatedModules": true,
-        "noEmit": false
-    },
-    "include": [
-        "src",
-        "test"
-    ]
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ES2022",
+    "target": "ES2022",
+    "moduleResolution": "bundler",
+    "types": ["vite/client", "node", "vitest/globals"],
+    "isolatedModules": true,
+    "noEmit": false
+  },
+  "include": ["src", "test"]
 }
