@@ -1,7 +1,14 @@
 import type System from '../systems/system';
 import Component from './component';
 import { isDisposableComponent, type DisposableComponent } from './component-disposal';
-import type { ComponentClass, EntityId, QueryCache, SystemClass } from './types';
+import type {
+  ComponentClass,
+  ComponentInstances,
+  EntityId,
+  QueryCache,
+  QueryResult,
+  SystemClass,
+} from './types';
 
 export default class World {
   readonly entities: Set<EntityId> = new Set();
@@ -101,6 +108,21 @@ export default class World {
   }
 
   // QUERIES
+  query<T extends readonly ComponentClass<Component>[]>(...componentClasses: T): QueryResult<T>[] {
+    const entities = this.entitiesWith(...componentClasses);
+    const result: QueryResult<T>[] = [];
+
+    for (const entity of entities) {
+      const components = componentClasses.map((componentClass) =>
+        this.getComponent(entity, componentClass),
+      ) as unknown as ComponentInstances<T>;
+
+      result.push([entity, ...components] as QueryResult<T>);
+    }
+
+    return result;
+  }
+
   entitiesWith(...componentClasses: ComponentClass<any>[]) {
     const key = this.createQueryKey(componentClasses);
 

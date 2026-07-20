@@ -22,4 +22,23 @@ describe('ecs tests', () => {
 
     expect([...entities]).toEqual([entity]);
   });
+
+  it('returns query tuples with entity and components in requested order', () => {
+    const world = new World();
+
+    const matchingEntity = world.createEntity('matching');
+    const missingColliderEntity = world.createEntity('missing-collider');
+
+    const rigidBody = new RigidBody({} as RAPIER.RigidBody);
+    const collider = new Collider({} as RAPIER.Collider);
+
+    world.addComponent(matchingEntity, rigidBody);
+    world.addComponent(matchingEntity, collider);
+    world.addComponent(missingColliderEntity, new RigidBody({} as RAPIER.RigidBody));
+
+    const results = world.query(RigidBody, Collider);
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toEqual([matchingEntity, rigidBody, collider]);
+  });
 });

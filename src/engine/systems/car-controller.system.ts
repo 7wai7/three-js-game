@@ -23,12 +23,8 @@ export default class CarControllerSystem extends System {
   private chassisForward = new THREE.Vector3();
 
   update(): void {
-    const entities = this.world.entitiesWith(Car, RigidBody);
-
-    for (const entity of entities) {
-      const chassis = this.world.getComponent(entity, Car)!;
+    for (const [entity, chassis, { rigidBody: rb }] of this.world.query(Car, RigidBody)) {
       const chassisCollider = this.world.getComponent(entity, Collider)!.collider;
-      const rb = this.world.getComponent(entity, RigidBody)!.rigidBody;
 
       if (chassis.wheels.length === 0) {
         chassis.wheels = this.world

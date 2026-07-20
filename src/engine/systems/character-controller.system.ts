@@ -11,13 +11,12 @@ export default class CharacterControllerSystem extends System {
   rightAxis = new THREE.Vector3(1, 0, 0);
 
   update(): void {
-    const entities = this.world.entitiesWith(CharacterController, RigidBody, Collider);
-
-    for (const entity of entities) {
-      const controller = this.world.getComponent(entity, CharacterController)!;
+    for (const [entity, controller, { rigidBody }, { collider }] of this.world.query(
+      CharacterController,
+      RigidBody,
+      Collider,
+    )) {
       const characterController = controller.characterController;
-      const rigidbody = this.world.getComponent(entity, RigidBody)!.rigidBody;
-      const collider = this.world.getComponent(entity, Collider)!.collider;
       const anim = this.world.getComponent(entity, Animation)!;
       let isMove = false;
 
@@ -51,9 +50,9 @@ export default class CharacterControllerSystem extends System {
       characterController.computeColliderMovement(collider, desiredMovement);
 
       const correctedMovement = characterController.computedMovement();
-      const currentPosition = rigidbody.translation();
+      const currentPosition = rigidBody.translation();
 
-      rigidbody.setNextKinematicTranslation({
+      rigidBody.setNextKinematicTranslation({
         x: currentPosition.x + correctedMovement.x,
         y: currentPosition.y + correctedMovement.y,
         z: currentPosition.z + correctedMovement.z,
@@ -66,7 +65,7 @@ export default class CharacterControllerSystem extends System {
       }
 
       if (!controller.isGrounded && controller.verticalVelocity < 0) {
-        const pos = rigidbody.translation();
+        const pos = rigidBody.translation();
         const ray = new RAPIER.Ray(
           {
             x: pos.x,
@@ -96,7 +95,7 @@ export default class CharacterControllerSystem extends System {
         }
       }
 
-      if (isMove) this.turnCharacter(controller, rigidbody);
+      if (isMove) this.turnCharacter(controller, rigidBody);
 
       if (controller.isGrounded) {
         if (isMove) {

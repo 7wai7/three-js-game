@@ -113,7 +113,6 @@ export const axial_XR9_config: ModelConfig = {
         maxSteerAngleDeg: 30,
       },
       {
-        baseObject: 'wheel_baseFR',
         steerObject: 'wheel_steerFR',
         rollObject: 'wheel_rollFR',
       },
@@ -125,7 +124,6 @@ export const axial_XR9_config: ModelConfig = {
         maxSteerAngleDeg: 30,
       },
       {
-        baseObject: 'wheel_baseFL',
         steerObject: 'wheel_steerFL',
         rollObject: 'wheel_rollFL',
       },
@@ -137,7 +135,6 @@ export const axial_XR9_config: ModelConfig = {
         isRear: true,
       },
       {
-        baseObject: 'wheel_baseRR',
         steerObject: 'wheel_steerRR',
         rollObject: 'wheel_rollRR',
       },
@@ -149,7 +146,6 @@ export const axial_XR9_config: ModelConfig = {
         isRear: true,
       },
       {
-        baseObject: 'wheel_baseRL',
         steerObject: 'wheel_steerRL',
         rollObject: 'wheel_rollRL',
       },
