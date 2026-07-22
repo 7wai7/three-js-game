@@ -13,7 +13,10 @@ export default class RapierDebugRenderer extends System {
   }
 
   update() {
-    if (this.input.clicked('KeyQ')) this.setVisible(!this.mesh.visible);
+    const input = this.engine.getInputLayer('system');
+    if (input && input.clicked('showColliders')) {
+      this.setVisible(!this.mesh.visible);
+    }
 
     if (this.mesh.visible) {
       const { vertices, colors } = this.physicsWorld.debugRender();

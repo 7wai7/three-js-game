@@ -17,10 +17,6 @@ export default abstract class System {
     return EngineContext.engine;
   }
 
-  protected get input() {
-    return this.engine.input;
-  }
-
   protected get assets() {
     return this.engine.assets;
   }

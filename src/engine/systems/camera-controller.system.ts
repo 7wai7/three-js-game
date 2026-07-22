@@ -67,17 +67,23 @@ export default class CameraControllerSystem extends System {
   }
 
   private handleInput() {
-    if (this.input.isMouseDown(0)) {
+    const input = this.engine.getInputLayer('camera');
+    if (!input) return;
+
+    if (input.pressed('cameraRotate')) {
       const maxDelta = 70;
-      const dx = clamp(this.input.mouseDelta.x, -maxDelta, maxDelta);
-      const dy = clamp(this.input.mouseDelta.y, -maxDelta, maxDelta);
+
+      const dx = clamp(input.axis('lookX'), -maxDelta, maxDelta);
+      const dy = clamp(input.axis('lookY'), -maxDelta, maxDelta);
 
       this.addYaw(-dx * this.mouseSensitivity);
       this.addPitch(-dy * this.mouseSensitivity);
     }
 
-    if (this.input.wheelDelta !== 0) {
-      this.dist += Math.sign(this.input.wheelDelta) * this.zoomStep;
+    const zoom = input.axis('zoom');
+
+    if (zoom !== 0) {
+      this.dist += Math.sign(zoom) * this.zoomStep;
       this.dist = clamp(this.dist, this.minDist, this.maxDist);
       this.updateOffset();
     }

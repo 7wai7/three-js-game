@@ -25,11 +25,13 @@ export const INPUT_ACTIONS = [
   'sprint',
   'brake',
   'boost',
+  'cameraRotate',
+  'showColliders',
 ] as const;
 
 export type InputAction = (typeof INPUT_ACTIONS)[number];
 
-export const AXIS_ACTIONS = ['moveX', 'moveY', 'lookX', 'lookY'] as const;
+export const AXIS_ACTIONS = ['moveX', 'moveY', 'lookX', 'lookY', 'zoom'] as const;
 
 export type AxisAction = (typeof AXIS_ACTIONS)[number];
 

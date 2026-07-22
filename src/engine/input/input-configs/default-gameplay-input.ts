@@ -1,4 +1,4 @@
-import type { InputLayerConfig } from './types';
+import type { InputLayerConfig } from '../types';
 
 export const defaultGameplayInput: InputLayerConfig = {
   axes: {
