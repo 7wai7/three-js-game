@@ -5,6 +5,7 @@ import System from './system';
 import Wheel from '../components/vehicle/wheel';
 import Collider from '../components/collider';
 import type RAPIER from '@dimforge/rapier3d';
+import ControlInput from '../components/control-input';
 
 type Wheels = {
   wheel: Wheel;
@@ -50,24 +51,27 @@ export default class CarControllerSystem extends System {
       this.chassisUp.copy(this.UP).applyQuaternion(this.chassisQuat);
       this.chassisForward.copy(this.FORWARD).applyQuaternion(this.chassisQuat);
 
+      const input = this.world.getComponent(entity, ControlInput);
+      const steer = input?.axis('moveX') ?? 0;
+      const throttle = input?.axis('moveY') ?? 0;
+      const brake = input?.pressed('brake') ?? false;
+
       for (const w of wheels) {
-        this.applyWheelVisualization(chassis, rb, w);
+        this.applyWheelVisualization(rb, w, steer, throttle, brake);
       }
 
       if (hasGroundedWheel) {
-        const throttle = chassis.inputMoveDir.z;
-
         for (const w of wheels) {
           this.applyGroundPulling(chassis, rb, w);
         }
 
-        if (!chassis.inputBrake && throttle !== 0) {
+        if (!brake && throttle !== 0) {
           for (const w of wheels) {
-            this.applyThrottle(chassis, rb, w);
+            this.applyThrottle(chassis, rb, w, throttle);
           }
         }
 
-        if (chassis.inputBrake) {
+        if (brake) {
           for (const w of wheels) {
             this.applyWheelBrake(chassis, rb, w);
           }
@@ -95,8 +99,14 @@ export default class CarControllerSystem extends System {
     });
   }
 
-  private applyWheelVisualization(chassis: Car, rb: RAPIER.RigidBody, w: Wheels) {
-    w.wheel.solveSteer(chassis.inputMoveDir.x);
+  private applyWheelVisualization(
+    rb: RAPIER.RigidBody,
+    w: Wheels,
+    steer: number,
+    throttle: number,
+    brake: boolean,
+  ) {
+    w.wheel.solveSteer(steer);
 
     const pointVelocity = rb.velocityAtPoint(w.rigidbody.translation());
 
@@ -106,15 +116,14 @@ export default class CarControllerSystem extends System {
 
     w.wheel.solveRoll({
       groundSpeed,
-      throttle: chassis.inputMoveDir.z,
-      brake: chassis.inputBrake,
+      throttle,
+      brake,
     });
   }
 
-  private applyThrottle(chassis: Car, rb: RAPIER.RigidBody, wheel: Wheels) {
+  private applyThrottle(chassis: Car, rb: RAPIER.RigidBody, wheel: Wheels, throttle: number) {
     if (!wheel.wheel.isGrounded || !wheel.wheel.isRear) return;
 
-    const throttle = chassis.inputMoveDir.z;
     const wheelPos = wheel.rigidbody.translation();
 
     const forward = this.chassisForward.clone();

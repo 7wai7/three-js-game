@@ -9,6 +9,7 @@ export default class InputManager {
   // mouse buttons (0 = left, 1 = middle, 2 = right)
   private readonly pressedMouseButtons = new Set<MouseButton>();
   private readonly clickedMouseButtons = new Set<MouseButton>();
+  private readonly releasedMouseButtons = new Set<MouseButton>();
 
   private readonly _mousePosition = {
     x: window.innerWidth / 2,
@@ -70,6 +71,10 @@ export default class InputManager {
     return this.clickedMouseButtons.has(button);
   }
 
+  isMouseReleased(button: MouseButton) {
+    return this.releasedMouseButtons.has(button);
+  }
+
   get mousePosition() {
     return this._mousePosition;
   }
@@ -92,6 +97,7 @@ export default class InputManager {
     this.clickedKeys.clear();
     this.releasedKeys.clear();
     this.clickedMouseButtons.clear();
+    this.releasedMouseButtons.clear();
     // zero deltas
     this._mouseDelta.x = 0;
     this._mouseDelta.y = 0;
@@ -99,12 +105,12 @@ export default class InputManager {
   }
 
   // ------------------- internal event handlers -------------------
-  private lockMouseMove(e: MouseEvent) {
+  private lockMouseMove = (e: MouseEvent) => {
     if (document.pointerLockElement === this.lockElement) {
-      this._mouseDelta.x = e.movementX;
-      this._mouseDelta.y = e.movementY;
+      this._mouseDelta.x += e.movementX;
+      this._mouseDelta.y += e.movementY;
     }
-  }
+  };
 
   private mouseMove = (e: MouseEvent) => {
     const newX = e.clientX;
@@ -126,6 +132,7 @@ export default class InputManager {
   private mouseUp = (e: MouseEvent) => {
     const b = e.button as MouseButton;
     this.pressedMouseButtons.delete(b);
+    this.releasedMouseButtons.add(b);
   };
 
   private wheel = (e: WheelEvent) => {
@@ -207,6 +214,7 @@ export default class InputManager {
   private onTouchEnd = (e: TouchEvent) => {
     // release left mouse
     this.pressedMouseButtons.delete(0);
+    this.releasedMouseButtons.add(0);
     e.preventDefault();
   };
 
