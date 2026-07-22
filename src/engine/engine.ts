@@ -8,15 +8,19 @@ import CameraControllerSystem from './systems/camera-controller.system';
 import AnimationsSystem from './systems/animations.system';
 import type { Assets } from './assets/types';
 import TextureAssetManager from './assets/texture-asset-manager';
-import CharacterInputSystem from './systems/input-controllers/character-input.system';
 import RapierDebugRenderer from './systems/rapier-debug-renderer.system';
-import VehicleInputSystem from './systems/input-controllers/vehicle-input.system';
 import CarControllerSystem from './systems/car-controller.system';
 import GameWorld from './game/game-world';
+import InputLayer from './input/input-layer';
+import { defaultGameplayInput } from './input/default-gameplay-input';
+import PlayerInputSystem from './systems/input-controllers/player-input.system';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
   readonly input: InputManager = new InputManager();
+  readonly inputLayers = new Map<string, InputLayer>([
+    ['gameplay', new InputLayer(this.input, defaultGameplayInput)],
+  ]);
 
   readonly assets: Assets = {
     gltf: new GLTFAssetManager(),
@@ -40,13 +44,16 @@ export default class Engine {
     this.camera = camera;
 
     this.world.addSystem(new PhysicsSyncSystem());
-    this.world.addSystem(new CharacterInputSystem());
-    this.world.addSystem(new VehicleInputSystem());
+    this.world.addSystem(new PlayerInputSystem());
     this.world.addSystem(new CarControllerSystem());
     this.world.addSystem(new CharacterControllerSystem());
     this.world.addSystem(new AnimationsSystem());
     this.world.addSystem(new CameraControllerSystem());
     this.world.addSystem(new RapierDebugRenderer());
+  }
+
+  getInputLayer(name: string) {
+    return this.inputLayers.get(name);
   }
 
   start() {

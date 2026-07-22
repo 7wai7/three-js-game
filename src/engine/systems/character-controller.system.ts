@@ -5,10 +5,16 @@ import System from './system';
 import RigidBody from '../components/rigidbody';
 import Collider from '../components/collider';
 import Animation from '../components/animation';
+import ControlInput from '../components/control-input';
+import PlayerControlled from '../components/player-controlled';
 
 export default class CharacterControllerSystem extends System {
   forwardAxis = new THREE.Vector3(0, 0, 1);
   rightAxis = new THREE.Vector3(1, 0, 0);
+  private cameraForward = new THREE.Vector3();
+  private cameraRight = new THREE.Vector3();
+  private moveDirection = new THREE.Vector3();
+  private up = new THREE.Vector3(0, 1, 0);
 
   update(): void {
     for (const [entity, controller, { rigidBody }, { collider }] of this.world.query(
@@ -18,28 +24,30 @@ export default class CharacterControllerSystem extends System {
     )) {
       const characterController = controller.characterController;
       const anim = this.world.getComponent(entity, Animation)!;
+      const input = this.world.getComponent(entity, ControlInput);
       let isMove = false;
 
-      if (controller.inputMoveDir.lengthSq() > 0) {
-        controller.inputMoveDir.normalize();
+      this.resolveMoveDirectionByCamera(entity, input);
+
+      if (this.moveDirection.lengthSq() > 0) {
+        this.moveDirection.normalize();
         isMove = true;
       }
 
-      const speed = controller.isRunning ? controller.runSpeed : controller.speed; // units per second
+      const isRunning = input?.pressed('sprint') ?? false;
+      const speed = isRunning ? controller.runSpeed : controller.speed; // units per second
       const g = this.physicsWorld.gravity;
       const desiredMovement = new THREE.Vector3();
 
-      desiredMovement.copy(controller.inputMoveDir).multiplyScalar(speed);
+      desiredMovement.copy(this.moveDirection).multiplyScalar(speed);
 
-      if (controller.jumpRequested && controller.isGrounded) {
+      if (input?.clicked('jump') && controller.isGrounded) {
         controller.verticalVelocity = controller.jumpForce;
         controller.isGrounded = false;
         anim.requestAnimation('Jumping Up', {
           loop: false,
         });
       }
-
-      controller.jumpRequested = false;
 
       controller.verticalVelocity += g.y * controller.gravityScale * this.dt;
 
@@ -95,11 +103,11 @@ export default class CharacterControllerSystem extends System {
         }
       }
 
-      if (isMove) this.turnCharacter(controller, rigidBody);
+      if (isMove) this.turnCharacter(controller, rigidBody, this.moveDirection);
 
       if (controller.isGrounded) {
         if (isMove) {
-          anim.requestAnimation(controller.isRunning ? 'Run' : 'Walk');
+          anim.requestAnimation(isRunning ? 'Run' : 'Walk');
         } else {
           anim.requestAnimation('Idle');
         }
@@ -107,8 +115,34 @@ export default class CharacterControllerSystem extends System {
     }
   }
 
-  private turnCharacter(controller: CharacterController, rigidbody: RAPIER.RigidBody) {
-    const targetAngle = Math.atan2(controller.inputMoveDir.x, controller.inputMoveDir.z);
+  private resolveMoveDirectionByCamera(entity: string, input?: ControlInput) {
+    this.moveDirection.set(0, 0, 0);
+
+    if (!input || !this.world.getComponent(entity, PlayerControlled)) return;
+
+    const moveX = input.axis('moveX');
+    const moveY = input.axis('moveY');
+
+    this.engine.camera.getWorldDirection(this.cameraForward);
+    this.cameraForward.y = 0;
+
+    if (this.cameraForward.lengthSq() > 0) {
+      this.cameraForward.normalize();
+    }
+
+    this.cameraRight.crossVectors(this.cameraForward, this.up).normalize();
+
+    this.moveDirection
+      .addScaledVector(this.cameraForward, moveY)
+      .addScaledVector(this.cameraRight, moveX);
+  }
+
+  private turnCharacter(
+    controller: CharacterController,
+    rigidbody: RAPIER.RigidBody,
+    moveDirection: THREE.Vector3,
+  ) {
+    const targetAngle = Math.atan2(moveDirection.x, moveDirection.z);
 
     const q = rigidbody.rotation();
     const currentQuat = new THREE.Quaternion(q.x, q.y, q.z, q.w);

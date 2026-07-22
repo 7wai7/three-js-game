@@ -1,4 +1,3 @@
-import { Vector3 } from 'three';
 import Component from '../../ecs/component';
 
 export type CarProps = {
@@ -9,9 +8,6 @@ export type CarProps = {
 };
 
 export default class Car extends Component {
-  inputMoveDir = new Vector3();
-  inputBrake = false;
-
   engineForce = 70;
   brakeForce = 12;
   sideGrip = 17;
