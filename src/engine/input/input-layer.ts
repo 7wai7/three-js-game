@@ -17,73 +17,93 @@ export default class InputLayer {
   }
 
   pressed(action: InputAction) {
-    return this.button(action).pressed;
+    return this.buttonValue(action, 'pressed');
   }
 
   clicked(action: InputAction) {
-    return this.button(action).clicked;
+    return this.buttonValue(action, 'clicked');
   }
 
   released(action: InputAction) {
-    return this.button(action).released;
+    return this.buttonValue(action, 'released');
   }
 
-  button(action: InputAction): ButtonState {
+  button(action: InputAction, out: ButtonState): ButtonState {
     const bindings = this.config.buttons?.[action];
 
-    if (!bindings) {
-      return {
-        pressed: false,
-        clicked: false,
-        released: false,
-      };
+    out.pressed = false;
+    out.clicked = false;
+    out.released = false;
+
+    if (!bindings) return out;
+
+    for (const binding of bindings) {
+      out.pressed ||= this.isPressed(binding);
+      out.clicked ||= this.isClicked(binding);
+      out.released ||= this.isReleased(binding);
     }
 
-    return {
-      pressed: bindings.some((binding) => this.isPressed(binding)),
-      clicked: bindings.some((binding) => this.isClicked(binding)),
-      released: bindings.some((binding) => this.isReleased(binding)),
-    };
+    return out;
   }
 
   axis(action: AxisAction) {
     const binding = this.config.axes?.[action];
     if (!binding) return 0;
 
-    let value = 0;
+    switch (binding.type) {
+      case 'mouse':
+        return (
+          (binding.axis === 'x' ? this.input.mouseDelta.x : this.input.mouseDelta.y) *
+          (binding.scale ?? 1)
+        );
 
-    if (binding.negative && this.isPressed(binding.negative)) {
-      value -= 1;
+      case 'wheel':
+        return this.input.wheelDelta * (binding.scale ?? 1);
+
+      case 'buttons': {
+        let value = 0;
+
+        if (binding.negative && this.isPressed(binding.negative)) {
+          value -= 1;
+        }
+
+        if (binding.positive && this.isPressed(binding.positive)) {
+          value += 1;
+        }
+
+        return value * (binding.scale ?? 1);
+      }
+    }
+  }
+
+  private buttonValue(action: InputAction, key: keyof ButtonState) {
+    const bindings = this.config.buttons?.[action];
+    if (!bindings) return false;
+
+    for (const binding of bindings) {
+      if (key === 'pressed' && this.isPressed(binding)) return true;
+      if (key === 'clicked' && this.isClicked(binding)) return true;
+      if (key === 'released' && this.isReleased(binding)) return true;
     }
 
-    if (binding.positive && this.isPressed(binding.positive)) {
-      value += 1;
-    }
-
-    return value * (binding.scale ?? 1);
+    return false;
   }
 
   private isPressed(binding: ButtonBinding) {
-    if (binding.device === 'keyboard') {
-      return this.input.pressed(binding.code);
-    }
-
-    return this.input.isMouseDown(binding.button);
+    return binding.device === 'keyboard'
+      ? this.input.pressed(binding.code)
+      : this.input.isMouseDown(binding.button);
   }
 
   private isClicked(binding: ButtonBinding) {
-    if (binding.device === 'keyboard') {
-      return this.input.clicked(binding.code);
-    }
-
-    return this.input.isMouseClicked(binding.button);
+    return binding.device === 'keyboard'
+      ? this.input.clicked(binding.code)
+      : this.input.isMouseClicked(binding.button);
   }
 
   private isReleased(binding: ButtonBinding) {
-    if (binding.device === 'keyboard') {
-      return this.input.released(binding.code);
-    }
-
-    return this.input.isMouseReleased(binding.button);
+    return binding.device === 'keyboard'
+      ? this.input.released(binding.code)
+      : this.input.isMouseReleased(binding.button);
   }
 }

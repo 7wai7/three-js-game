@@ -36,11 +36,22 @@ export type AxisAction = (typeof AXIS_ACTIONS)[number];
 export type ButtonBinding =
   { device: 'keyboard'; code: InputKey } | { device: 'mouse'; button: MouseButton };
 
-export type AxisBinding = {
-  negative?: ButtonBinding;
-  positive?: ButtonBinding;
-  scale?: number;
-};
+export type AxisBinding =
+  | {
+      type: 'buttons';
+      negative?: ButtonBinding;
+      positive?: ButtonBinding;
+      scale?: number;
+    }
+  | {
+      type: 'mouse';
+      axis: 'x' | 'y';
+      scale?: number;
+    }
+  | {
+      type: 'wheel';
+      scale?: number;
+    };
 
 export type InputLayerConfig = {
   buttons?: Partial<Record<InputAction, ButtonBinding[]>>;
