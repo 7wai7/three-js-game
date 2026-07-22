@@ -5,28 +5,24 @@ import System from '../system';
 
 export default class PlayerInputSystem extends System {
   update(): void {
-    const entities = this.world.entitiesWith(PlayerControlled);
-
-    for (const entity of entities) {
-      const player = this.world.getComponent(entity, PlayerControlled)!;
+    for (const [entity, player] of this.world.query(PlayerControlled)) {
       const layer = this.engine.getInputLayer(player.inputLayer);
-
       if (!layer) continue;
 
-      let controlInput = this.world.getComponent(entity, ControlInput);
+      let input = this.world.getComponent(entity, ControlInput);
 
-      if (!controlInput) {
-        controlInput = this.world.addComponent(entity, new ControlInput());
+      if (!input) {
+        input = this.world.addComponent(entity, new ControlInput());
       }
 
-      controlInput.reset();
+      input.reset();
 
       for (const action of INPUT_ACTIONS) {
-        controlInput.setButton(action, layer.button(action));
+        layer.button(action, input.buttons[action]);
       }
 
       for (const action of AXIS_ACTIONS) {
-        controlInput.setAxis(action, layer.axis(action));
+        input.axes[action] = layer.axis(action);
       }
     }
   }

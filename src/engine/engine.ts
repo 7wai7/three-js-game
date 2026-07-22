@@ -12,13 +12,17 @@ import RapierDebugRenderer from './systems/rapier-debug-renderer.system';
 import CarControllerSystem from './systems/car-controller.system';
 import GameWorld from './game/game-world';
 import InputLayer from './input/input-layer';
-import { defaultGameplayInput } from './input/default-gameplay-input';
+import { defaultGameplayInput } from './input/input-configs/default-gameplay-input';
 import PlayerInputSystem from './systems/input-controllers/player-input.system';
+import { defaultCameraInput } from './input/input-configs/default-camera-input';
+import { systemInput } from './input/input-configs/system-input';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
   readonly input: InputManager = new InputManager();
   readonly inputLayers = new Map<string, InputLayer>([
+    ['system', new InputLayer(this.input, systemInput)],
+    ['camera', new InputLayer(this.input, defaultCameraInput)],
     ['gameplay', new InputLayer(this.input, defaultGameplayInput)],
   ]);
 

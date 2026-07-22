@@ -32,6 +32,7 @@ describe('input layers', () => {
     const layer = new InputLayer(rawInput as unknown as InputManager, {
       axes: {
         moveX: {
+          type: 'buttons',
           negative: { device: 'keyboard', code: 'KeyA' },
           positive: { device: 'keyboard', code: 'KeyD' },
         },
@@ -56,6 +57,7 @@ describe('input layers', () => {
     const layer = new InputLayer(rawInput as unknown as InputManager, {
       axes: {
         moveY: {
+          type: 'buttons',
           negative: { device: 'keyboard', code: 'KeyS' },
           positive: { device: 'keyboard', code: 'KeyW' },
         },
