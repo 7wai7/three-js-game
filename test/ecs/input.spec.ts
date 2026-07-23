@@ -11,14 +11,12 @@ import PlayerInputSystem from '../../src/engine/systems/input-controllers/player
 
 function createRawInput() {
   return {
-    /* eslint-disable */
     pressed: vi.fn((_code: string) => false),
     clicked: vi.fn((_code: string) => false),
     released: vi.fn((_code: string) => false),
     isMouseDown: vi.fn((_button: number) => false),
     isMouseClicked: vi.fn((_button: number) => false),
     isMouseReleased: vi.fn((_button: number) => false),
-    /* eslint-enable */
   };
 }
 
