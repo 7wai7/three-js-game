@@ -21,4 +21,10 @@ export default class Magazine extends Component {
     this.ammo -= amount;
     return true;
   }
+
+  consumeAvailable(amount: number) {
+    const consumed = Math.min(this.ammo, amount);
+    this.ammo -= consumed;
+    return consumed;
+  }
 }
