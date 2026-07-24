@@ -131,7 +131,30 @@ describe('combat systems', () => {
     world.update();
 
     expect(spinUp.value).toBe(1);
-    expect(spawnProjectile).toHaveBeenCalledTimes(1);
+    expect(spawnProjectile).toHaveBeenCalledTimes(5);
     expect(spawnProjectile).toHaveBeenCalledWith(minigun);
+  });
+
+  it('can enqueue multiple automatic shots in one frame', () => {
+    engine.deltaTime = 1 / 60;
+
+    world.addSystem(new AutomaticFireSystem());
+
+    const entity = world.createEntity('weapon');
+    const fireControl = world.addComponent(entity, new FireControl());
+    const shotQueue = world.addComponent(entity, new ShotQueue());
+    const magazine = world.addComponent(entity, new Magazine(1000));
+
+    world.addComponent(entity, new Weapon());
+    world.addComponent(entity, new AutomaticTrigger());
+    world.addComponent(entity, new FireRate(1000));
+
+    fireControl.setActive(true);
+
+    world.update();
+    world.update();
+
+    expect(shotQueue.count).toBe(16);
+    expect(magazine.ammo).toBe(984);
   });
 });

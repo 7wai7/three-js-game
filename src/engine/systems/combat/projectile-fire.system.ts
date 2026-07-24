@@ -14,5 +14,7 @@ export default class ProjectileFireSystem extends System {
     }
   }
 
-  private spawnProjectile(_entity: EntityId) {}
+  private spawnProjectile(entity: EntityId) {
+    console.log('FIRE!', entity);
+  }
 }

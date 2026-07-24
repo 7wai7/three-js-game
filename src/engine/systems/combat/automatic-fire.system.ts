@@ -16,18 +16,30 @@ export default class AutomaticFireSystem extends System {
       Weapon,
       AutomaticTrigger,
     )) {
-      fireRate.remaining = Math.max(fireRate.remaining - this.dt, 0);
-
-      if (!fireControl.canFire || !fireRate.ready) continue;
+      if (!fireControl.canFire) {
+        fireRate.clear();
+        continue;
+      }
 
       const reloadable = this.world.getComponent(entity, Reloadable);
-      if (reloadable?.active) continue;
+      if (reloadable?.active) {
+        fireRate.clear();
+        continue;
+      }
+
+      fireRate.tick(this.dt);
+
+      let shots = fireRate.consumeReadyShots();
+      if (shots === 0) continue;
 
       const magazine = this.world.getComponent(entity, Magazine);
-      if (magazine && !magazine.consume()) continue;
+      if (magazine) {
+        shots = magazine.consumeAvailable(shots);
+      }
 
-      shotQueue.enqueue();
-      fireRate.reset();
+      if (shots > 0) {
+        shotQueue.enqueue(shots);
+      }
     }
   }
 }
