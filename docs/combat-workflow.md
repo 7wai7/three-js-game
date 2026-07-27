@@ -22,6 +22,8 @@ ControlInput
   -> AutomaticFireSystem
   -> ShotQueue
   -> ProjectileFireSystem
+  -> BallisticProjectile
+  -> ProjectileMotionSystem
 ```
 
 ## Components
@@ -73,6 +75,40 @@ Stores reload state and reload timer.
 Stores how many shots should be executed this frame. This separates "deciding
 to shoot" from "creating the projectile".
 
+`ProjectileEmitter`
+
+Stores how this weapon creates ordinary projectile objects: projectile model,
+initial speed, gravity, drag, lifetime, and shoot points.
+
+Shoot points are `THREE.Object3D` references from the weapon model. In weapon
+GLB files they should usually be named `ShootPoint`, `ShootPoint.001`,
+`ShootPoint.002`, etc. A weapon can have one or many shoot points.
+
+With model instancing, bind those nodes through `objectRefLists`:
+
+```ts
+component(
+  ProjectileEmitter,
+  {
+    speed: 80,
+  },
+  {
+    objectRefLists: {
+      shootPoints: ['Shootpoint.L', 'Shootpoint.R'],
+    },
+  },
+);
+```
+
+When a weapon has several shoot points, `ProjectileFireSystem` cycles through
+them in order. This supports multi-barrel weapons without making the firing
+logic special-case each weapon.
+
+`BallisticProjectile`
+
+Stores runtime movement data for a projectile entity: velocity, gravity, drag,
+lifetime, and age.
+
 ## Systems
 
 `FireInputSystem`
@@ -109,10 +145,21 @@ creation.
 
 `ProjectileFireSystem`
 
-Reads `ShotQueue` and executes the actual shot creation.
+Reads `ShotQueue` and `ProjectileEmitter`, then creates projectile game objects.
 
-Right now this is only a placeholder `console.log`, but later this is where
-projectile spawning, raycasts, muzzle effects, or sounds can be triggered.
+For ordinary bullets it asks `GLTFAssetManager` for a clone of
+`src/assets/Weapons/Bullet.glb`, places it at the next shoot point, and adds a
+`BallisticProjectile` component. This system knows how to spawn projectiles, but
+it does not own projectile model caches and it does not decide when the weapon
+should shoot.
+
+If the projectile model is still loading, `ShotQueue` is left untouched and the
+shots are spawned after the asset is available.
+
+`ProjectileMotionSystem`
+
+Reads `BallisticProjectile` entities and moves them using velocity, gravity, air
+drag, and lifetime. It does not know which weapon created the projectile.
 
 ## Example: Simple Automatic Weapon
 
@@ -126,7 +173,11 @@ AutomaticTrigger
 FireRate
 Magazine
 ShotQueue
+ProjectileEmitter
 ```
+
+`ProjectileEmitter` needs at least one shoot point. With model instancing, bind
+the weapon model's `ShootPoint` objects into `ProjectileEmitter.shootPoints`.
 
 Flow:
 
@@ -135,7 +186,8 @@ Player holds fire
   -> FireInputSystem sets FireControl.active
   -> AutomaticFireSystem checks cooldown and ammo
   -> ShotQueue receives a shot
-  -> ProjectileFireSystem creates the projectile
+  -> ProjectileFireSystem creates a projectile entity
+  -> ProjectileMotionSystem moves the projectile
 ```
 
 ## Example: Minigun
@@ -151,6 +203,7 @@ AutomaticTrigger
 FireRate
 Magazine
 ShotQueue
+ProjectileEmitter
 ```
 
 Flow:
@@ -178,6 +231,12 @@ firing system aware of every possible condition.
 
 Prefer writing to `ShotQueue` instead of spawning projectiles directly from
 decision systems.
+
+For weapon-specific mechanics, keep the custom behavior in a focused component
+and system for that weapon family. The system should still communicate through
+shared combat data when possible: block or set `FireControl`, enqueue
+`ShotQueue`, or use a custom emitter component if the projectile creation really
+is unique.
 
 This keeps weapon behavior composable:
 

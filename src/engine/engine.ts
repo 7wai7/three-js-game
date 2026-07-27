@@ -22,6 +22,7 @@ import FireInputSystem from './systems/combat/fire-input.system';
 import SpinUpSystem from './systems/combat/spin-up.system';
 import AutomaticFireSystem from './systems/combat/automatic-fire.system';
 import ProjectileFireSystem from './systems/combat/projectile-fire.system';
+import ProjectileMotionSystem from './systems/combat/projectile-motion.system';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
@@ -63,6 +64,7 @@ export default class Engine {
     this.world.addSystem(new SpinUpSystem());
     this.world.addSystem(new AutomaticFireSystem());
     this.world.addSystem(new ProjectileFireSystem());
+    this.world.addSystem(new ProjectileMotionSystem());
     this.world.addSystem(new AnimationsSystem());
     this.world.addSystem(new CameraControllerSystem());
     this.world.addSystem(new RapierDebugRenderer());

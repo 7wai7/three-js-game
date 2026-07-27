@@ -9,7 +9,7 @@ export type ModelConfig = {
 
   entities: Record<SceneRef, EntityConfig>;
 
-  joints: JointConfig[];
+  joints?: JointConfig[];
 };
 
 export type EntityConfig = {
@@ -53,12 +53,24 @@ type ObjectRefKey<C extends ComponentConstructor> = {
 }[WritableKey<InstanceType<C>>] &
   string;
 
+type ObjectRefListKey<C extends ComponentConstructor> = {
+  [K in WritableKey<InstanceType<C>>]-?: NonNullable<InstanceType<C>[K]> extends THREE.Object3D[]
+    ? K
+    : never;
+}[WritableKey<InstanceType<C>>] &
+  string;
+
 export type ComponentObjectRefs<C extends ComponentConstructor> = Partial<
   Record<ObjectRefKey<C>, SceneRef>
 >;
 
+export type ComponentObjectRefLists<C extends ComponentConstructor> = Partial<
+  Record<ObjectRefListKey<C>, SceneRef[]>
+>;
+
 type ComponentConfigOptions<C extends ComponentConstructor> = {
   objectRefs?: ComponentObjectRefs<C>;
+  objectRefLists?: ComponentObjectRefLists<C>;
 };
 
 type ComponentConfigArgs<C extends ComponentConstructor> = [ComponentProps<C>] extends [never]
@@ -71,6 +83,7 @@ export type EntityComponentConfig<C extends ComponentConstructor = ComponentCons
   type: C;
   props?: ComponentProps<C>;
   objectRefs?: ComponentObjectRefs<C>;
+  objectRefLists?: ComponentObjectRefLists<C>;
 };
 
 export function component<C extends ComponentConstructor>(

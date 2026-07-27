@@ -75,9 +75,7 @@ function createComponent(config: EntityComponentConfig): Component {
 }
 
 function bindObjectRefs(component: Component, config: EntityComponentConfig, ctx: RuntimeContext) {
-  if (!config.objectRefs) return;
-
-  for (const [field, nodeName] of Object.entries(config.objectRefs)) {
+  for (const [field, nodeName] of Object.entries(config.objectRefs ?? {})) {
     const node = ctx.nodesByName.get(nodeName as string);
 
     if (!node) {
@@ -88,6 +86,25 @@ function bindObjectRefs(component: Component, config: EntityComponentConfig, ctx
     }
 
     (component as Record<string, any>)[field] = node.source;
+  }
+
+  for (const [field, nodeNames] of Object.entries(config.objectRefLists ?? {})) {
+    const refs: THREE.Object3D[] = [];
+
+    for (const nodeName of nodeNames as string[]) {
+      const node = ctx.nodesByName.get(nodeName);
+
+      if (!node) {
+        console.warn(
+          `Object ref "${nodeName}" not found for component "${component.constructor.name}"`,
+        );
+        continue;
+      }
+
+      refs.push(node.source);
+    }
+
+    (component as Record<string, any>)[field] = refs;
   }
 }
 
@@ -113,10 +130,20 @@ function fillObjectsMap(config: ModelConfig, objectsMap: InstanceNodeMap, model:
             });
           }
         }
+
+        for (const objectRefs of Object.values(
+          componentConfig.objectRefLists ?? {},
+        ) as string[][]) {
+          if (objectRefs.includes(obj.name) && !objectsMap.has(obj.name)) {
+            objectsMap.set(obj.name, {
+              source: obj,
+            });
+          }
+        }
       }
     }
 
-    for (const jointConfig of config.joints) {
+    for (const jointConfig of config.joints ?? []) {
       if (
         jointConfig.type === 'revolute' &&
         obj.name === jointConfig.anchor &&
@@ -280,7 +307,7 @@ function createColliders(
 }
 
 function createJoints(config: ModelConfig, ctx: RuntimeContext) {
-  for (const joint of config.joints) {
+  for (const joint of config.joints ?? []) {
     const bodyA = ctx.nodesByName.get(joint.bodyA)?.rigidBody;
     const bodyB = ctx.nodesByName.get(joint.bodyB)?.rigidBody;
 
