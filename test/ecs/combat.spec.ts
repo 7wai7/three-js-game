@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SpinUp from '../../src/engine/components/combat/capabilities/spin-up';
 import AutomaticTrigger from '../../src/engine/components/combat/firing-modes/automatic-trigger';
 import FireControl from '../../src/engine/components/combat/fire-control';
-import FireInput from '../../src/engine/components/combat/fire-input';
 import FireRate from '../../src/engine/components/combat/fire-rate';
 import Magazine from '../../src/engine/components/combat/magazine';
 import BallisticProjectile from '../../src/engine/components/combat/projectiles/ballistic-projectile';
@@ -161,7 +160,6 @@ describe('combat systems', () => {
     });
 
     world.addComponent(minigun, new Weapon());
-    world.addComponent(minigun, new FireInput());
     world.addComponent(minigun, new FireControl());
     const spinUp = world.addComponent(
       minigun,

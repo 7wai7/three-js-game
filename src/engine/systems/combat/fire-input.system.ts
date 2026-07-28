@@ -1,6 +1,5 @@
 import ControlInput from '../../components/control-input';
 import FireControl from '../../components/combat/fire-control';
-import FireInput from '../../components/combat/fire-input';
 import Weapon from '../../components/combat/weapon';
 import type { EntityId } from '../../ecs/types';
 import System from '../system';
@@ -10,11 +9,30 @@ export default class FireInputSystem extends System {
     for (const [entity, fireControl] of this.world.query(FireControl)) {
       fireControl.resetFrame();
 
-      const fireInput = this.world.getComponent(entity, FireInput);
-      if (!fireInput || !this.world.getComponent(entity, Weapon)) continue;
+      if (!this.world.getComponent(entity, Weapon)) continue;
 
       const input = this.getControlInput(entity);
-      fireControl.setActive(input?.pressed(fireInput.action) ?? false);
+      this.setActiveFromInput(fireControl, input);
+    }
+  }
+
+  private setActiveFromInput(fireControl: FireControl, controlInput?: ControlInput) {
+    fireControl.setActive(this.readInputState(fireControl, controlInput));
+  }
+
+  private readInputState(fireControl: FireControl, controlInput?: ControlInput) {
+    if (!controlInput) {
+      return false;
+    }
+
+    switch (fireControl.mode) {
+      case 'clicked':
+        return controlInput.clicked(fireControl.action);
+      case 'released':
+        return controlInput.released(fireControl.action);
+      case 'pressed':
+      default:
+        return controlInput.pressed(fireControl.action);
     }
   }
 

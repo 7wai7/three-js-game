@@ -1,10 +1,32 @@
 import Component from '../../ecs/component';
+import type { InputAction } from '../../input/types';
+
+export type FireInputMode = 'pressed' | 'clicked' | 'released';
+
+export type FireControlProps = {
+  action?: InputAction;
+  mode?: FireInputMode;
+};
 
 export default class FireControl extends Component {
   active = false;
   started = false;
   stopped = false;
   blocked = false;
+  action: InputAction = 'firePrimary';
+  mode: FireInputMode = 'pressed';
+
+  constructor(props: FireControlProps = {}) {
+    super();
+
+    if (props.action !== undefined) {
+      this.action = props.action;
+    }
+
+    if (props.mode !== undefined) {
+      this.mode = props.mode;
+    }
+  }
 
   resetFrame() {
     this.started = false;

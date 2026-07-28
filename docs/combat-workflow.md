@@ -32,12 +32,6 @@ ControlInput
 
 A marker component. It says that this entity is a weapon.
 
-`FireInput`
-
-Defines which input action controls this weapon, for example `firePrimary`.
-This component does not store button state. It only stores the binding to a
-semantic input action.
-
 `FireControl`
 
 Stores the normalized fire intent:
@@ -48,6 +42,7 @@ Stores the normalized fire intent:
 - `blocked`: another system temporarily prevents firing
 
 Other systems should read `FireControl` instead of reading raw input.
+Defines which input action controls this weapon, for example `firePrimary`.
 
 `SpinUp`
 
@@ -167,7 +162,6 @@ Required components:
 
 ```text
 Weapon
-FireInput
 FireControl
 AutomaticTrigger
 FireRate
@@ -196,7 +190,6 @@ Required components:
 
 ```text
 Weapon
-FireInput
 FireControl
 SpinUp
 AutomaticTrigger

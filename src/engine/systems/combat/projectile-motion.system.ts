@@ -4,7 +4,7 @@ import System from '../system';
 
 export default class ProjectileMotionSystem extends System {
   private displacement = new THREE.Vector3();
-  private readonly up = new THREE.Vector3(0, 1, 0);
+  private readonly forward = new THREE.Vector3(0, 0, 1);
   private readonly direction = new THREE.Vector3();
 
   update(): void {
@@ -25,9 +25,11 @@ export default class ProjectileMotionSystem extends System {
       this.displacement.copy(projectile.velocity).multiplyScalar(this.dt);
       projectile.gameObject.position.add(this.displacement);
 
-      if (projectile.velocity.lengthSq() > 0) {
-        this.direction.copy(projectile.velocity).normalize();
-        projectile.gameObject.quaternion.setFromUnitVectors(this.up, this.direction);
+      this.direction.set(projectile.velocity.x, 0, projectile.velocity.z);
+
+      if (this.direction.lengthSq() > 0) {
+        this.direction.normalize();
+        projectile.gameObject.quaternion.setFromUnitVectors(this.forward, this.direction);
       }
     }
   }
