@@ -1,6 +1,7 @@
 import type System from '../systems/system';
 import Component from './component';
 import { isDisposableComponent, type DisposableComponent } from './component-disposal';
+import { ComponentRequirementError, getRequiredComponents } from './require-component';
 import type {
   ComponentClass,
   ComponentInstances,
@@ -18,6 +19,7 @@ export default class World {
 
   private readonly disposeQueue: DisposableComponent[] = [];
   private readonly queuedForDispose = new Set<DisposableComponent>();
+  private componentRequirementsDirty = false;
 
   createEntity(id: EntityId) {
     if (this.entities.has(id)) {
@@ -45,12 +47,15 @@ export default class World {
     for (const query of this.queryCache.values()) {
       query.entities.delete(id);
     }
+
+    this.markComponentRequirementsDirty();
   }
 
   addComponent<T extends Component>(entity: EntityId, component: T) {
     if (!this.entities.has(entity)) throw new Error(`Entity '${entity}' not found`);
 
     const componentClass = component.constructor as ComponentClass<T>;
+
     let componentMap = this.components.get(componentClass);
 
     if (!componentMap) {
@@ -69,6 +74,7 @@ export default class World {
     this.cancelComponentDispose(component);
 
     this.markQueriesDirty();
+    this.markComponentRequirementsDirty();
 
     return component;
   }
@@ -87,6 +93,7 @@ export default class World {
     }
 
     this.markQueriesDirty();
+    this.markComponentRequirementsDirty();
 
     return component as T | undefined;
   }
@@ -189,6 +196,34 @@ export default class World {
     }
   }
 
+  private markComponentRequirementsDirty() {
+    this.componentRequirementsDirty = true;
+  }
+
+  validateComponentRequirements() {
+    for (const [componentClass, componentMap] of this.components) {
+      for (const entity of componentMap.keys()) {
+        this.assertComponentRequirements(entity, componentClass);
+      }
+    }
+
+    this.componentRequirementsDirty = false;
+  }
+
+  private assertComponentRequirements(entity: EntityId, componentClass: ComponentClass<Component>) {
+    const missingComponents = getRequiredComponents(componentClass).filter((requiredComponent) => {
+      if (requiredComponent === componentClass) {
+        return false;
+      }
+
+      return !this.getComponent(entity, requiredComponent);
+    });
+
+    if (missingComponents.length > 0) {
+      throw new ComponentRequirementError(entity, componentClass, missingComponents);
+    }
+  }
+
   private queueComponentDispose(component: Component) {
     if (!isDisposableComponent(component)) {
       return;
@@ -234,6 +269,10 @@ export default class World {
 
   // UPDATE SYSTEMS
   update() {
+    if (this.componentRequirementsDirty) {
+      this.validateComponentRequirements();
+    }
+
     for (const system of this.systems.values()) {
       if (system.started) {
         system.update?.();
