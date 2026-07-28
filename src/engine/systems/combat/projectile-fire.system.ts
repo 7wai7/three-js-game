@@ -3,6 +3,7 @@ import BallisticProjectile from '../../components/combat/projectiles/ballistic-p
 import ProjectileEmitter, {
   DEFAULT_PROJECTILE_MODEL_PATH,
 } from '../../components/combat/projectiles/projectile-emitter';
+import ProjectileShotPattern from '../../components/combat/projectiles/projectile-shot-pattern';
 import ShotQueue from '../../components/combat/shot-queue';
 import Weapon from '../../components/combat/weapon';
 import System from '../system';
@@ -15,7 +16,11 @@ export default class ProjectileFireSystem extends System {
   }
 
   update(): void {
-    for (const [, shotQueue, , emitter] of this.world.query(ShotQueue, Weapon, ProjectileEmitter)) {
+    for (const [entity, shotQueue, , emitter] of this.world.query(
+      ShotQueue,
+      Weapon,
+      ProjectileEmitter,
+    )) {
       if (emitter.shootPoints.length === 0) {
         continue;
       }
@@ -26,15 +31,48 @@ export default class ProjectileFireSystem extends System {
       }
 
       const shots = shotQueue.consumeAll();
-      for (let i = 0; i < shots; i += 1) {
-        const shootPoint = emitter.nextShootPoint();
+      const pattern = this.world.getComponent(entity, ProjectileShotPattern);
+      const burstsPerTrigger = Math.max(pattern?.shotsPerTrigger ?? 1, 1);
+
+      for (let shotIndex = 0; shotIndex < shots; shotIndex += 1) {
         const projectileModel = this.assets.gltf.getLoadedModel(emitter.projectileModelPath)?.scene;
 
-        if (shootPoint && projectileModel) {
-          this.spawnProjectile(emitter, projectileModel, shootPoint);
+        if (!projectileModel) {
+          continue;
+        }
+
+        for (let burstIndex = 0; burstIndex < burstsPerTrigger; burstIndex += 1) {
+          const shootPoint = this.resolveShootPoint(
+            emitter,
+            pattern,
+            burstIndex,
+            shotIndex,
+            burstsPerTrigger,
+          );
+
+          if (shootPoint) {
+            this.spawnProjectile(emitter, projectileModel, shootPoint);
+          }
         }
       }
     }
+  }
+
+  private resolveShootPoint(
+    emitter: ProjectileEmitter,
+    pattern: ProjectileShotPattern | undefined,
+    burstIndex: number,
+    shotIndex: number,
+    burstsPerTrigger: number,
+  ) {
+    if (pattern && pattern.shootPointIndices.length > 0) {
+      const patternIndex = pattern.getShootPointIndex(shotIndex * burstsPerTrigger + burstIndex);
+      if (patternIndex !== undefined) {
+        return emitter.getShootPoint(patternIndex);
+      }
+    }
+
+    return emitter.nextShootPoint();
   }
 
   private spawnProjectile(
@@ -44,7 +82,7 @@ export default class ProjectileFireSystem extends System {
   ) {
     shootPoint.updateWorldMatrix(true, false);
 
-    const projectileObject = projectileModel;
+    const projectileObject = projectileModel.clone(true);
     shootPoint.getWorldPosition(projectileObject.position);
     shootPoint.getWorldQuaternion(projectileObject.quaternion);
     this.scene.add(projectileObject);

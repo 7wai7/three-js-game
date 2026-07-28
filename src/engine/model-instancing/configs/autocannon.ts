@@ -9,6 +9,7 @@ import ProjectileEmitter from '../../components/combat/projectiles/projectile-em
 import ShotQueue from '../../components/combat/shot-queue';
 import Weapon from '../../components/combat/weapon';
 import { component, type ModelConfig } from '../config-types';
+import ProjectileShotPattern from '../../components/combat/projectiles/projectile-shot-pattern';
 
 export const autocannonConfig: ModelConfig = {
   modelPath: 'src/assets/Weapons/Autocannon.glb',
@@ -21,9 +22,13 @@ export const autocannonConfig: ModelConfig = {
         component(FireInput, 'firePrimary'),
         component(FireControl),
         component(AutomaticTrigger),
-        component(FireRate, 10),
+        component(FireRate, 3),
         component(Magazine, 1000),
         component(ShotQueue),
+        component(ProjectileShotPattern, {
+          shotsPerTrigger: 1,
+          // shootPointIndices: [1,2]
+        }),
         component(
           ProjectileEmitter,
           {

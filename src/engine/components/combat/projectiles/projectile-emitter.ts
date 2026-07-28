@@ -49,12 +49,20 @@ export default class ProjectileEmitter extends Component {
     }
   }
 
+  getShootPoint(index = this.nextShootPointIndex) {
+    if (this.shootPoints.length === 0) {
+      return;
+    }
+
+    return this.shootPoints[index % this.shootPoints.length];
+  }
+
   nextShootPoint() {
     if (this.shootPoints.length === 0) {
       return;
     }
 
-    const shootPoint = this.shootPoints[this.nextShootPointIndex % this.shootPoints.length];
+    const shootPoint = this.getShootPoint(this.nextShootPointIndex);
     this.nextShootPointIndex = (this.nextShootPointIndex + 1) % this.shootPoints.length;
     return shootPoint;
   }

@@ -9,6 +9,7 @@ import FireRate from '../../src/engine/components/combat/fire-rate';
 import Magazine from '../../src/engine/components/combat/magazine';
 import BallisticProjectile from '../../src/engine/components/combat/projectiles/ballistic-projectile';
 import ProjectileEmitter from '../../src/engine/components/combat/projectiles/projectile-emitter';
+import ProjectileShotPattern from '../../src/engine/components/combat/projectiles/projectile-shot-pattern';
 import ShotQueue from '../../src/engine/components/combat/shot-queue';
 import Weapon from '../../src/engine/components/combat/weapon';
 import ControlInput from '../../src/engine/components/control-input';
@@ -318,6 +319,50 @@ describe('combat systems', () => {
       .map(([entity]) => world.getGameObject(entity).position.x);
 
     expect(projectiles).toEqual([-1, 1, -1]);
+  });
+
+  it('uses a configured shot pattern to spawn projectiles from specific shoot points', async () => {
+    world.addSystem(new ProjectileFireSystem());
+
+    const weaponObject = new THREE.Object3D();
+    const leftShootPoint = new THREE.Object3D();
+    const centerShootPoint = new THREE.Object3D();
+    const rightShootPoint = new THREE.Object3D();
+
+    leftShootPoint.position.set(-1, 0, 0);
+    centerShootPoint.position.set(0, 0, 0);
+    rightShootPoint.position.set(1, 0, 0);
+    weaponObject.add(leftShootPoint, centerShootPoint, rightShootPoint);
+
+    const weapon = world.createGameObject(weaponObject);
+    const shotQueue = world.addComponent(weapon, new ShotQueue());
+
+    world.addComponent(weapon, new Weapon());
+    world.addComponent(
+      weapon,
+      new ProjectileEmitter({
+        shootPoints: [leftShootPoint, centerShootPoint, rightShootPoint],
+      }),
+    );
+    world.addComponent(
+      weapon,
+      new ProjectileShotPattern({
+        shotsPerTrigger: 2,
+        shootPointIndices: [2, 0],
+      }),
+    );
+
+    world.update();
+    await flushPromises();
+
+    shotQueue.enqueue(1);
+    world.update();
+
+    const projectiles = world
+      .query(BallisticProjectile)
+      .map(([entity]) => world.getGameObject(entity).position.x);
+
+    expect(projectiles).toEqual([1, -1]);
   });
 
   it('moves ballistic projectiles with gravity and air drag', () => {
