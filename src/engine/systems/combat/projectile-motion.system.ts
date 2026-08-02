@@ -25,10 +25,8 @@ export default class ProjectileMotionSystem extends System {
       this.displacement.copy(projectile.velocity).multiplyScalar(this.dt);
       projectile.gameObject.position.add(this.displacement);
 
-      this.direction.set(projectile.velocity.x, 0, projectile.velocity.z);
-
-      if (this.direction.lengthSq() > 0) {
-        this.direction.normalize();
+      if (projectile.velocity.lengthSq() > 0) {
+        this.direction.copy(projectile.velocity).normalize();
         projectile.gameObject.quaternion.setFromUnitVectors(this.forward, this.direction);
       }
     }
