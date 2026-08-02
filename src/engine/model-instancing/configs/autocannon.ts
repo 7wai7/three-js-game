@@ -9,12 +9,14 @@ import ShotQueue from '../../components/combat/shot-queue';
 import Weapon from '../../components/combat/weapon';
 import { component, type ModelConfig } from '../config-types';
 import ProjectileShotPattern from '../../components/combat/projectiles/projectile-shot-pattern';
+import AimAtTarget from '../../components/transform/aim-at-target';
+import { DEG2RAD } from 'three/src/math/MathUtils.js';
 
 export const autocannonConfig: ModelConfig = {
   modelPath: 'src/assets/Weapons/Autocannon.glb',
 
   entities: {
-    Weapon_Body: {
+    Weapon_Stand: {
       components: [
         component(PlayerControlled),
         component(Weapon),
@@ -47,6 +49,24 @@ export const autocannonConfig: ModelConfig = {
         rigidBodyType: 'FIXED',
         shape: 'BALL',
       },
+    },
+    Weapon_Body: {
+      components: [
+        component(AimAtTarget, {
+          rotationAxis: new THREE.Vector3(0, 0, 1),
+          forwardAxis: new THREE.Vector3(0, 1, 0),
+          maxAngularSpeed: 20 * DEG2RAD,
+        }),
+      ],
+    },
+    Weapon: {
+      components: [
+        component(AimAtTarget, {
+          rotationAxis: new THREE.Vector3(0, 0, 1),
+          forwardAxis: new THREE.Vector3(0, 1, 0),
+          maxAngularSpeed: 20 * DEG2RAD,
+        }),
+      ],
     },
   },
 };

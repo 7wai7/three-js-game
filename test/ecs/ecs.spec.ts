@@ -47,6 +47,52 @@ describe('ecs tests', () => {
     expect(results[0]).toEqual([matchingEntity, rigidBody, collider]);
   });
 
+  it('returns components from entity list in requested component order', () => {
+    const world = new World();
+
+    const first = world.createEntity('first');
+    const second = world.createEntity('second');
+
+    const collider = world.addComponent(first, new Collider({} as RAPIER.Collider));
+    const rigidBody = world.addComponent(second, new RigidBody({} as RAPIER.RigidBody));
+
+    const result = world.getComponentsFromEntities([first, second], RigidBody, Collider);
+
+    expect(result).toEqual([rigidBody, collider]);
+  });
+
+  it('can find ordered components from a single-use entity iterator', () => {
+    const world = new World();
+    const entitiesByName = new Map<string, string>();
+
+    const first = world.createEntity('first');
+    const second = world.createEntity('second');
+    entitiesByName.set('first', first);
+    entitiesByName.set('second', second);
+
+    const collider = world.addComponent(first, new Collider({} as RAPIER.Collider));
+    const rigidBody = world.addComponent(second, new RigidBody({} as RAPIER.RigidBody));
+
+    const result = world.getComponentsFromEntities(
+      Array.from(entitiesByName.values()),
+      RigidBody,
+      Collider,
+    );
+
+    expect(result).toEqual([rigidBody, collider]);
+  });
+
+  it('throws when requested component is not found in entity list', () => {
+    const world = new World();
+    const entity = world.createEntity('entity');
+
+    world.addComponent(entity, new RigidBody({} as RAPIER.RigidBody));
+
+    expect(() => world.getComponentsFromEntities([entity], RigidBody, Collider)).toThrow(
+      'Component "Collider" not found in provided entities',
+    );
+  });
+
   it('does not validate required components until the entity is checked', () => {
     const world = new World();
     const entity = world.createEntity('weapon');
