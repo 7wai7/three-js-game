@@ -96,4 +96,52 @@ describe('AimAtTargetSystem', () => {
 
     expect(object.rotation.y).toBeCloseTo(Math.PI / 4);
   });
+
+  it('clamps rotation to configured angle limits', () => {
+    const { world } = createTestEngineContext();
+    world.addSystem(new AimAtTargetSystem());
+
+    const object = new THREE.Object3D();
+    const target = new THREE.Object3D();
+    target.position.set(10, 0, 0);
+
+    const entity = world.createGameObject(object);
+    const aim = world.addComponent(
+      entity,
+      new AimAtTarget({
+        targetObject: target,
+        minAngle: -Math.PI / 6,
+        maxAngle: Math.PI / 4,
+      }),
+    );
+
+    updateSystem(world);
+
+    expect(aim.currentAngle).toBeCloseTo(Math.PI / 4);
+    expect(object.rotation.y).toBeCloseTo(Math.PI / 4);
+  });
+
+  it('clamps rotation to negative angle limits', () => {
+    const { world } = createTestEngineContext();
+    world.addSystem(new AimAtTargetSystem());
+
+    const object = new THREE.Object3D();
+    const target = new THREE.Object3D();
+    target.position.set(-10, 0, 0);
+
+    const entity = world.createGameObject(object);
+    const aim = world.addComponent(
+      entity,
+      new AimAtTarget({
+        targetObject: target,
+        minAngle: -Math.PI / 6,
+        maxAngle: Math.PI / 4,
+      }),
+    );
+
+    updateSystem(world);
+
+    expect(aim.currentAngle).toBeCloseTo(-Math.PI / 6);
+    expect(object.rotation.y).toBeCloseTo(-Math.PI / 6);
+  });
 });

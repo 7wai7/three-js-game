@@ -66,25 +66,37 @@ export default class AimAtTargetSystem extends System {
       this.projectedForward.dot(this.projectedTarget),
     );
 
-    const delta = this.clampDelta(angle, aim.maxAngularSpeed);
+    const delta = this.resolveDelta(angle, aim);
 
     if (Math.abs(delta) <= EPSILON) {
       return;
     }
 
     object.rotateOnAxis(this.axisLocal, delta);
+    aim.currentAngle += delta;
   }
 
   private projectOnPlane(target: THREE.Vector3, vector: THREE.Vector3, planeNormal: THREE.Vector3) {
     target.copy(vector).addScaledVector(planeNormal, -vector.dot(planeNormal));
   }
 
-  private clampDelta(angle: number, maxAngularSpeed?: number) {
-    if (maxAngularSpeed === undefined) {
-      return angle;
+  private resolveDelta(angle: number, aim: AimAtTarget) {
+    const targetAngle = this.clampAngle(aim.currentAngle + angle, aim.minAngle, aim.maxAngle);
+    const delta = targetAngle - aim.currentAngle;
+
+    if (aim.maxAngularSpeed === undefined) {
+      return delta;
     }
 
-    const maxDelta = Math.max(maxAngularSpeed, 0) * this.dt;
-    return THREE.MathUtils.clamp(angle, -maxDelta, maxDelta);
+    const maxDelta = Math.max(aim.maxAngularSpeed, 0) * this.dt;
+    return THREE.MathUtils.clamp(delta, -maxDelta, maxDelta);
+  }
+
+  private clampAngle(angle: number, minAngle?: number, maxAngle?: number) {
+    return THREE.MathUtils.clamp(
+      angle,
+      minAngle ?? Number.NEGATIVE_INFINITY,
+      maxAngle ?? Number.POSITIVE_INFINITY,
+    );
   }
 }

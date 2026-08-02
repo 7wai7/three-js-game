@@ -8,7 +8,6 @@ import { createFloor, createLight } from './engine/game/terrain-factory.js';
 import { instanceModelByConfig } from './engine/model-instancing/instancing.js';
 import { autocannonConfig } from './engine/model-instancing/configs/autocannon.js';
 import RigidBody from './engine/components/rigidbody.js';
-import AimAtTarget from './engine/components/transform/aim-at-target.js';
 import Weapon from './engine/components/combat/weapon.js';
 
 // Initialize Three.js renderer, scene, and camera
@@ -37,13 +36,8 @@ createLight(scene);
 instanceModelByConfig(engine, autocannonConfig, new Map()).then(({ entities }) => {
   const [weapon] = engine.world.getComponentsFromEntities([...entities], Weapon);
   const rb = engine.world.getComponent(weapon.entity, RigidBody)!;
-  const aims = engine.world.getChildComponents(weapon.entity, AimAtTarget);
 
   rb.rigidBody.setTranslation(new THREE.Vector3(0, -1.7, 0), false);
-
-  const target = new THREE.Vector3(10, 2, 10);
-
-  aims.forEach((aim) => (aim.targetPosition = target));
 });
 
 engine.start();

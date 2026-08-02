@@ -11,7 +11,7 @@ export default class CameraControllerSystem extends System {
   // internal state
   dist = 10;
   minDist = 2;
-  maxDist = 10;
+  maxDist = 20;
   zoomStep = 0.3;
 
   yawOffset = 0;

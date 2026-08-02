@@ -10,6 +10,7 @@ import Weapon from '../../components/combat/weapon';
 import { component, type ModelConfig } from '../config-types';
 import ProjectileShotPattern from '../../components/combat/projectiles/projectile-shot-pattern';
 import AimAtTarget from '../../components/transform/aim-at-target';
+import AimAtMouseScreen from '../../components/transform/aim-at-mouse-screen';
 import { DEG2RAD } from 'three/src/math/MathUtils.js';
 
 export const autocannonConfig: ModelConfig = {
@@ -55,8 +56,9 @@ export const autocannonConfig: ModelConfig = {
         component(AimAtTarget, {
           rotationAxis: new THREE.Vector3(0, 0, 1),
           forwardAxis: new THREE.Vector3(0, 1, 0),
-          maxAngularSpeed: 20 * DEG2RAD,
+          maxAngularSpeed: 50 * DEG2RAD,
         }),
+        component(AimAtMouseScreen),
       ],
     },
     Weapon: {
@@ -64,8 +66,11 @@ export const autocannonConfig: ModelConfig = {
         component(AimAtTarget, {
           rotationAxis: new THREE.Vector3(0, 0, 1),
           forwardAxis: new THREE.Vector3(0, 1, 0),
-          maxAngularSpeed: 20 * DEG2RAD,
+          maxAngularSpeed: 40 * DEG2RAD,
+          minAngle: -40 * DEG2RAD,
+          maxAngle: 40 * DEG2RAD,
         }),
+        component(AimAtMouseScreen),
       ],
     },
   },
