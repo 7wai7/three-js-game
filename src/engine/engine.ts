@@ -16,6 +16,16 @@ import { defaultGameplayInput } from './input/input-configs/default-gameplay-inp
 import PlayerInputSystem from './systems/input-controllers/player-input.system';
 import { defaultCameraInput } from './input/input-configs/default-camera-input';
 import { systemInput } from './input/input-configs/system-input';
+import ReloadSystem from './systems/combat/reload.system';
+import ChargingSystem from './systems/combat/charging.system';
+import FireInputSystem from './systems/combat/fire-input.system';
+import SpinUpSystem from './systems/combat/spin-up.system';
+import AutomaticFireSystem from './systems/combat/automatic-fire.system';
+import ProjectileShotPatternSystem from './systems/combat/projectile-shot-pattern.system';
+import ProjectileFireSystem from './systems/combat/projectile-fire.system';
+import ProjectileMotionSystem from './systems/combat/projectile-motion.system';
+import AimAtMouseScreenSystem from './systems/transform/aim-at-mouse-screen.system';
+import AimAtTargetSystem from './systems/transform/aim-at-target.system';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
@@ -51,6 +61,16 @@ export default class Engine {
     this.world.addSystem(new PlayerInputSystem());
     this.world.addSystem(new CarControllerSystem());
     this.world.addSystem(new CharacterControllerSystem());
+    this.world.addSystem(new ReloadSystem());
+    this.world.addSystem(new FireInputSystem());
+    this.world.addSystem(new ChargingSystem());
+    this.world.addSystem(new SpinUpSystem());
+    this.world.addSystem(new AutomaticFireSystem());
+    this.world.addSystem(new ProjectileShotPatternSystem());
+    this.world.addSystem(new ProjectileFireSystem());
+    this.world.addSystem(new ProjectileMotionSystem());
+    this.world.addSystem(new AimAtMouseScreenSystem());
+    this.world.addSystem(new AimAtTargetSystem());
     this.world.addSystem(new AnimationsSystem());
     this.world.addSystem(new CameraControllerSystem());
     this.world.addSystem(new RapierDebugRenderer());

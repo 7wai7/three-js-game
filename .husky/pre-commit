@@ -5,3 +5,6 @@ npm run lint:fix
 if [ -n "$staged_files" ]; then
   echo "$staged_files" | git add --pathspec-from-file=-
 fi
+
+
+npm run test

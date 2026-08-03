@@ -165,28 +165,37 @@ export default class World {
   }
 
   getComponentsFromEntities<T extends readonly ComponentClass<Component>[]>(
-    entities: Iterable<EntityId>,
+    entities: EntityId[],
     ...componentClasses: T
-  ): InstanceType<T[number]>[] {
-    const result: InstanceType<T[number]>[] = [];
+  ): ComponentInstances<T> {
+    const result: Component[] = [];
 
     for (const componentClass of componentClasses) {
       const componentMap = this.components.get(componentClass);
 
       if (!componentMap) {
-        continue;
+        throw new Error(`Component "${componentClass.name}" not found in provided entities`);
       }
+
+      let foundComponent: Component | undefined;
 
       for (const entity of entities) {
         const component = componentMap.get(entity);
 
         if (component) {
-          result.push(component as InstanceType<T[number]>);
+          foundComponent = component;
+          break;
         }
       }
+
+      if (!foundComponent) {
+        throw new Error(`Component "${componentClass.name}" not found in provided entities`);
+      }
+
+      result.push(foundComponent);
     }
 
-    return result;
+    return result as ComponentInstances<T>;
   }
 
   // UTILS

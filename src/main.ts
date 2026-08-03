@@ -4,12 +4,12 @@ import Engine from './engine/engine.js';
 import EngineContext from './engine/contexts/engine.context.js';
 import { createEcsCamera, createMainCamera } from './engine/game/global-factory.js';
 import setupResizeHandler from './listeners/setup-resize-listener.js';
-import { createFloor, createLight } from './engine/game/terrain-factory.js';
-import CameraControllerSystem from './engine/systems/camera-controller.system.js';
+import { createLight } from './engine/game/terrain-factory.js';
 import { instanceModelByConfig } from './engine/model-instancing/instancing.js';
-import CarComponent from './engine/components/vehicle/car.js';
-import PlayerControlled from './engine/components/player-controlled.js';
-import { axial_XR9_config } from './engine/model-instancing/configs/Axial-XR9.js';
+import { autocannonConfig } from './engine/model-instancing/configs/autocannon.js';
+import RigidBody from './engine/components/rigidbody.js';
+import AimAtTarget from './engine/components/transform/aim-at-target.js';
+import Weapon from './engine/components/combat/weapon.js';
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -27,19 +27,23 @@ EngineContext.setEngine(engine);
 // Handle window resize
 setupResizeHandler(renderer, camera);
 
-const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
-
 createEcsCamera(engine.world, camera);
-createFloor(engine, {
-  position: new THREE.Vector3(0, -2, 0),
-});
+// createFloor(engine, {
+//   position: new THREE.Vector3(0, -2, 0),
+// });
 
 createLight(scene);
 
-instanceModelByConfig(engine, axial_XR9_config, new Map()).then(({ entities }) => {
-  const car = engine.world.getComponentsFromEntities(entities, CarComponent)[0];
-  engine.world.addComponent(car.entity, new PlayerControlled());
-  cameraControllerSystem.followEntity = car.entity;
+instanceModelByConfig(engine, autocannonConfig, new Map()).then(({ entities }) => {
+  const [weapon] = engine.world.getComponentsFromEntities([...entities], Weapon);
+  const rb = engine.world.getComponent(weapon.entity, RigidBody)!;
+  const aims = engine.world.getChildComponents(weapon.entity, AimAtTarget);
+
+  rb.rigidBody.setTranslation(new THREE.Vector3(0, -1.7, 0), false);
+
+  const target = new THREE.Vector3(0, 2, 10);
+
+  aims.forEach((aim) => (aim.targetPosition = target));
 });
 
 engine.start();
