@@ -71,5 +71,15 @@ export const autocannonConfig: ModelConfig = {
         // component(AimAtMouseScreen),
       ],
     },
+    Camera: {
+      components: [
+        component(AimAtTarget, {
+          rotationAxis: new THREE.Vector3(0, 0, 1),
+          forwardAxis: new THREE.Vector3(0, 1, 0),
+          maxAngularSpeed: 70 * DEG2RAD,
+        }),
+        // component(AimAtMouseScreen),
+      ],
+    },
   },
 };

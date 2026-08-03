@@ -54,7 +54,7 @@ export const combatTurretConfig: ModelConfig = {
         component(AimAtTarget, {
           rotationAxis: new THREE.Vector3(0, 0, 1),
           forwardAxis: new THREE.Vector3(0, 1, 0),
-          maxAngularSpeed: 50 * DEG2RAD,
+          maxAngularSpeed: 70 * DEG2RAD,
         }),
         // component(AimAtMouseScreen),
       ],
@@ -64,9 +64,31 @@ export const combatTurretConfig: ModelConfig = {
         component(AimAtTarget, {
           rotationAxis: new THREE.Vector3(0, 0, 1),
           forwardAxis: new THREE.Vector3(0, 1, 0),
-          maxAngularSpeed: 40 * DEG2RAD,
+          maxAngularSpeed: 50 * DEG2RAD,
           minAngle: -40 * DEG2RAD,
           maxAngle: 40 * DEG2RAD,
+        }),
+        // component(AimAtMouseScreen),
+      ],
+    },
+    Camera_Stand: {
+      components: [
+        component(AimAtTarget, {
+          rotationAxis: new THREE.Vector3(0, 0, 1),
+          forwardAxis: new THREE.Vector3(0, 1, 0),
+          maxAngularSpeed: 150 * DEG2RAD,
+        }),
+        // component(AimAtMouseScreen),
+      ],
+    },
+    Camera: {
+      components: [
+        component(AimAtTarget, {
+          rotationAxis: new THREE.Vector3(0, 0, 1),
+          forwardAxis: new THREE.Vector3(0, 1, 0),
+          maxAngularSpeed: 120 * DEG2RAD,
+          minAngle: -50 * DEG2RAD,
+          maxAngle: 50 * DEG2RAD,
         }),
         // component(AimAtMouseScreen),
       ],
