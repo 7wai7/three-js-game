@@ -6,11 +6,12 @@ import Component from '../../ecs/component';
  */
 export default class FireRate extends Component {
   interval: number;
-  accumulated = 0;
+  accumulated: number;
 
   constructor(shotsPerSecond: number) {
     super();
     this.interval = 1 / shotsPerSecond;
+    this.accumulated = this.interval;
   }
 
   get ready() {
@@ -19,6 +20,10 @@ export default class FireRate extends Component {
 
   tick(dt: number) {
     this.accumulated += dt;
+  }
+
+  holdReady() {
+    this.accumulated = Math.min(this.accumulated, this.interval);
   }
 
   consumeReadyShots(maxShots = Number.POSITIVE_INFINITY) {

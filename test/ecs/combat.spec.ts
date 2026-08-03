@@ -191,7 +191,7 @@ describe('combat systems', () => {
     expect(world.query(BallisticProjectile)).toHaveLength(5);
   });
 
-  it('can enqueue multiple automatic shots in one frame', () => {
+  it('fires immediately and can enqueue multiple automatic shots in one frame', () => {
     engine.deltaTime = 1 / 60;
 
     world.addSystem(new AutomaticFireSystem());
@@ -210,8 +210,59 @@ describe('combat systems', () => {
     world.update();
     world.update();
 
-    expect(shotQueue.count).toBe(16);
-    expect(magazine.ammo).toBe(984);
+    expect(shotQueue.count).toBe(17);
+    expect(magazine.ammo).toBe(983);
+  });
+
+  it('fires the first automatic shot without waiting for fire rate accumulation', () => {
+    engine.deltaTime = 1 / 60;
+
+    world.addSystem(new AutomaticFireSystem());
+
+    const entity = world.createEntity('weapon');
+    const fireControl = world.addComponent(entity, new FireControl());
+    const shotQueue = world.addComponent(entity, new ShotQueue());
+
+    world.addComponent(entity, new Weapon());
+    world.addComponent(entity, new AutomaticTrigger());
+    world.addComponent(entity, new FireRate(1));
+
+    fireControl.setActive(true);
+
+    world.update();
+    world.update();
+
+    expect(shotQueue.count).toBe(1);
+  });
+
+  it('does not reset fire rate cooldown on repeated quick trigger presses', () => {
+    engine.deltaTime = 0.1;
+
+    world.addSystem(new AutomaticFireSystem());
+
+    const entity = world.createEntity('weapon');
+    const fireControl = world.addComponent(entity, new FireControl());
+    const shotQueue = world.addComponent(entity, new ShotQueue());
+
+    world.addComponent(entity, new Weapon());
+    world.addComponent(entity, new AutomaticTrigger());
+    world.addComponent(entity, new FireRate(1));
+
+    fireControl.setActive(true);
+    world.update();
+    world.update();
+
+    fireControl.setActive(false);
+    world.update();
+    fireControl.setActive(true);
+    world.update();
+
+    fireControl.setActive(false);
+    world.update();
+    fireControl.setActive(true);
+    world.update();
+
+    expect(shotQueue.count).toBe(1);
   });
 
   it('creates ballistic projectile entities from queued weapon shots', async () => {

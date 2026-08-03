@@ -16,7 +16,13 @@ export default class AutomaticFireSystem extends System {
       Weapon,
       AutomaticTrigger,
     )) {
-      if (!fireControl.canFire) {
+      if (!fireControl.active) {
+        fireRate.tick(this.dt);
+        fireRate.holdReady();
+        continue;
+      }
+
+      if (fireControl.blocked) {
         fireRate.clear();
         continue;
       }
