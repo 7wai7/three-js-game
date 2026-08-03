@@ -33,7 +33,7 @@ export const combatTurretConfig: ModelConfig = {
           {
             speed: 1,
             lifetime: 5,
-            gravity: new THREE.Vector3(),
+            gravityScale: 0.01,
           },
           {
             objectRefLists: {

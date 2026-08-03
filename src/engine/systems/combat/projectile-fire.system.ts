@@ -67,7 +67,7 @@ export default class ProjectileFireSystem extends System {
       projectileEntity,
       new BallisticProjectile({
         velocity,
-        gravity: emitter.gravity,
+        gravityScale: emitter.gravityScale,
         drag: emitter.drag,
         lifetime: emitter.lifetime,
       }),

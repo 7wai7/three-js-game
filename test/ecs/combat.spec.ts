@@ -49,6 +49,9 @@ function createTestEngineContext(deltaTime = 1 / 60, autoResolveProjectileLoads 
   const engine = {
     world,
     scene: new THREE.Scene(),
+    physicsWorld: {
+      gravity: { x: 0, y: -10, z: 0 },
+    },
     assets: {
       gltf: {
         preloadModel: vi.fn((path: string) => {
@@ -484,7 +487,7 @@ describe('combat systems', () => {
       projectileEntity,
       new BallisticProjectile({
         velocity: new THREE.Vector3(10, 10, 0),
-        gravity: new THREE.Vector3(0, -10, 0),
+        gravityScale: 1,
         drag: 0,
         lifetime: 5,
       }),

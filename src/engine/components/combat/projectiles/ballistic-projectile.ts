@@ -3,14 +3,14 @@ import Component from '../../../ecs/component';
 
 export type BallisticProjectileProps = {
   velocity: THREE.Vector3;
-  gravity?: THREE.Vector3;
+  gravityScale?: number;
   drag?: number;
   lifetime?: number;
 };
 
 export default class BallisticProjectile extends Component {
   velocity: THREE.Vector3;
-  gravity = new THREE.Vector3(0, -9.81, 0);
+  gravityScale = 1;
   drag = 0;
   lifetime = 5;
   age = 0;
@@ -20,8 +20,8 @@ export default class BallisticProjectile extends Component {
 
     this.velocity = props.velocity.clone();
 
-    if (props.gravity) {
-      this.gravity.copy(props.gravity);
+    if (props.gravityScale) {
+      this.gravityScale = props.gravityScale;
     }
 
     if (props.drag !== undefined) {

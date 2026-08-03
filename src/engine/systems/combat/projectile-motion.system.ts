@@ -4,6 +4,7 @@ import System from '../system';
 
 export default class ProjectileMotionSystem extends System {
   private displacement = new THREE.Vector3();
+  private scaledGravity = new THREE.Vector3();
   private readonly forward = new THREE.Vector3(0, 0, 1);
   private readonly direction = new THREE.Vector3();
 
@@ -16,7 +17,9 @@ export default class ProjectileMotionSystem extends System {
         continue;
       }
 
-      projectile.velocity.addScaledVector(projectile.gravity, this.dt);
+      const g = this.physicsWorld.gravity;
+      this.scaledGravity.set(g.x, g.y, g.z).multiplyScalar(projectile.gravityScale);
+      projectile.velocity.addScaledVector(this.scaledGravity, this.dt);
 
       if (projectile.drag > 0) {
         projectile.velocity.multiplyScalar(Math.exp(-projectile.drag * this.dt));

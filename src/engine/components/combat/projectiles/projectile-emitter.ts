@@ -8,7 +8,7 @@ export const DEFAULT_PROJECTILE_MODEL_PATH = 'src/assets/Weapons/Bullet.glb';
 export type ProjectileEmitterProps = {
   projectileModelPath?: string;
   speed?: number;
-  gravity?: THREE.Vector3Like;
+  gravityScale?: number;
   drag?: number;
   lifetime?: number;
   shootPoints?: THREE.Object3D[];
@@ -18,7 +18,7 @@ export type ProjectileEmitterProps = {
 export default class ProjectileEmitter extends Component {
   projectileModelPath = DEFAULT_PROJECTILE_MODEL_PATH;
   speed = 80;
-  gravity = new THREE.Vector3(0, -9.81, 0);
+  gravityScale = 1;
   drag = 0.05;
   lifetime = 5;
   shootPoints: THREE.Object3D[] = [];
@@ -34,8 +34,8 @@ export default class ProjectileEmitter extends Component {
       this.speed = props.speed;
     }
 
-    if (props.gravity) {
-      this.gravity.copy(props.gravity);
+    if (props.gravityScale) {
+      this.gravityScale = props.gravityScale;
     }
 
     if (props.drag !== undefined) {
