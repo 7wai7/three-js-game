@@ -21,6 +21,8 @@ ControlInput
   -> optional gates: SpinUp, Chargeable, Reloadable, Magazine
   -> AutomaticFireSystem
   -> ShotQueue
+  -> ProjectileShotPatternSystem
+  -> ProjectileSpawnQueue
   -> ProjectileFireSystem
   -> BallisticProjectile
   -> ProjectileMotionSystem
@@ -67,8 +69,13 @@ Stores reload state and reload timer.
 
 `ShotQueue`
 
-Stores how many shots should be executed this frame. This separates "deciding
-to shoot" from "creating the projectile".
+Stores how many weapon shot events should be executed this frame. This separates
+"deciding to shoot" from "choosing barrels" and "creating the projectile".
+
+`ProjectileSpawnQueue`
+
+Stores concrete projectile spawn requests. Each request points at a specific
+shoot point index. This keeps `ProjectileFireSystem` focused on spawning only.
 
 `ProjectileEmitter`
 
@@ -95,9 +102,30 @@ component(
 );
 ```
 
-When a weapon has several shoot points, `ProjectileFireSystem` cycles through
-them in order. This supports multi-barrel weapons without making the firing
-logic special-case each weapon.
+The same projectile weapon should also have `ProjectileSpawnQueue` and one shot
+pattern component, for example `SingleProjectileShotPattern` or
+`AlternatingProjectileShotPattern`.
+
+`SingleProjectileShotPattern`
+
+Maps each `ShotQueue` event to one projectile from one shoot point. This is the
+smallest ordinary weapon pattern.
+
+`AlternatingProjectileShotPattern`
+
+Maps `ShotQueue` events to projectile requests that advance through several
+shoot points. If `shootPointIndices` is omitted, it alternates through every
+shoot point from `ProjectileEmitter`.
+
+`ProjectileVolleyShotPattern`
+
+Maps one `ShotQueue` event to several projectile requests. Configure `groups`
+when different volleys should use different barrels. For example, a four-barrel
+weapon can fire two barrels at a time with groups like `[[0, 3], [1, 2]]`.
+
+These pattern components store only pattern data and cursor state. The mapping
+logic lives in `ProjectileShotPatternSystem`, so adding a new shot pattern means
+adding a small component plus the matching system logic.
 
 `BallisticProjectile`
 
@@ -138,18 +166,29 @@ If `FireControl.canFire` is true and cooldown is ready, it consumes ammo if a
 This system does not know about input, spin-up, charging, or projectile
 creation.
 
+`ProjectileShotPatternSystem`
+
+Reads `ShotQueue`, a projectile shot pattern component, and
+`ProjectileSpawnQueue`.
+
+It consumes weapon shot events and writes concrete projectile spawn requests.
+This is where barrel selection lives. A weapon with
+`AlternatingProjectileShotPattern` can cycle through barrels, while a weapon
+with `ProjectileVolleyShotPattern` can fire several barrels from one shot event.
+
 `ProjectileFireSystem`
 
-Reads `ShotQueue` and `ProjectileEmitter`, then creates projectile game objects.
+Reads `ProjectileSpawnQueue` and `ProjectileEmitter`, then creates projectile
+game objects.
 
 For ordinary bullets it asks `GLTFAssetManager` for a clone of
-`src/assets/Weapons/Bullet.glb`, places it at the next shoot point, and adds a
-`BallisticProjectile` component. This system knows how to spawn projectiles, but
-it does not own projectile model caches and it does not decide when the weapon
-should shoot.
+`src/assets/Weapons/Bullet.glb`, places it at the requested shoot point, and
+adds a `BallisticProjectile` component. This system knows how to spawn
+projectiles, but it does not own projectile model caches, choose barrels, or
+decide when the weapon should shoot.
 
-If the projectile model is still loading, `ShotQueue` is left untouched and the
-shots are spawned after the asset is available.
+If the projectile model is still loading, `ProjectileSpawnQueue` is left
+untouched and the projectiles are spawned after the asset is available.
 
 `ProjectileMotionSystem`
 
@@ -167,6 +206,8 @@ AutomaticTrigger
 FireRate
 Magazine
 ShotQueue
+ProjectileSpawnQueue
+SingleProjectileShotPattern
 ProjectileEmitter
 ```
 
@@ -180,6 +221,7 @@ Player holds fire
   -> FireInputSystem sets FireControl.active
   -> AutomaticFireSystem checks cooldown and ammo
   -> ShotQueue receives a shot
+  -> ProjectileShotPatternSystem creates one projectile spawn request
   -> ProjectileFireSystem creates a projectile entity
   -> ProjectileMotionSystem moves the projectile
 ```
@@ -196,6 +238,8 @@ AutomaticTrigger
 FireRate
 Magazine
 ShotQueue
+ProjectileSpawnQueue
+AlternatingProjectileShotPattern
 ProjectileEmitter
 ```
 
@@ -207,6 +251,7 @@ Player holds fire
   -> SpinUpSystem starts spinning the barrel
   -> SpinUpSystem blocks FireControl until spin is ready
   -> AutomaticFireSystem starts adding shots to ShotQueue
+  -> ProjectileShotPatternSystem alternates projectile spawn requests
   -> ProjectileFireSystem creates projectiles
 ```
 
@@ -223,7 +268,8 @@ Prefer writing to `FireControl` or blocking `FireControl` instead of making the
 firing system aware of every possible condition.
 
 Prefer writing to `ShotQueue` instead of spawning projectiles directly from
-decision systems.
+decision systems. Prefer adding a focused projectile shot pattern component when
+the weapon needs a new barrel selection behavior.
 
 For weapon-specific mechanics, keep the custom behavior in a focused component
 and system for that weapon family. The system should still communicate through

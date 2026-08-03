@@ -8,7 +8,9 @@ import FireRate from '../../src/engine/components/combat/fire-rate';
 import Magazine from '../../src/engine/components/combat/magazine';
 import BallisticProjectile from '../../src/engine/components/combat/projectiles/ballistic-projectile';
 import ProjectileEmitter from '../../src/engine/components/combat/projectiles/projectile-emitter';
-import ProjectileShotPattern from '../../src/engine/components/combat/projectiles/projectile-shot-pattern';
+import ProjectileSpawnQueue from '../../src/engine/components/combat/projectiles/projectile-spawn-queue';
+import AlternatingProjectileShotPattern from '../../src/engine/components/combat/projectiles/shot-patterns/alternating-projectile-shot-pattern';
+import ProjectileVolleyShotPattern from '../../src/engine/components/combat/projectiles/shot-patterns/projectile-volley-shot-pattern';
 import ShotQueue from '../../src/engine/components/combat/shot-queue';
 import Weapon from '../../src/engine/components/combat/weapon';
 import ControlInput from '../../src/engine/components/control-input';
@@ -19,6 +21,7 @@ import AutomaticFireSystem from '../../src/engine/systems/combat/automatic-fire.
 import FireInputSystem from '../../src/engine/systems/combat/fire-input.system';
 import ProjectileFireSystem from '../../src/engine/systems/combat/projectile-fire.system';
 import ProjectileMotionSystem from '../../src/engine/systems/combat/projectile-motion.system';
+import ProjectileShotPatternSystem from '../../src/engine/systems/combat/projectile-shot-pattern.system';
 import SpinUpSystem from '../../src/engine/systems/combat/spin-up.system';
 
 async function flushPromises() {
@@ -114,6 +117,7 @@ describe('combat systems', () => {
   });
 
   it('fires queued projectile shots without knowing how shooting was started', async () => {
+    world.addSystem(new ProjectileShotPatternSystem());
     world.addSystem(new ProjectileFireSystem());
 
     const weaponObject = new THREE.Object3D();
@@ -123,6 +127,7 @@ describe('combat systems', () => {
     const entity = world.createGameObject(weaponObject);
     const shotQueue = world.addComponent(entity, new ShotQueue());
     world.addComponent(entity, new Weapon());
+    world.addComponent(entity, new ProjectileSpawnQueue());
     world.addComponent(entity, new ProjectileEmitter({ shootPoints: [shootPoint] }));
 
     world.update();
@@ -141,6 +146,7 @@ describe('combat systems', () => {
     world.addSystem(new FireInputSystem());
     world.addSystem(new SpinUpSystem());
     world.addSystem(new AutomaticFireSystem());
+    world.addSystem(new ProjectileShotPatternSystem());
     world.addSystem(new ProjectileFireSystem());
 
     const playerObject = new THREE.Object3D();
@@ -173,6 +179,7 @@ describe('combat systems', () => {
     world.addComponent(minigun, new FireRate(20));
     world.addComponent(minigun, new Magazine(10));
     world.addComponent(minigun, new ShotQueue());
+    world.addComponent(minigun, new ProjectileSpawnQueue());
     world.addComponent(minigun, new ProjectileEmitter({ shootPoints: [shootPoint] }));
 
     world.update();
@@ -265,7 +272,7 @@ describe('combat systems', () => {
     expect(shotQueue.count).toBe(1);
   });
 
-  it('creates ballistic projectile entities from queued weapon shots', async () => {
+  it('creates ballistic projectile entities from queued projectile spawn requests', async () => {
     world.addSystem(new ProjectileFireSystem());
 
     const weaponObject = new THREE.Object3D();
@@ -275,7 +282,7 @@ describe('combat systems', () => {
     weaponObject.add(shootPoint);
 
     const weapon = world.createGameObject(weaponObject);
-    const shotQueue = world.addComponent(weapon, new ShotQueue());
+    const spawnQueue = world.addComponent(weapon, new ProjectileSpawnQueue());
 
     world.addComponent(weapon, new Weapon());
     world.addComponent(
@@ -291,7 +298,7 @@ describe('combat systems', () => {
     world.update();
     await flushPromises();
 
-    shotQueue.enqueue();
+    spawnQueue.enqueue();
     world.update();
 
     const [[projectileEntity, projectile]] = world.query(BallisticProjectile);
@@ -315,27 +322,29 @@ describe('combat systems', () => {
     weaponObject.add(shootPoint);
 
     const weapon = world.createGameObject(weaponObject);
-    const shotQueue = world.addComponent(weapon, new ShotQueue());
+    const spawnQueue = world.addComponent(weapon, new ProjectileSpawnQueue());
 
     world.addComponent(weapon, new Weapon());
     world.addComponent(weapon, new ProjectileEmitter({ shootPoints: [shootPoint] }));
 
-    shotQueue.enqueue(2);
+    spawnQueue.enqueue();
+    spawnQueue.enqueue();
     world.update();
     world.update();
 
-    expect(shotQueue.count).toBe(2);
+    expect(spawnQueue.count).toBe(2);
     expect(world.query(BallisticProjectile)).toHaveLength(0);
 
     context.resolveProjectileModelLoad();
     await flushPromises();
     world.update();
 
-    expect(shotQueue.count).toBe(0);
+    expect(spawnQueue.count).toBe(0);
     expect(world.query(BallisticProjectile)).toHaveLength(2);
   });
 
   it('cycles projectile spawn through multiple shoot points', async () => {
+    world.addSystem(new ProjectileShotPatternSystem());
     world.addSystem(new ProjectileFireSystem());
 
     const weaponObject = new THREE.Object3D();
@@ -350,6 +359,8 @@ describe('combat systems', () => {
     const shotQueue = world.addComponent(weapon, new ShotQueue());
 
     world.addComponent(weapon, new Weapon());
+    world.addComponent(weapon, new ProjectileSpawnQueue());
+    world.addComponent(weapon, new AlternatingProjectileShotPattern());
     world.addComponent(
       weapon,
       new ProjectileEmitter({
@@ -370,7 +381,8 @@ describe('combat systems', () => {
     expect(projectiles).toEqual([-1, 1, -1]);
   });
 
-  it('uses a configured shot pattern to spawn projectiles from specific shoot points', async () => {
+  it('uses a volley shot pattern to spawn projectiles from specific shoot points', async () => {
+    world.addSystem(new ProjectileShotPatternSystem());
     world.addSystem(new ProjectileFireSystem());
 
     const weaponObject = new THREE.Object3D();
@@ -387,6 +399,7 @@ describe('combat systems', () => {
     const shotQueue = world.addComponent(weapon, new ShotQueue());
 
     world.addComponent(weapon, new Weapon());
+    world.addComponent(weapon, new ProjectileSpawnQueue());
     world.addComponent(
       weapon,
       new ProjectileEmitter({
@@ -395,9 +408,8 @@ describe('combat systems', () => {
     );
     world.addComponent(
       weapon,
-      new ProjectileShotPattern({
-        shotsPerTrigger: 2,
-        shootPointIndices: [2, 0],
+      new ProjectileVolleyShotPattern({
+        groups: [[2, 0]],
       }),
     );
 
@@ -412,6 +424,53 @@ describe('combat systems', () => {
       .map(([entity]) => world.getGameObject(entity).position.x);
 
     expect(projectiles).toEqual([1, -1]);
+  });
+
+  it('can fire alternating barrel pairs from a four-barrel projectile weapon', async () => {
+    world.addSystem(new ProjectileShotPatternSystem());
+    world.addSystem(new ProjectileFireSystem());
+
+    const weaponObject = new THREE.Object3D();
+    const shootPoints = [-2, -1, 1, 2].map((x) => {
+      const shootPoint = new THREE.Object3D();
+      shootPoint.position.set(x, 0, 0);
+      return shootPoint;
+    });
+
+    weaponObject.add(...shootPoints);
+
+    const weapon = world.createGameObject(weaponObject);
+    const shotQueue = world.addComponent(weapon, new ShotQueue());
+
+    world.addComponent(weapon, new Weapon());
+    world.addComponent(weapon, new ProjectileSpawnQueue());
+    world.addComponent(
+      weapon,
+      new ProjectileEmitter({
+        shootPoints,
+      }),
+    );
+    world.addComponent(
+      weapon,
+      new ProjectileVolleyShotPattern({
+        groups: [
+          [0, 3],
+          [1, 2],
+        ],
+      }),
+    );
+
+    world.update();
+    await flushPromises();
+
+    shotQueue.enqueue(2);
+    world.update();
+
+    const projectiles = world
+      .query(BallisticProjectile)
+      .map(([entity]) => world.getGameObject(entity).position.x);
+
+    expect(projectiles).toEqual([-2, 2, -1, 1]);
   });
 
   it('moves ballistic projectiles with gravity and air drag', () => {

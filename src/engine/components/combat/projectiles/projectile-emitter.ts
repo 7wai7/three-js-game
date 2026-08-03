@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import Component from '../../../ecs/component';
+import { RequireComponent } from '../../../ecs/require-component';
+import ProjectileSpawnQueue from './projectile-spawn-queue';
 
 export const DEFAULT_PROJECTILE_MODEL_PATH = 'src/assets/Weapons/Bullet.glb';
 
@@ -12,6 +14,7 @@ export type ProjectileEmitterProps = {
   shootPoints?: THREE.Object3D[];
 };
 
+@RequireComponent(ProjectileSpawnQueue)
 export default class ProjectileEmitter extends Component {
   projectileModelPath = DEFAULT_PROJECTILE_MODEL_PATH;
   speed = 80;
@@ -19,7 +22,6 @@ export default class ProjectileEmitter extends Component {
   drag = 0.05;
   lifetime = 5;
   shootPoints: THREE.Object3D[] = [];
-  nextShootPointIndex = 0;
 
   constructor(props: ProjectileEmitterProps = {}) {
     super();
@@ -49,21 +51,7 @@ export default class ProjectileEmitter extends Component {
     }
   }
 
-  getShootPoint(index = this.nextShootPointIndex) {
-    if (this.shootPoints.length === 0) {
-      return;
-    }
-
-    return this.shootPoints[index % this.shootPoints.length];
-  }
-
-  nextShootPoint() {
-    if (this.shootPoints.length === 0) {
-      return;
-    }
-
-    const shootPoint = this.getShootPoint(this.nextShootPointIndex);
-    this.nextShootPointIndex = (this.nextShootPointIndex + 1) % this.shootPoints.length;
-    return shootPoint;
+  getShootPoint(index = 0) {
+    return this.shootPoints[index];
   }
 }
