@@ -5,7 +5,6 @@ import EngineContext from './engine/contexts/engine.context.js';
 import { createEcsCamera, createMainCamera } from './engine/game/global-factory.js';
 import setupResizeHandler from './listeners/setup-resize-listener.js';
 import { createLight } from './engine/game/terrain-factory.js';
-import { instanceModelByConfig } from './engine/model-instancing/instancing.js';
 import { autocannonConfig } from './engine/model-instancing/configs/autocannon.js';
 import RigidBody from './engine/components/rigidbody.js';
 import AimAtTarget from './engine/components/transform/aim-at-target.js';
@@ -34,7 +33,7 @@ createEcsCamera(engine.world, camera);
 
 createLight(scene);
 
-instanceModelByConfig(engine, autocannonConfig, new Map()).then(({ entities }) => {
+engine.modelInstancer.instance(autocannonConfig, new Map()).then(({ entities }) => {
   const [weapon] = engine.world.getComponentsFromEntities([...entities], Weapon);
   const rb = engine.world.getComponent(weapon.entity, RigidBody)!;
   const aims = engine.world.getChildComponents(weapon.entity, AimAtTarget);

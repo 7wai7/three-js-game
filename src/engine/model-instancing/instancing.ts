@@ -9,6 +9,7 @@ import {
 } from './config-types';
 import { getObjectSize } from '../../utils/get-object-size';
 import { getAxisDimensions, getColliderRotationByAxis } from './utils';
+import SceneNodeIndex from './scene-node-index';
 import type Engine from '../engine';
 import type World from '../ecs/world';
 import type { EntityId } from '../ecs/types';
@@ -24,40 +25,60 @@ type RuntimeContext = {
   nodesByName: InstanceNodeMap;
 };
 
+export type ModelInstanceResult = {
+  entities: IterableIterator<EntityId>;
+  model: THREE.Object3D;
+  nodeIndex: SceneNodeIndex;
+  nodesByName: InstanceNodeMap;
+};
+
+export default class ModelInstancer {
+  private readonly engine: Engine;
+
+  constructor(engine: Engine) {
+    this.engine = engine;
+  }
+
+  async instance(config: ModelConfig, nodesByName?: InstanceNodeMap): Promise<ModelInstanceResult> {
+    const { world, physicsWorld, scene, assets } = this.engine;
+
+    if (!nodesByName) nodesByName = new Map();
+
+    const gltf = await assets.gltf.loadModel(config.modelPath);
+    const model = gltf.scene;
+
+    const nodeIndex = SceneNodeIndex.fromModel(model, nodesByName);
+    nodesByName = nodeIndex.nodesByName;
+
+    const runtimeContext: RuntimeContext = {
+      physicsWorld,
+      entitiesByName: new Map<SceneRef, string>(),
+      nodesByName,
+    };
+
+    createColliders(physicsWorld, config, nodesByName);
+
+    createJoints(config, runtimeContext);
+
+    createEntities(world, config, runtimeContext);
+
+    scene.add(model);
+
+    return {
+      entities: runtimeContext.entitiesByName.values(),
+      model,
+      nodeIndex,
+      nodesByName,
+    };
+  }
+}
+
 export async function instanceModelByConfig(
   engine: Engine,
   config: ModelConfig,
   nodesByName?: InstanceNodeMap,
 ) {
-  const { world, physicsWorld, scene, assets } = engine;
-
-  if (!nodesByName) nodesByName = new Map();
-
-  const gltf = await assets.gltf.loadModel(config.modelPath);
-  const model = gltf.scene;
-
-  fillObjectsMap(config, nodesByName, model);
-  fillArmatureObjects(nodesByName, model);
-
-  const runtimeContext: RuntimeContext = {
-    physicsWorld,
-    entitiesByName: new Map<SceneRef, string>(),
-    nodesByName,
-  };
-
-  createColliders(physicsWorld, config, nodesByName);
-
-  createJoints(config, runtimeContext);
-
-  createEntities(world, config, runtimeContext);
-
-  scene.add(model);
-
-  return {
-    entities: runtimeContext.entitiesByName.values(),
-    model: model,
-    nodesByName,
-  };
+  return engine.modelInstancer.instance(config, nodesByName);
 }
 
 function addPhysicsComponents(world: World, entity: EntityId, node: InstanceNode) {
@@ -106,69 +127,6 @@ function bindObjectRefs(component: Component, config: EntityComponentConfig, ctx
 
     (component as Record<string, any>)[field] = refs;
   }
-}
-
-function fillObjectsMap(config: ModelConfig, objectsMap: InstanceNodeMap, model: THREE.Object3D) {
-  model.traverse((obj) => {
-    for (const [key, entity] of Object.entries(config.entities)) {
-      if (key === obj.name && !objectsMap.has(obj.name)) {
-        objectsMap.set(obj.name, {
-          source: obj,
-        });
-      }
-      if (entity.collider && entity.collider.source === obj.name && !objectsMap.has(obj.name)) {
-        objectsMap.set(obj.name, {
-          source: obj,
-        });
-      }
-
-      for (const componentConfig of entity.components ?? []) {
-        for (const objectRef of Object.values(componentConfig.objectRefs ?? {})) {
-          if (objectRef === obj.name && !objectsMap.has(obj.name)) {
-            objectsMap.set(obj.name, {
-              source: obj,
-            });
-          }
-        }
-
-        for (const objectRefs of Object.values(
-          componentConfig.objectRefLists ?? {},
-        ) as string[][]) {
-          if (objectRefs.includes(obj.name) && !objectsMap.has(obj.name)) {
-            objectsMap.set(obj.name, {
-              source: obj,
-            });
-          }
-        }
-      }
-    }
-
-    for (const jointConfig of config.joints ?? []) {
-      if (
-        jointConfig.type === 'revolute' &&
-        obj.name === jointConfig.anchor &&
-        !objectsMap.has(obj.name)
-      ) {
-        objectsMap.set(obj.name, {
-          source: obj,
-        });
-      }
-    }
-  });
-}
-
-function fillArmatureObjects(objectsMap: InstanceNodeMap, model: THREE.Object3D) {
-  model.traverse((obj) => {
-    const isBone = obj.type === 'Bone' || (obj as THREE.Bone).isBone === true;
-
-    if (!isBone) return;
-    if (!obj.name) return;
-    if (objectsMap.has(obj.name)) return;
-
-    objectsMap.set(obj.name, {
-      source: obj,
-    });
-  });
 }
 
 function createColliders(
