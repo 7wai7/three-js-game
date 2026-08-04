@@ -15,15 +15,14 @@ export type ModelConfig = {
 export type EntityConfig = {
   components?: EntityComponentConfig[];
   collider?: ColliderConfig;
+  colliders?: ColliderConfig[];
 };
 
 export type InstanceNode = {
   source: THREE.Object3D;
 
   rigidBody?: RAPIER.RigidBody;
-  collider?: RAPIER.Collider;
-
-  steerPivot?: THREE.Object3D;
+  colliders?: RAPIER.Collider[];
 };
 
 export type InstanceNodeMap = Map<SceneRef, InstanceNode>;

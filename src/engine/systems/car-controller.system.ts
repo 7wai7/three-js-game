@@ -3,7 +3,7 @@ import RigidBody from '../components/rigidbody';
 import Car from '../components/vehicle/car';
 import System from './system';
 import Wheel from '../components/vehicle/wheel';
-import Collider from '../components/collider';
+import Colliders from '../components/colliders';
 import type RAPIER from '@dimforge/rapier3d';
 import ControlInput from '../components/control-input';
 
@@ -25,7 +25,7 @@ export default class CarControllerSystem extends System {
 
   update(): void {
     for (const [entity, chassis, { rigidBody: rb }] of this.world.query(Car, RigidBody)) {
-      const chassisCollider = this.world.getComponent(entity, Collider)!.collider;
+      const chassisCollider = this.world.getComponent(entity, Colliders)!.primary;
 
       if (chassis.wheels.length === 0) {
         chassis.wheels = this.world
@@ -36,7 +36,7 @@ export default class CarControllerSystem extends System {
       const wheels: Wheels[] = chassis.wheels.map((entity) => ({
         wheel: this.world.getComponent(entity, Wheel)!,
         rigidbody: this.world.getComponent(entity, RigidBody)!.rigidBody,
-        collider: this.world.getComponent(entity, Collider)!.collider,
+        collider: this.world.getComponent(entity, Colliders)!.primary,
       }));
 
       let hasGroundedWheel = false;

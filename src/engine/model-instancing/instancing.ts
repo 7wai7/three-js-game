@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d/rapier.js';
 import {
   type EntityComponentConfig,
+  type EntityConfig,
   type InstanceNode,
   type InstanceNodeMap,
   type ColliderConfig,
@@ -15,7 +16,7 @@ import type Engine from '../engine';
 import type { EntityId } from '../ecs/types';
 import type Component from '../ecs/component';
 import RigidBody from '../components/rigidbody';
-import Collider from '../components/collider';
+import Colliders from '../components/colliders';
 
 type RuntimeContext = {
   entitiesByName: Map<SceneRef, EntityId>;
@@ -73,8 +74,8 @@ export default class ModelInstancer {
       this.engine.world.addComponent(entity, new RigidBody(node.rigidBody));
     }
 
-    if (node.collider) {
-      this.engine.world.addComponent(entity, new Collider(node.collider));
+    if (node.colliders?.length) {
+      this.engine.world.addComponent(entity, new Colliders(node.colliders));
     }
   }
 
@@ -118,8 +119,8 @@ export default class ModelInstancer {
 
   private createColliders(config: ModelConfig, nodesByName: InstanceNodeMap) {
     for (const [entityName, entityConfig] of Object.entries(config.entities)) {
-      const colliderConfig = entityConfig.collider;
-      if (!colliderConfig) continue;
+      const colliderConfigs = this.getColliderConfigs(entityConfig);
+      if (colliderConfigs.length === 0) continue;
 
       const target = nodesByName.get(entityName);
       if (!target) {
@@ -127,50 +128,88 @@ export default class ModelInstancer {
         continue;
       }
 
-      const colliderNode = nodesByName.get(colliderConfig.source);
+      const rb = this.createRigidBodyForColliders(colliderConfigs, target.source);
+      const colliders: RAPIER.Collider[] = [];
 
-      if (!colliderNode) {
-        console.warn(`Collider source not found "${colliderConfig.source}"`);
+      for (const colliderConfig of colliderConfigs) {
+        const colliderNode = nodesByName.get(colliderConfig.source);
+
+        if (!colliderNode) {
+          console.warn(`Collider source not found "${colliderConfig.source}"`);
+          continue;
+        }
+
+        colliderNode.source.visible = false;
+
+        const collider = this.createCollider(
+          colliderConfig,
+          target.source,
+          colliderNode.source,
+          rb,
+        );
+
+        colliders.push(collider);
+      }
+
+      if (colliders.length === 0) {
         continue;
-      }
-
-      colliderNode.source.visible = false;
-
-      const rb = this.createRigidBody(colliderConfig, target.source);
-      const colliderDesc = this.createColliderDesc(
-        colliderConfig,
-        target.source,
-        colliderNode.source,
-        Boolean(rb),
-      );
-      const collider = rb
-        ? this.engine.physicsWorld.createCollider(colliderDesc, rb)
-        : this.engine.physicsWorld.createCollider(colliderDesc);
-
-      collider.setRestitution(0);
-
-      if (colliderConfig.mass !== undefined) {
-        collider.setMass(colliderConfig.mass);
-      }
-
-      if (colliderConfig.friction !== undefined) {
-        collider.setFriction(colliderConfig.friction);
-      }
-
-      if (colliderConfig.frictionRule !== undefined) {
-        collider.setFrictionCombineRule(colliderConfig.frictionRule);
-      }
-
-      if (colliderConfig.collisionGroups !== undefined) {
-        collider.setCollisionGroups(colliderConfig.collisionGroups);
       }
 
       if (rb) {
         target.rigidBody = rb;
       }
 
-      target.collider = collider;
+      target.colliders = colliders;
     }
+  }
+
+  private getColliderConfigs(entityConfig: EntityConfig) {
+    return [
+      ...(entityConfig.collider ? [entityConfig.collider] : []),
+      ...(entityConfig.colliders ?? []),
+    ];
+  }
+
+  private createRigidBodyForColliders(configs: ColliderConfig[], target: THREE.Object3D) {
+    const rigidBodyConfig = configs.find((config) => config.rigidBodyType !== 'NONE');
+
+    if (!rigidBodyConfig) {
+      return;
+    }
+
+    return this.createRigidBody(rigidBodyConfig, target);
+  }
+
+  private createCollider(
+    config: ColliderConfig,
+    target: THREE.Object3D,
+    colliderSource: THREE.Object3D,
+    rb?: RAPIER.RigidBody,
+  ) {
+    const colliderDesc = this.createColliderDesc(config, target, colliderSource, Boolean(rb));
+    const collider = rb
+      ? this.engine.physicsWorld.createCollider(colliderDesc, rb)
+      : this.engine.physicsWorld.createCollider(colliderDesc);
+
+    collider.setRestitution(0);
+
+    if (config.mass !== undefined) {
+      collider.setMass(config.mass);
+    }
+
+    if (config.friction !== undefined) {
+      collider.setFriction(config.friction);
+    }
+
+    if (config.frictionRule !== undefined) {
+      collider.setFrictionCombineRule(config.frictionRule);
+    }
+
+    if (config.collisionGroups !== undefined) {
+      collider.setCollisionGroups(config.collisionGroups);
+    }
+
+    return collider;
   }
 
   private createRigidBody(config: ColliderConfig, target: THREE.Object3D) {

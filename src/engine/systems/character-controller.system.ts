@@ -3,7 +3,7 @@ import * as RAPIER from '@dimforge/rapier3d';
 import CharacterController from '../components/character-controller';
 import System from './system';
 import RigidBody from '../components/rigidbody';
-import Collider from '../components/collider';
+import Colliders from '../components/colliders';
 import Animation from '../components/animation';
 import ControlInput from '../components/control-input';
 import PlayerControlled from '../components/player-controlled';
@@ -17,11 +17,12 @@ export default class CharacterControllerSystem extends System {
   private up = new THREE.Vector3(0, 1, 0);
 
   update(): void {
-    for (const [entity, controller, { rigidBody }, { collider }] of this.world.query(
+    for (const [entity, controller, { rigidBody }, colliders] of this.world.query(
       CharacterController,
       RigidBody,
-      Collider,
+      Colliders,
     )) {
+      const collider = colliders.primary;
       const characterController = controller.characterController;
       const anim = this.world.getComponent(entity, Animation)!;
       const input = this.world.getComponent(entity, ControlInput);

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d';
 import RigidBody from '../components/rigidbody';
 import CharacterController from '../components/character-controller';
-import Collider from '../components/collider';
+import Colliders from '../components/colliders';
 import getUniformScale from '../../utils/get-uniform-scale';
 import Animation from '../components/animation';
 import AnimationsSystem from '../systems/animations.system';
@@ -77,7 +77,7 @@ export async function createPlayer(engine: Engine, transform: SpawnTransform = {
 
   // Add components to the world
   world.addComponent(entity, new RigidBody(rb));
-  world.addComponent(entity, new Collider(collider));
+  world.addComponent(entity, new Colliders([collider]));
   world.addComponent(
     entity,
     new CharacterController(controller, {

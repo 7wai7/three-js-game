@@ -65,6 +65,12 @@ export default class World {
 
     const previousComponent = componentMap.get(entity);
 
+    if (previousComponent) {
+      console.warn(
+        `Component "${componentClass.name}" is already attached to entity "${entity}" and will be replaced`,
+      );
+    }
+
     if (previousComponent && previousComponent !== component) {
       this.queueComponentDispose(previousComponent);
     }

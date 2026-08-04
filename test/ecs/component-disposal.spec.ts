@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d/rapier.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import Collider from '../../src/engine/components/collider';
+import Colliders from '../../src/engine/components/colliders';
 import RigidBody from '../../src/engine/components/rigidbody';
 import EngineContext from '../../src/engine/contexts/engine.context';
 import type Engine from '../../src/engine/engine';
@@ -48,17 +48,17 @@ describe('physics components disposal', () => {
     physicsWorld = engine.physicsWorld;
   });
 
-  it('defers real Rapier RigidBody and attached Collider removal until flush', () => {
+  it('defers real Rapier RigidBody and attached Colliders removal until flush', () => {
     const { rigidBody, collider } = createDynamicBodyWithCollider(physicsWorld);
 
     const entity = world.createEntity('entity');
     world.addComponent(entity, new RigidBody(rigidBody));
-    world.addComponent(entity, new Collider(collider));
+    world.addComponent(entity, new Colliders([collider]));
 
     world.destroyEntity(entity);
 
     expect(world.getComponent(entity, RigidBody)).toBeUndefined();
-    expect(world.getComponent(entity, Collider)).toBeUndefined();
+    expect(world.getComponent(entity, Colliders)).toBeUndefined();
     expect(rigidBody.isValid()).toBe(true);
     expect(collider.isValid()).toBe(true);
 
@@ -68,20 +68,38 @@ describe('physics components disposal', () => {
     expect(collider.isValid()).toBe(false);
   });
 
-  it('removes a standalone real Rapier Collider on flush', () => {
+  it('removes a standalone real Rapier Colliders component on flush', () => {
     const collider = physicsWorld.createCollider(RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5));
 
     const entity = world.createEntity('entity');
-    world.addComponent(entity, new Collider(collider));
+    world.addComponent(entity, new Colliders([collider]));
 
-    world.removeComponent(entity, Collider);
+    world.removeComponent(entity, Colliders);
 
-    expect(world.getComponent(entity, Collider)).toBeUndefined();
+    expect(world.getComponent(entity, Colliders)).toBeUndefined();
     expect(collider.isValid()).toBe(true);
 
     world.flushDisposedComponents();
 
     expect(collider.isValid()).toBe(false);
+  });
+
+  it('removes multiple standalone real Rapier colliders on flush', () => {
+    const firstCollider = physicsWorld.createCollider(RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5));
+    const secondCollider = physicsWorld.createCollider(RAPIER.ColliderDesc.ball(0.5));
+
+    const entity = world.createEntity('entity');
+    world.addComponent(entity, new Colliders([firstCollider, secondCollider]));
+
+    world.destroyEntity(entity);
+
+    expect(firstCollider.isValid()).toBe(true);
+    expect(secondCollider.isValid()).toBe(true);
+
+    world.flushDisposedComponents();
+
+    expect(firstCollider.isValid()).toBe(false);
+    expect(secondCollider.isValid()).toBe(false);
   });
 
   it('disposes replaced real Rapier RigidBodies only after flush', () => {
@@ -127,9 +145,9 @@ describe('physics components disposal', () => {
     const childEntity = world.createGameObject(childObject);
 
     world.addComponent(rootEntity, new RigidBody(rootPhysics.rigidBody));
-    world.addComponent(rootEntity, new Collider(rootPhysics.collider));
+    world.addComponent(rootEntity, new Colliders([rootPhysics.collider]));
     world.addComponent(childEntity, new RigidBody(childPhysics.rigidBody));
-    world.addComponent(childEntity, new Collider(childPhysics.collider));
+    world.addComponent(childEntity, new Colliders([childPhysics.collider]));
 
     world.destroyEntity(rootEntity);
 
