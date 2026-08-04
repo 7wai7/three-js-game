@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import RAPIER from '@dimforge/rapier3d';
+import RAPIER from '@dimforge/rapier3d/rapier.js';
 import {
   type EntityComponentConfig,
   type InstanceNode,
   type InstanceNodeMap,
+  type ColliderConfig,
   type ModelConfig,
   type SceneRef,
 } from './config-types';
@@ -135,93 +136,16 @@ export default class ModelInstancer {
 
       colliderNode.source.visible = false;
 
-      const meshWorldPos = new THREE.Vector3();
-      const meshWorldQuat = new THREE.Quaternion();
-
-      target.source.getWorldPosition(meshWorldPos);
-      target.source.getWorldQuaternion(meshWorldQuat);
-
-      const size = getObjectSize(colliderNode.source);
-
-      let rbDesc: RAPIER.RigidBodyDesc;
-
-      switch (colliderConfig.rigidBodyType) {
-        case 'FIXED':
-          rbDesc = RAPIER.RigidBodyDesc.fixed();
-          break;
-
-        case 'KINEMATIC':
-          rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased();
-          break;
-
-        default:
-          rbDesc = RAPIER.RigidBodyDesc.dynamic();
-          break;
-      }
-
-      rbDesc.setTranslation(meshWorldPos.x, meshWorldPos.y, meshWorldPos.z);
-
-      rbDesc.setRotation({
-        x: meshWorldQuat.x,
-        y: meshWorldQuat.y,
-        z: meshWorldQuat.z,
-        w: meshWorldQuat.w,
-      });
-
-      const rb = this.engine.physicsWorld.createRigidBody(rbDesc);
-
-      rb.setLinearDamping(0.1);
-      rb.setAngularDamping(0.1);
-
-      if (colliderConfig.enableCcd) {
-        rb.enableCcd(true);
-      }
-
-      let colliderDesc: RAPIER.ColliderDesc;
-
-      const { length, radius } = getAxisDimensions(size, colliderConfig.axis);
-
-      switch (colliderConfig.shape) {
-        case 'BALL':
-          colliderDesc = RAPIER.ColliderDesc.ball(Math.max(size.x, size.y, size.z) * 0.5);
-          break;
-
-        case 'CAPSULE':
-          colliderDesc = RAPIER.ColliderDesc.capsule(Math.max(0, length * 0.5 - radius), radius);
-          break;
-
-        case 'CYLINDER':
-          colliderDesc = RAPIER.ColliderDesc.cylinder(length * 0.5, radius);
-          break;
-
-        default:
-          colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5);
-      }
-
-      target.source.updateMatrixWorld(true);
-      colliderNode.source.updateMatrixWorld(true);
-
-      const localPos = new THREE.Vector3();
-
-      const localMatrix = target.source.matrixWorld
-        .clone()
-        .invert()
-        .multiply(colliderNode.source.matrixWorld.clone());
-
-      localMatrix.decompose(localPos, new THREE.Quaternion(), new THREE.Vector3());
-
-      colliderDesc.setTranslation(localPos.x, localPos.y, localPos.z);
-
-      const localQuat = getColliderRotationByAxis(colliderConfig.axis);
-
-      colliderDesc.setRotation({
-        x: localQuat.x,
-        y: localQuat.y,
-        z: localQuat.z,
-        w: localQuat.w,
-      });
-
-      const collider = this.engine.physicsWorld.createCollider(colliderDesc, rb);
+      const rb = this.createRigidBody(colliderConfig, target.source);
+      const colliderDesc = this.createColliderDesc(
+        colliderConfig,
+        target.source,
+        colliderNode.source,
+        Boolean(rb),
+      );
+      const collider = rb
+        ? this.engine.physicsWorld.createCollider(colliderDesc, rb)
+        : this.engine.physicsWorld.createCollider(colliderDesc);
 
       collider.setRestitution(0);
 
@@ -241,9 +165,152 @@ export default class ModelInstancer {
         collider.setCollisionGroups(colliderConfig.collisionGroups);
       }
 
-      target.rigidBody = rb;
+      if (rb) {
+        target.rigidBody = rb;
+      }
+
       target.collider = collider;
     }
+  }
+
+  private createRigidBody(config: ColliderConfig, target: THREE.Object3D) {
+    if (config.rigidBodyType === 'NONE') {
+      return;
+    }
+
+    const meshWorldPos = new THREE.Vector3();
+    const meshWorldQuat = new THREE.Quaternion();
+
+    target.getWorldPosition(meshWorldPos);
+    target.getWorldQuaternion(meshWorldQuat);
+
+    const rbDesc = this.createRigidBodyDesc(config);
+
+    rbDesc.setTranslation(meshWorldPos.x, meshWorldPos.y, meshWorldPos.z);
+
+    rbDesc.setRotation({
+      x: meshWorldQuat.x,
+      y: meshWorldQuat.y,
+      z: meshWorldQuat.z,
+      w: meshWorldQuat.w,
+    });
+
+    const rb = this.engine.physicsWorld.createRigidBody(rbDesc);
+
+    rb.setLinearDamping(0.1);
+    rb.setAngularDamping(0.1);
+
+    if (config.enableCcd) {
+      rb.enableCcd(true);
+    }
+
+    return rb;
+  }
+
+  private createRigidBodyDesc(config: ColliderConfig) {
+    switch (config.rigidBodyType) {
+      case 'FIXED':
+        return RAPIER.RigidBodyDesc.fixed();
+
+      case 'KINEMATIC':
+        return RAPIER.RigidBodyDesc.kinematicPositionBased();
+
+      default:
+        return RAPIER.RigidBodyDesc.dynamic();
+    }
+  }
+
+  private createColliderDesc(
+    config: ColliderConfig,
+    target: THREE.Object3D,
+    colliderSource: THREE.Object3D,
+    attachedToRigidBody: boolean,
+  ) {
+    const size = getObjectSize(colliderSource);
+    const { length, radius } = getAxisDimensions(size, config.axis);
+
+    let colliderDesc: RAPIER.ColliderDesc;
+
+    switch (config.shape) {
+      case 'BALL':
+        colliderDesc = RAPIER.ColliderDesc.ball(Math.max(size.x, size.y, size.z) * 0.5);
+        break;
+
+      case 'CAPSULE':
+        colliderDesc = RAPIER.ColliderDesc.capsule(Math.max(0, length * 0.5 - radius), radius);
+        break;
+
+      case 'CYLINDER':
+        colliderDesc = RAPIER.ColliderDesc.cylinder(length * 0.5, radius);
+        break;
+
+      default:
+        colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5);
+    }
+
+    if (attachedToRigidBody) {
+      this.setAttachedColliderTransform(colliderDesc, config, target, colliderSource);
+    } else {
+      this.setStandaloneColliderTransform(colliderDesc, config, target, colliderSource);
+    }
+
+    return colliderDesc;
+  }
+
+  private setAttachedColliderTransform(
+    colliderDesc: RAPIER.ColliderDesc,
+    config: ColliderConfig,
+    target: THREE.Object3D,
+    colliderSource: THREE.Object3D,
+  ) {
+    target.updateMatrixWorld(true);
+    colliderSource.updateMatrixWorld(true);
+
+    const localPos = new THREE.Vector3();
+
+    const localMatrix = target.matrixWorld
+      .clone()
+      .invert()
+      .multiply(colliderSource.matrixWorld.clone());
+
+    localMatrix.decompose(localPos, new THREE.Quaternion(), new THREE.Vector3());
+
+    colliderDesc.setTranslation(localPos.x, localPos.y, localPos.z);
+
+    const localQuat = getColliderRotationByAxis(config.axis);
+
+    colliderDesc.setRotation({
+      x: localQuat.x,
+      y: localQuat.y,
+      z: localQuat.z,
+      w: localQuat.w,
+    });
+  }
+
+  private setStandaloneColliderTransform(
+    colliderDesc: RAPIER.ColliderDesc,
+    config: ColliderConfig,
+    target: THREE.Object3D,
+    colliderSource: THREE.Object3D,
+  ) {
+    target.updateMatrixWorld(true);
+    colliderSource.updateMatrixWorld(true);
+
+    const worldPos = new THREE.Vector3();
+    const worldQuat = new THREE.Quaternion();
+    const axisQuat = getColliderRotationByAxis(config.axis);
+
+    colliderSource.getWorldPosition(worldPos);
+    target.getWorldQuaternion(worldQuat);
+    worldQuat.multiply(axisQuat);
+
+    colliderDesc.setTranslation(worldPos.x, worldPos.y, worldPos.z);
+    colliderDesc.setRotation({
+      x: worldQuat.x,
+      y: worldQuat.y,
+      z: worldQuat.z,
+      w: worldQuat.w,
+    });
   }
 
   private createJoints(config: ModelConfig, ctx: RuntimeContext) {

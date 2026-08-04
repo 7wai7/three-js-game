@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import RAPIER from '@dimforge/rapier3d';
+import type RAPIER from '@dimforge/rapier3d';
 import type Component from '../ecs/component';
 
 export type SceneRef = string;
@@ -171,7 +171,7 @@ export type SphericalJointConfig = {
 export const COLLIDER_SHAPE = ['BOX', 'BALL', 'CAPSULE', 'CYLINDER'] as const;
 export type ColliderShape = (typeof COLLIDER_SHAPE)[number];
 
-export const RIGIDBODY_TYPE = ['FIXED', 'DYNAMIC', 'KINEMATIC'] as const;
+export const RIGIDBODY_TYPE = ['NONE', 'FIXED', 'DYNAMIC', 'KINEMATIC'] as const;
 export type RigidBodyType = (typeof RIGIDBODY_TYPE)[number];
 
 export const AXIS = ['X', 'Y', 'Z'] as const;

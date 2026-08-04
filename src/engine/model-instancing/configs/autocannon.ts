@@ -45,7 +45,7 @@ export const autocannonConfig: ModelConfig = {
 
       collider: {
         source: 'Col_Weapon',
-        rigidBodyType: 'FIXED',
+        rigidBodyType: 'NONE',
         shape: 'BALL',
       },
     },

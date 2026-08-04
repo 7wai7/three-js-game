@@ -46,4 +46,28 @@ describe('SceneNodeIndex', () => {
 
     expect(nodesByName.get('SharedName')?.source).toBe(existing);
   });
+
+  it('hides collider helper objects by name while indexing the model tree', () => {
+    const root = new THREE.Group();
+    root.name = 'Root';
+
+    const colliderHelper = new THREE.Object3D();
+    colliderHelper.name = 'COL_trigger';
+
+    const mixedCaseColliderHelper = new THREE.Object3D();
+    mixedCaseColliderHelper.name = 'Col_Weapon';
+
+    const visualMesh = new THREE.Object3D();
+    visualMesh.name = 'Weapon';
+
+    root.add(colliderHelper, mixedCaseColliderHelper, visualMesh);
+
+    const index = SceneNodeIndex.fromModel(root);
+
+    expect(index.get('COL_trigger')?.source).toBe(colliderHelper);
+    expect(index.get('Col_Weapon')?.source).toBe(mixedCaseColliderHelper);
+    expect(colliderHelper.visible).toBe(false);
+    expect(mixedCaseColliderHelper.visible).toBe(false);
+    expect(visualMesh.visible).toBe(true);
+  });
 });
