@@ -14,6 +14,7 @@ export type ModelConfig = {
 
 export type EntityConfig = {
   components?: EntityComponentConfig[];
+  rigidBody?: RigidBodyConfig;
   collider?: ColliderConfig;
   colliders?: ColliderConfig[];
 };
@@ -105,13 +106,19 @@ export function component<C extends ComponentConstructor>(
 export type ColliderConfig = {
   source: SceneRef;
   shape?: ColliderShape;
-  rigidBodyType?: RigidBodyType;
   axis?: Axis;
   mass?: number;
   collisionGroups?: number;
-  enableCcd?: boolean;
   friction?: number;
   frictionRule?: RAPIER.CoefficientCombineRule;
+};
+
+export type RigidBodyConfig = {
+  type?: PhysicalRigidBodyType;
+  mass?: number;
+  enableCcd?: boolean;
+  linearDamping?: number;
+  angularDamping?: number;
 };
 
 // JOINT TYPES
@@ -172,6 +179,7 @@ export type ColliderShape = (typeof COLLIDER_SHAPE)[number];
 
 export const RIGIDBODY_TYPE = ['NONE', 'FIXED', 'DYNAMIC', 'KINEMATIC'] as const;
 export type RigidBodyType = (typeof RIGIDBODY_TYPE)[number];
+export type PhysicalRigidBodyType = Exclude<RigidBodyType, 'NONE'>;
 
 export const AXIS = ['X', 'Y', 'Z'] as const;
 export type Axis = (typeof AXIS)[number];

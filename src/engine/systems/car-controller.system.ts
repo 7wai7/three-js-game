@@ -25,7 +25,7 @@ export default class CarControllerSystem extends System {
 
   update(): void {
     for (const [entity, chassis, { rigidBody: rb }] of this.world.query(Car, RigidBody)) {
-      const chassisCollider = this.world.getComponent(entity, Colliders)!.primary;
+      const chassisCollider = this.world.getComponent(entity, Colliders)?.primary;
 
       if (chassis.wheels.length === 0) {
         chassis.wheels = this.world
@@ -41,7 +41,12 @@ export default class CarControllerSystem extends System {
 
       let hasGroundedWheel = false;
       for (const w of wheels) {
-        this.checkIsGroundedWheel(this.physicsWorld, w.wheel, w.collider, [chassisCollider]);
+        this.checkIsGroundedWheel(
+          this.physicsWorld,
+          w.wheel,
+          w.collider,
+          chassisCollider ? [chassisCollider] : [],
+        );
 
         if (w.wheel.isGrounded) hasGroundedWheel = true;
       }

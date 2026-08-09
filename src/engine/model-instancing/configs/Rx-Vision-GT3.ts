@@ -25,7 +25,6 @@ const wheelCollider: Omit<ColliderConfig, 'source'> = {
   friction: 0,
   frictionRule: RAPIER.CoefficientCombineRule.Min,
   collisionGroups: interactionGroups(GROUP_WHEEL, GROUP_WORLD | GROUP_PLAYER),
-  enableCcd: true,
 };
 
 function createWheelPrismaticJoint(wheel: string) {
@@ -61,11 +60,15 @@ function createWheel(
         Wheel,
         {
           ...wheelProps,
-          radius: 0.66,
+          radius: 0.15,
         },
         { objectRefs },
       ),
     ],
+    rigidBody: {
+      type: 'DYNAMIC',
+      enableCcd: true,
+    },
     collider: {
       ...wheelCollider,
       source: collider,
@@ -80,6 +83,7 @@ export const Rx_Vision_GT3_config: ModelConfig = {
     Body: {
       components: [
         component(Car, {
+          // TODO: separate the parameters for each wheel
           engineForce: 120,
           brakeForce: 22,
           sideGrip: 24,
@@ -87,6 +91,9 @@ export const Rx_Vision_GT3_config: ModelConfig = {
         }),
         component(PlayerControlled),
       ],
+      rigidBody: {
+        type: 'DYNAMIC',
+      },
       collider: {
         source: 'COL_Body',
         shape: 'BOX',

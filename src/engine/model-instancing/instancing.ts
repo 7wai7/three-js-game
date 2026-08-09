@@ -7,6 +7,7 @@ import {
   type InstanceNodeMap,
   type ColliderConfig,
   type ModelConfig,
+  type RigidBodyConfig,
   type SceneRef,
 } from './config-types';
 import { getObjectSize } from '../../utils/get-object-size';
@@ -53,7 +54,7 @@ export default class ModelInstancer {
       nodesByName,
     };
 
-    this.createColliders(config, nodesByName);
+    this.createPhysics(config, nodesByName);
 
     this.createJoints(config, runtimeContext);
 
@@ -117,10 +118,10 @@ export default class ModelInstancer {
     }
   }
 
-  private createColliders(config: ModelConfig, nodesByName: InstanceNodeMap) {
+  private createPhysics(config: ModelConfig, nodesByName: InstanceNodeMap) {
     for (const [entityName, entityConfig] of Object.entries(config.entities)) {
       const colliderConfigs = this.getColliderConfigs(entityConfig);
-      if (colliderConfigs.length === 0) continue;
+      if (!entityConfig.rigidBody && colliderConfigs.length === 0) continue;
 
       const target = nodesByName.get(entityName);
       if (!target) {
@@ -128,7 +129,9 @@ export default class ModelInstancer {
         continue;
       }
 
-      const rb = this.createRigidBodyForColliders(colliderConfigs, target.source);
+      const rb = entityConfig.rigidBody
+        ? this.createRigidBody(entityConfig.rigidBody, target.source)
+        : null;
       const colliders: RAPIER.Collider[] = [];
 
       for (const colliderConfig of colliderConfigs) {
@@ -151,15 +154,13 @@ export default class ModelInstancer {
         colliders.push(collider);
       }
 
-      if (colliders.length === 0) {
-        continue;
-      }
-
       if (rb) {
         target.rigidBody = rb;
       }
 
-      target.colliders = colliders;
+      if (colliders.length > 0) {
+        target.colliders = colliders;
+      }
     }
   }
 
@@ -170,21 +171,11 @@ export default class ModelInstancer {
     ];
   }
 
-  private createRigidBodyForColliders(configs: ColliderConfig[], target: THREE.Object3D) {
-    const rigidBodyConfig = configs.find((config) => config.rigidBodyType !== 'NONE');
-
-    if (!rigidBodyConfig) {
-      return;
-    }
-
-    return this.createRigidBody(rigidBodyConfig, target);
-  }
-
   private createCollider(
     config: ColliderConfig,
     target: THREE.Object3D,
     colliderSource: THREE.Object3D,
-    rb?: RAPIER.RigidBody,
+    rb: RAPIER.RigidBody | null,
   ) {
     const colliderDesc = this.createColliderDesc(config, target, colliderSource, Boolean(rb));
     const collider = rb
@@ -212,11 +203,7 @@ export default class ModelInstancer {
     return collider;
   }
 
-  private createRigidBody(config: ColliderConfig, target: THREE.Object3D) {
-    if (config.rigidBodyType === 'NONE') {
-      return;
-    }
-
+  private createRigidBody(config: RigidBodyConfig, target: THREE.Object3D) {
     const meshWorldPos = new THREE.Vector3();
     const meshWorldQuat = new THREE.Quaternion();
 
@@ -226,6 +213,12 @@ export default class ModelInstancer {
     const rbDesc = this.createRigidBodyDesc(config);
 
     rbDesc.setTranslation(meshWorldPos.x, meshWorldPos.y, meshWorldPos.z);
+    rbDesc.setLinearDamping(config.linearDamping ?? 0.1);
+    rbDesc.setAngularDamping(config.angularDamping ?? 0.1);
+
+    if (config.mass !== undefined) {
+      rbDesc.setAdditionalMass(config.mass);
+    }
 
     rbDesc.setRotation({
       x: meshWorldQuat.x,
@@ -236,9 +229,6 @@ export default class ModelInstancer {
 
     const rb = this.engine.physicsWorld.createRigidBody(rbDesc);
 
-    rb.setLinearDamping(0.1);
-    rb.setAngularDamping(0.1);
-
     if (config.enableCcd) {
       rb.enableCcd(true);
     }
@@ -246,8 +236,8 @@ export default class ModelInstancer {
     return rb;
   }
 
-  private createRigidBodyDesc(config: ColliderConfig) {
-    switch (config.rigidBodyType) {
+  private createRigidBodyDesc(config: RigidBodyConfig) {
+    switch (config.type) {
       case 'FIXED':
         return RAPIER.RigidBodyDesc.fixed();
 

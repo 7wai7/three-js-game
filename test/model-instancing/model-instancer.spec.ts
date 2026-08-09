@@ -65,7 +65,6 @@ describe('ModelInstancer', () => {
         Trigger: {
           collider: {
             source: 'COL_trigger',
-            rigidBodyType: 'NONE',
             shape: 'BOX',
           },
         },
@@ -89,14 +88,12 @@ describe('ModelInstancer', () => {
     });
   });
 
-  it('keeps creating a rigidbody for existing collider configs by default', async () => {
+  it('can create a rigidbody without colliders', async () => {
     const model = new THREE.Group();
     const body = new THREE.Object3D();
-    const colliderSource = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
 
     body.name = 'Body';
-    colliderSource.name = 'COL_body';
-    body.add(colliderSource);
+    body.position.set(2, 3, 4);
     model.add(body);
 
     const { engine, world } = createTestEngine(model);
@@ -105,19 +102,27 @@ describe('ModelInstancer', () => {
       modelPath: 'body.glb',
       entities: {
         Body: {
-          collider: {
-            source: 'COL_body',
-            shape: 'BOX',
+          rigidBody: {
+            type: 'KINEMATIC',
+            mass: 400,
           },
         },
       },
     };
 
-    const { entities } = await instancer.instance(config);
+    const { entities, nodesByName } = await instancer.instance(config);
     const [entity] = [...entities];
+    const rigidBody = world.getComponent(entity, RigidBody);
 
-    expect(world.getComponent(entity, Colliders)).toBeInstanceOf(Colliders);
-    expect(world.getComponent(entity, RigidBody)).toBeInstanceOf(RigidBody);
+    expect(rigidBody).toBeInstanceOf(RigidBody);
+    expect(world.getComponent(entity, Colliders)).toBeUndefined();
+    expect(nodesByName.get('Body')?.rigidBody).toBe(rigidBody?.rigidBody);
+    expect(nodesByName.get('Body')?.colliders).toBeUndefined();
+    expect(rigidBody?.rigidBody.translation()).toMatchObject({
+      x: 2,
+      y: 3,
+      z: 4,
+    });
   });
 
   it('can create multiple colliders for one entity from config', async () => {
@@ -160,7 +165,7 @@ describe('ModelInstancer', () => {
     const colliders = world.getComponent(entity, Colliders);
 
     expect(colliders?.colliders).toHaveLength(2);
-    expect(world.getComponent(entity, RigidBody)).toBeInstanceOf(RigidBody);
+    expect(world.getComponent(entity, RigidBody)).toBeUndefined();
     expect(nodesByName.get('Body')?.colliders).toEqual(colliders?.colliders);
     expect(leftColliderSource.visible).toBe(false);
     expect(rightColliderSource.visible).toBe(false);

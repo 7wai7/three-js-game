@@ -45,7 +45,6 @@ export const combatTurretConfig: ModelConfig = {
 
       collider: {
         source: 'Col_Weapon',
-        rigidBodyType: 'FIXED',
         shape: 'BALL',
       },
     },

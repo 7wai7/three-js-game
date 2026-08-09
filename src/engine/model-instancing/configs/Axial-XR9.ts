@@ -26,7 +26,6 @@ const wheelCollider: Omit<ColliderConfig, 'source'> = {
   friction: 0,
   frictionRule: RAPIER.CoefficientCombineRule.Min,
   collisionGroups: interactionGroups(GROUP_WHEEL, GROUP_WORLD | GROUP_PLAYER),
-  enableCcd: true,
 };
 
 function createWheelRevoluteJoint(wheel: string, anchor: string, isFront = false) {
@@ -76,6 +75,10 @@ function createWheel(
         { objectRefs },
       ),
     ],
+    rigidBody: {
+      type: 'DYNAMIC',
+      enableCcd: true,
+    },
     collider: {
       ...wheelCollider,
       source: collider,
@@ -96,6 +99,9 @@ export const axial_XR9_config: ModelConfig = {
           pullingForce: 5,
         }),
       ],
+      rigidBody: {
+        type: 'DYNAMIC',
+      },
       collider: {
         source: 'COL_chassis',
         shape: 'BOX',
