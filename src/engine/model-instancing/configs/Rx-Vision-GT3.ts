@@ -15,47 +15,37 @@ import {
   type ComponentProps,
   type EntityConfig,
   type ModelConfig,
-  type RevoluteJointConfig,
+  type PrismaticJointConfig,
 } from '../config-types';
-import { DEG2RAD } from 'three/src/math/MathUtils.js';
+import PlayerControlled from '../../components/player-controlled';
 
 const wheelCollider: Omit<ColliderConfig, 'source'> = {
   shape: 'BALL' as const,
-  axis: 'X' as const,
   mass: 300,
   friction: 0,
   frictionRule: RAPIER.CoefficientCombineRule.Min,
   collisionGroups: interactionGroups(GROUP_WHEEL, GROUP_WORLD | GROUP_PLAYER),
 };
 
-function createWheelRevoluteJoint(wheel: string, anchor: string, isFront = false) {
-  const min = -20 * DEG2RAD;
-  const max = 13 * DEG2RAD;
-
-  const revoluteJoint: Omit<RevoluteJointConfig, 'bodyB' | 'anchor'> = {
-    type: 'revolute',
-    bodyA: 'Chassis',
-    axis: { x: 1 },
-    limits: !isFront
-      ? {
-          min,
-          max,
-        }
-      : {
-          min: max * -1,
-          max: min * -1,
-        },
+function createWheelPrismaticJoint(wheel: string) {
+  const prismaticJoint: Omit<PrismaticJointConfig, 'bodyB'> = {
+    type: 'prismatic',
+    bodyA: 'Body',
+    axis: { y: 1 },
+    limits: {
+      min: -0.1,
+      max: 0.15,
+    },
     motorPosition: {
-      target: !isFront ? min : min * -1,
-      stiffness: 300,
-      damping: 90,
+      target: -0.05,
+      stiffness: 500,
+      damping: 70,
     },
   };
 
   return {
-    ...revoluteJoint,
+    ...prismaticJoint,
     bodyB: wheel,
-    anchor,
   };
 }
 
@@ -70,7 +60,7 @@ function createWheel(
         Wheel,
         {
           ...wheelProps,
-          radius: 0.66,
+          radius: 0.15,
         },
         { objectRefs },
       ),
@@ -88,25 +78,27 @@ function createWheel(
   };
 }
 
-export const axial_XR9_config: ModelConfig = {
-  modelPath: 'src/assets/Axial-XR9.glb',
+export const Rx_Vision_GT3_config: ModelConfig = {
+  modelPath: 'src/assets/Vehicles/Rx-Vision GT3.glb',
 
   entities: {
-    Chassis: {
+    Body: {
       components: [
         component(Car, {
+          // TODO: separate the parameters for each wheel
           engineForce: 120,
           brakeForce: 22,
           sideGrip: 24,
           pullingForce: 5,
         }),
+        component(PlayerControlled),
       ],
       rigidBody: {
         type: 'DYNAMIC',
       },
       colliders: [
         {
-          source: 'COL_chassis',
+          source: 'COL_Body',
           shape: 'BOX',
           mass: 400,
           collisionGroups: interactionGroups(
@@ -117,55 +109,55 @@ export const axial_XR9_config: ModelConfig = {
       ],
     },
 
-    wheel_baseFR: createWheel(
-      'COL_wheelFR',
+    wheel_base_FR: createWheel(
+      'COL_wheel_FR',
       {
         maxSteerAngleDeg: 30,
       },
       {
-        steerObject: 'wheel_steerFR',
-        rollObject: 'wheel_rollFR',
+        steerObject: 'wheel_steer_FR',
+        rollObject: 'wheel_roll_FR',
       },
     ),
 
-    wheel_baseFL: createWheel(
-      'COL_wheelFL',
+    wheel_base_FL: createWheel(
+      'COL_wheel_FL',
       {
         maxSteerAngleDeg: 30,
       },
       {
-        steerObject: 'wheel_steerFL',
-        rollObject: 'wheel_rollFL',
+        steerObject: 'wheel_steer_FL',
+        rollObject: 'wheel_roll_FL',
       },
     ),
 
-    wheel_baseRR: createWheel(
-      'COL_wheelRR',
+    wheel_base_RR: createWheel(
+      'COL_wheel_RR',
       {
         isRear: true,
       },
       {
-        steerObject: 'wheel_steerRR',
-        rollObject: 'wheel_rollRR',
+        steerObject: 'wheel_steer_RR',
+        rollObject: 'wheel_roll_RR',
       },
     ),
 
-    wheel_baseRL: createWheel(
-      'COL_wheelRL',
+    wheel_base_RL: createWheel(
+      'COL_wheel_RL',
       {
         isRear: true,
       },
       {
-        steerObject: 'wheel_steerRL',
-        rollObject: 'wheel_rollRL',
+        steerObject: 'wheel_steer_RL',
+        rollObject: 'wheel_roll_RL',
       },
     ),
   },
 
   joints: [
-    createWheelRevoluteJoint('wheel_baseFR', 'wheel_armFR', true),
-    createWheelRevoluteJoint('wheel_baseFL', 'wheel_armFL', true),
-    createWheelRevoluteJoint('wheel_baseRR', 'wheel_armRR'),
-    createWheelRevoluteJoint('wheel_baseRL', 'wheel_armRL'),
+    createWheelPrismaticJoint('wheel_base_FR'),
+    createWheelPrismaticJoint('wheel_base_FL'),
+    createWheelPrismaticJoint('wheel_base_RR'),
+    createWheelPrismaticJoint('wheel_base_RL'),
   ],
 };

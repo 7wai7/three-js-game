@@ -1,98 +1,80 @@
 import * as THREE from 'three';
-import RAPIER from '@dimforge/rapier3d';
+import RAPIER from '@dimforge/rapier3d/rapier.js';
 import {
   type EntityComponentConfig,
   type InstanceNode,
   type InstanceNodeMap,
+  type ColliderConfig,
   type ModelConfig,
+  type RigidBodyConfig,
   type SceneRef,
+  type ModelInstanceResult,
+  type RuntimeContext,
 } from './config-types';
 import { getObjectSize } from '../../utils/get-object-size';
 import { getAxisDimensions, getColliderRotationByAxis } from './utils';
 import type Engine from '../engine';
-import type World from '../ecs/world';
 import type { EntityId } from '../ecs/types';
 import type Component from '../ecs/component';
 import RigidBody from '../components/rigidbody';
-import Collider from '../components/collider';
-import type GameWorld from '../game/game-world';
+import Colliders from '../components/colliders';
 
-type RuntimeContext = {
-  physicsWorld: RAPIER.World;
+const COLLIDER_HELPER_NAME = /^col/i;
 
-  entitiesByName: Map<SceneRef, EntityId>;
-  nodesByName: InstanceNodeMap;
-};
+export default class ModelInstancer {
+  private readonly engine: Engine;
 
-export async function instanceModelByConfig(
-  engine: Engine,
-  config: ModelConfig,
-  nodesByName?: InstanceNodeMap,
-) {
-  const { world, physicsWorld, scene, assets } = engine;
-
-  if (!nodesByName) nodesByName = new Map();
-
-  const gltf = await assets.gltf.loadModel(config.modelPath);
-  const model = gltf.scene;
-
-  fillObjectsMap(config, nodesByName, model);
-  fillArmatureObjects(nodesByName, model);
-
-  const runtimeContext: RuntimeContext = {
-    physicsWorld,
-    entitiesByName: new Map<SceneRef, string>(),
-    nodesByName,
-  };
-
-  createColliders(physicsWorld, config, nodesByName);
-
-  createJoints(config, runtimeContext);
-
-  createEntities(world, config, runtimeContext);
-
-  scene.add(model);
-
-  return {
-    entities: runtimeContext.entitiesByName.values(),
-    model: model,
-    nodesByName,
-  };
-}
-
-function addPhysicsComponents(world: World, entity: EntityId, node: InstanceNode) {
-  if (node.rigidBody) {
-    world.addComponent(entity, new RigidBody(node.rigidBody));
+  constructor(engine: Engine) {
+    this.engine = engine;
   }
 
-  if (node.collider) {
-    world.addComponent(entity, new Collider(node.collider));
+  async instance(config: ModelConfig): Promise<ModelInstanceResult> {
+    const { scene, assets } = this.engine;
+
+    const nodesByName: InstanceNodeMap = new Map();
+
+    const gltf = await assets.gltf.loadModel(config.modelPath);
+    const model = gltf.scene;
+
+    this.addObjectTreeToMap(model, nodesByName);
+
+    const runtimeContext: RuntimeContext = {
+      entitiesByName: new Map<SceneRef, string>(),
+      nodesByName,
+    };
+
+    this.createPhysics(config, nodesByName);
+
+    this.createJoints(config, runtimeContext);
+
+    this.createEntities(config, runtimeContext);
+
+    scene.add(model);
+
+    return {
+      entities: runtimeContext.entitiesByName.values(),
+      model,
+      nodesByName,
+    };
   }
-}
 
-function createComponent(config: EntityComponentConfig): Component {
-  return new config.type(config.props);
-}
-
-function bindObjectRefs(component: Component, config: EntityComponentConfig, ctx: RuntimeContext) {
-  for (const [field, nodeName] of Object.entries(config.objectRefs ?? {})) {
-    const node = ctx.nodesByName.get(nodeName as string);
-
-    if (!node) {
-      console.warn(
-        `Object ref "${nodeName}" not found for component "${component.constructor.name}"`,
-      );
-      continue;
+  private addPhysicsComponents(entity: EntityId, node: InstanceNode) {
+    if (node.rigidBody) {
+      this.engine.world.addComponent(entity, new RigidBody(node.rigidBody));
     }
 
-    (component as Record<string, any>)[field] = node.source;
+    if (node.colliders?.length) {
+      this.engine.world.addComponent(entity, new Colliders(node.colliders));
+    }
   }
 
-  for (const [field, nodeNames] of Object.entries(config.objectRefLists ?? {})) {
-    const refs: THREE.Object3D[] = [];
+  private createComponent(config: EntityComponentConfig): Component {
+    return new config.type(config.props);
+  }
 
-    for (const nodeName of nodeNames as string[]) {
-      const node = ctx.nodesByName.get(nodeName);
+  private bindObjectRefs(component: Component, config: EntityComponentConfig, ctx: RuntimeContext) {
+    for (const [field, nodeName] of Object.entries(config.objectRefs ?? {})) {
+      const node = ctx.nodesByName.get(nodeName as string);
 
       if (!node) {
         console.warn(
@@ -101,125 +83,123 @@ function bindObjectRefs(component: Component, config: EntityComponentConfig, ctx
         continue;
       }
 
-      refs.push(node.source);
+      (component as Record<string, any>)[field] = node.source;
     }
 
-    (component as Record<string, any>)[field] = refs;
+    for (const [field, nodeNames] of Object.entries(config.objectRefLists ?? {})) {
+      const refs: THREE.Object3D[] = [];
+
+      for (const nodeName of nodeNames as string[]) {
+        const node = ctx.nodesByName.get(nodeName);
+
+        if (!node) {
+          console.warn(
+            `Object ref "${nodeName}" not found for component "${component.constructor.name}"`,
+          );
+          continue;
+        }
+
+        refs.push(node.source);
+      }
+
+      (component as Record<string, any>)[field] = refs;
+    }
   }
-}
 
-function fillObjectsMap(config: ModelConfig, objectsMap: InstanceNodeMap, model: THREE.Object3D) {
-  model.traverse((obj) => {
-    for (const [key, entity] of Object.entries(config.entities)) {
-      if (key === obj.name && !objectsMap.has(obj.name)) {
-        objectsMap.set(obj.name, {
-          source: obj,
-        });
-      }
-      if (entity.collider && entity.collider.source === obj.name && !objectsMap.has(obj.name)) {
-        objectsMap.set(obj.name, {
-          source: obj,
-        });
+  private createPhysics(config: ModelConfig, nodesByName: InstanceNodeMap) {
+    for (const [entityName, entityConfig] of Object.entries(config.entities)) {
+      const colliderConfigs = entityConfig.colliders ?? [];
+      if (!entityConfig.rigidBody && colliderConfigs.length === 0) continue;
+
+      const target = nodesByName.get(entityName);
+      if (!target) {
+        console.warn(`Target entity not found "${entityName}"`);
+        continue;
       }
 
-      for (const componentConfig of entity.components ?? []) {
-        for (const objectRef of Object.values(componentConfig.objectRefs ?? {})) {
-          if (objectRef === obj.name && !objectsMap.has(obj.name)) {
-            objectsMap.set(obj.name, {
-              source: obj,
-            });
-          }
+      const rb = entityConfig.rigidBody
+        ? this.createRigidBody(entityConfig.rigidBody, target.source)
+        : null;
+      const colliders: RAPIER.Collider[] = [];
+
+      for (const colliderConfig of colliderConfigs) {
+        const colliderNode = nodesByName.get(colliderConfig.source);
+
+        if (!colliderNode) {
+          console.warn(`Collider source not found "${colliderConfig.source}"`);
+          continue;
         }
 
-        for (const objectRefs of Object.values(
-          componentConfig.objectRefLists ?? {},
-        ) as string[][]) {
-          if (objectRefs.includes(obj.name) && !objectsMap.has(obj.name)) {
-            objectsMap.set(obj.name, {
-              source: obj,
-            });
-          }
-        }
+        colliderNode.source.visible = false;
+
+        const collider = this.createCollider(
+          colliderConfig,
+          target.source,
+          colliderNode.source,
+          rb,
+        );
+
+        colliders.push(collider);
+      }
+
+      if (rb) {
+        target.rigidBody = rb;
+      }
+
+      if (colliders.length > 0) {
+        target.colliders = colliders;
       }
     }
+  }
 
-    for (const jointConfig of config.joints ?? []) {
-      if (
-        jointConfig.type === 'revolute' &&
-        obj.name === jointConfig.anchor &&
-        !objectsMap.has(obj.name)
-      ) {
-        objectsMap.set(obj.name, {
-          source: obj,
-        });
-      }
-    }
-  });
-}
+  private createCollider(
+    config: ColliderConfig,
+    target: THREE.Object3D,
+    colliderSource: THREE.Object3D,
+    rb: RAPIER.RigidBody | null,
+  ) {
+    const colliderDesc = this.createColliderDesc(config, target, colliderSource, Boolean(rb));
+    const collider = rb
+      ? this.engine.physicsWorld.createCollider(colliderDesc, rb)
+      : this.engine.physicsWorld.createCollider(colliderDesc);
 
-function fillArmatureObjects(objectsMap: InstanceNodeMap, model: THREE.Object3D) {
-  model.traverse((obj) => {
-    const isBone = obj.type === 'Bone' || (obj as THREE.Bone).isBone === true;
+    collider.setRestitution(0);
 
-    if (!isBone) return;
-    if (!obj.name) return;
-    if (objectsMap.has(obj.name)) return;
-
-    objectsMap.set(obj.name, {
-      source: obj,
-    });
-  });
-}
-
-function createColliders(
-  physicsWorld: RAPIER.World,
-  config: ModelConfig,
-  objectsMap: InstanceNodeMap,
-) {
-  for (const [entityName, entityConfig] of Object.entries(config.entities)) {
-    const colliderConfig = entityConfig.collider;
-    if (!colliderConfig) continue;
-
-    const target = objectsMap.get(entityName);
-    if (!target) {
-      console.warn(`Target entity not found "${entityName}"`);
-      continue;
+    if (config.mass !== undefined) {
+      collider.setMass(config.mass);
     }
 
-    const colliderNode = objectsMap.get(colliderConfig.source);
-
-    if (!colliderNode) {
-      console.warn(`Collider source not found "${colliderConfig.source}"`);
-      continue;
+    if (config.friction !== undefined) {
+      collider.setFriction(config.friction);
     }
 
-    colliderNode.source.visible = false;
+    if (config.frictionRule !== undefined) {
+      collider.setFrictionCombineRule(config.frictionRule);
+    }
 
+    if (config.collisionGroups !== undefined) {
+      collider.setCollisionGroups(config.collisionGroups);
+    }
+
+    return collider;
+  }
+
+  private createRigidBody(config: RigidBodyConfig, target: THREE.Object3D) {
     const meshWorldPos = new THREE.Vector3();
     const meshWorldQuat = new THREE.Quaternion();
 
-    target.source.getWorldPosition(meshWorldPos);
-    target.source.getWorldQuaternion(meshWorldQuat);
+    target.getWorldPosition(meshWorldPos);
+    target.getWorldQuaternion(meshWorldQuat);
 
-    const size = getObjectSize(colliderNode.source);
-
-    let rbDesc: RAPIER.RigidBodyDesc;
-
-    switch (colliderConfig.rigidBodyType) {
-      case 'FIXED':
-        rbDesc = RAPIER.RigidBodyDesc.fixed();
-        break;
-
-      case 'KINEMATIC':
-        rbDesc = RAPIER.RigidBodyDesc.kinematicPositionBased();
-        break;
-
-      default:
-        rbDesc = RAPIER.RigidBodyDesc.dynamic();
-        break;
-    }
+    const rbDesc = this.createRigidBodyDesc(config);
 
     rbDesc.setTranslation(meshWorldPos.x, meshWorldPos.y, meshWorldPos.z);
+    rbDesc.setLinearDamping(config.linearDamping ?? 0.1);
+    rbDesc.setAngularDamping(config.angularDamping ?? 0.1);
+
+    if (config.mass !== undefined) {
+      rbDesc.setAdditionalMass(config.mass);
+    }
 
     rbDesc.setRotation({
       x: meshWorldQuat.x,
@@ -228,20 +208,40 @@ function createColliders(
       w: meshWorldQuat.w,
     });
 
-    const rb = physicsWorld.createRigidBody(rbDesc);
+    const rb = this.engine.physicsWorld.createRigidBody(rbDesc);
 
-    rb.setLinearDamping(0.1);
-    rb.setAngularDamping(0.1);
-
-    if (colliderConfig.enableCcd) {
+    if (config.enableCcd) {
       rb.enableCcd(true);
     }
 
+    return rb;
+  }
+
+  private createRigidBodyDesc(config: RigidBodyConfig) {
+    switch (config.type) {
+      case 'FIXED':
+        return RAPIER.RigidBodyDesc.fixed();
+
+      case 'KINEMATIC':
+        return RAPIER.RigidBodyDesc.kinematicPositionBased();
+
+      default:
+        return RAPIER.RigidBodyDesc.dynamic();
+    }
+  }
+
+  private createColliderDesc(
+    config: ColliderConfig,
+    target: THREE.Object3D,
+    colliderSource: THREE.Object3D,
+    attachedToRigidBody: boolean,
+  ) {
+    const size = getObjectSize(colliderSource);
+    const { length, radius } = getAxisDimensions(size, config.axis);
+
     let colliderDesc: RAPIER.ColliderDesc;
 
-    const { length, radius } = getAxisDimensions(size, colliderConfig.axis);
-
-    switch (colliderConfig.shape) {
+    switch (config.shape) {
       case 'BALL':
         colliderDesc = RAPIER.ColliderDesc.ball(Math.max(size.x, size.y, size.z) * 0.5);
         break;
@@ -258,21 +258,36 @@ function createColliders(
         colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5);
     }
 
-    target.source.updateMatrixWorld(true);
-    colliderNode.source.updateMatrixWorld(true);
+    if (attachedToRigidBody) {
+      this.setAttachedColliderTransform(colliderDesc, config, target, colliderSource);
+    } else {
+      this.setStandaloneColliderTransform(colliderDesc, config, target, colliderSource);
+    }
+
+    return colliderDesc;
+  }
+
+  private setAttachedColliderTransform(
+    colliderDesc: RAPIER.ColliderDesc,
+    config: ColliderConfig,
+    target: THREE.Object3D,
+    colliderSource: THREE.Object3D,
+  ) {
+    target.updateMatrixWorld(true);
+    colliderSource.updateMatrixWorld(true);
 
     const localPos = new THREE.Vector3();
 
-    const localMatrix = target.source.matrixWorld
+    const localMatrix = target.matrixWorld
       .clone()
       .invert()
-      .multiply(colliderNode.source.matrixWorld.clone());
+      .multiply(colliderSource.matrixWorld.clone());
 
     localMatrix.decompose(localPos, new THREE.Quaternion(), new THREE.Vector3());
 
     colliderDesc.setTranslation(localPos.x, localPos.y, localPos.z);
 
-    const localQuat = getColliderRotationByAxis(colliderConfig.axis);
+    const localQuat = getColliderRotationByAxis(config.axis);
 
     colliderDesc.setRotation({
       x: localQuat.x,
@@ -280,160 +295,186 @@ function createColliders(
       z: localQuat.z,
       w: localQuat.w,
     });
-
-    const collider = physicsWorld.createCollider(colliderDesc, rb);
-
-    collider.setRestitution(0);
-
-    if (colliderConfig.mass !== undefined) {
-      collider.setMass(colliderConfig.mass);
-    }
-
-    if (colliderConfig.friction !== undefined) {
-      collider.setFriction(colliderConfig.friction);
-    }
-
-    if (colliderConfig.frictionRule !== undefined) {
-      collider.setFrictionCombineRule(colliderConfig.frictionRule);
-    }
-
-    if (colliderConfig.collisionGroups !== undefined) {
-      collider.setCollisionGroups(colliderConfig.collisionGroups);
-    }
-
-    target.rigidBody = rb;
-    target.collider = collider;
   }
-}
 
-function createJoints(config: ModelConfig, ctx: RuntimeContext) {
-  for (const joint of config.joints ?? []) {
-    const bodyA = ctx.nodesByName.get(joint.bodyA)?.rigidBody;
-    const bodyB = ctx.nodesByName.get(joint.bodyB)?.rigidBody;
+  private setStandaloneColliderTransform(
+    colliderDesc: RAPIER.ColliderDesc,
+    config: ColliderConfig,
+    target: THREE.Object3D,
+    colliderSource: THREE.Object3D,
+  ) {
+    target.updateMatrixWorld(true);
+    colliderSource.updateMatrixWorld(true);
 
-    if (!bodyA || !bodyB) continue;
+    const worldPos = new THREE.Vector3();
+    const worldQuat = new THREE.Quaternion();
+    const axisQuat = getColliderRotationByAxis(config.axis);
 
-    switch (joint.type) {
-      case 'prismatic': {
-        const axis = joint.axis;
+    colliderSource.getWorldPosition(worldPos);
+    target.getWorldQuaternion(worldQuat);
+    worldQuat.multiply(axisQuat);
 
-        const rapierAxis = {
-          x: axis.x ?? 0,
-          y: axis.y ?? 0,
-          z: axis.z ?? 0,
-        };
+    colliderDesc.setTranslation(worldPos.x, worldPos.y, worldPos.z);
+    colliderDesc.setRotation({
+      x: worldQuat.x,
+      y: worldQuat.y,
+      z: worldQuat.z,
+      w: worldQuat.w,
+    });
+  }
 
-        const aPos = bodyA.translation();
-        const bPos = bodyB.translation();
+  private createJoints(config: ModelConfig, ctx: RuntimeContext) {
+    for (const joint of config.joints ?? []) {
+      const bodyA = ctx.nodesByName.get(joint.bodyA)?.rigidBody;
+      const bodyB = ctx.nodesByName.get(joint.bodyB)?.rigidBody;
 
-        const anchor1 = {
-          x: bPos.x - aPos.x,
-          y: bPos.y - aPos.y,
-          z: bPos.z - aPos.z,
-        };
+      if (!bodyA || !bodyB) continue;
 
-        const anchor2 = { x: 0, y: 0, z: 0 };
+      switch (joint.type) {
+        case 'prismatic': {
+          const axis = joint.axis;
 
-        const jointData = RAPIER.JointData.prismatic(anchor1, anchor2, rapierAxis);
+          const rapierAxis = {
+            x: axis.x ?? 0,
+            y: axis.y ?? 0,
+            z: axis.z ?? 0,
+          };
 
-        const j = ctx.physicsWorld.createImpulseJoint(
-          jointData,
-          bodyA,
-          bodyB,
-          true,
-        ) as RAPIER.PrismaticImpulseJoint;
+          const aPos = bodyA.translation();
+          const bPos = bodyB.translation();
 
-        if (joint.limits) {
-          j.setLimits(joint.limits.min, joint.limits.max);
+          const anchor1 = {
+            x: bPos.x - aPos.x,
+            y: bPos.y - aPos.y,
+            z: bPos.z - aPos.z,
+          };
+
+          const anchor2 = { x: 0, y: 0, z: 0 };
+
+          const jointData = RAPIER.JointData.prismatic(anchor1, anchor2, rapierAxis);
+
+          const j = this.engine.physicsWorld.createImpulseJoint(
+            jointData,
+            bodyA,
+            bodyB,
+            true,
+          ) as RAPIER.PrismaticImpulseJoint;
+
+          if (joint.limits) {
+            j.setLimits(joint.limits.min, joint.limits.max);
+          }
+
+          if (joint.motorPosition) {
+            j.configureMotorPosition(
+              joint.motorPosition.target,
+              joint.motorPosition.stiffness,
+              joint.motorPosition.damping,
+            );
+          }
+
+          break;
         }
 
-        if (joint.motorPosition) {
-          j.configureMotorPosition(
-            joint.motorPosition.target,
-            joint.motorPosition.stiffness,
-            joint.motorPosition.damping,
-          );
+        case 'revolute': {
+          const pivot = ctx.nodesByName.get(joint.anchor);
+
+          if (!pivot) {
+            console.warn("Failed to create 'revolute' joint: anchor object not found");
+            continue;
+          }
+
+          const pivotWorld = new THREE.Vector3();
+
+          pivot.source.getWorldPosition(pivotWorld);
+
+          const bodyAPos = bodyA.translation();
+
+          const anchor1 = {
+            x: pivotWorld.x - bodyAPos.x,
+            y: pivotWorld.y - bodyAPos.y,
+            z: pivotWorld.z - bodyAPos.z,
+          };
+
+          const bodyBPos = bodyB.translation();
+
+          const anchor2 = {
+            x: pivotWorld.x - bodyBPos.x,
+            y: pivotWorld.y - bodyBPos.y,
+            z: pivotWorld.z - bodyBPos.z,
+          };
+
+          const axis = {
+            x: joint.axis.x ?? 0,
+            y: joint.axis.y ?? 0,
+            z: joint.axis.z ?? 0,
+          };
+
+          const jointData = RAPIER.JointData.revolute(anchor1, anchor2, axis);
+
+          const j = this.engine.physicsWorld.createImpulseJoint(
+            jointData,
+            bodyA,
+            bodyB,
+            true,
+          ) as RAPIER.RevoluteImpulseJoint;
+
+          if (joint.limits) {
+            j.setLimits(joint.limits.min, joint.limits.max);
+          }
+
+          if (joint.motorPosition) {
+            j.configureMotorPosition(
+              joint.motorPosition.target,
+              joint.motorPosition.stiffness,
+              joint.motorPosition.damping,
+            );
+          }
+
+          break;
         }
-
-        break;
-      }
-
-      case 'revolute': {
-        const pivot = ctx.nodesByName.get(joint.anchor);
-
-        if (!pivot) {
-          console.warn("Failed to create 'revolute' joint: anchor object not found");
-          continue;
-        }
-
-        const pivotWorld = new THREE.Vector3();
-
-        pivot.source.getWorldPosition(pivotWorld);
-
-        const bodyAPos = bodyA.translation();
-
-        const anchor1 = {
-          x: pivotWorld.x - bodyAPos.x,
-          y: pivotWorld.y - bodyAPos.y,
-          z: pivotWorld.z - bodyAPos.z,
-        };
-
-        const bodyBPos = bodyB.translation();
-
-        const anchor2 = {
-          x: pivotWorld.x - bodyBPos.x,
-          y: pivotWorld.y - bodyBPos.y,
-          z: pivotWorld.z - bodyBPos.z,
-        };
-
-        const axis = {
-          x: joint.axis.x ?? 0,
-          y: joint.axis.y ?? 0,
-          z: joint.axis.z ?? 0,
-        };
-
-        const jointData = RAPIER.JointData.revolute(anchor1, anchor2, axis);
-
-        const j = ctx.physicsWorld.createImpulseJoint(
-          jointData,
-          bodyA,
-          bodyB,
-          true,
-        ) as RAPIER.RevoluteImpulseJoint;
-
-        if (joint.limits) {
-          j.setLimits(joint.limits.min, joint.limits.max);
-        }
-
-        if (joint.motorPosition) {
-          j.configureMotorPosition(
-            joint.motorPosition.target,
-            joint.motorPosition.stiffness,
-            joint.motorPosition.damping,
-          );
-        }
-
-        break;
       }
     }
   }
-}
 
-function createEntities(world: GameWorld, config: ModelConfig, runtimeContext: RuntimeContext) {
-  for (const [nodeName, entityConfig] of Object.entries(config.entities)) {
-    const node = runtimeContext.nodesByName.get(nodeName);
-    if (!node) continue;
+  private createEntities(config: ModelConfig, runtimeContext: RuntimeContext) {
+    for (const [nodeName, entityConfig] of Object.entries(config.entities)) {
+      const node = runtimeContext.nodesByName.get(nodeName);
+      if (!node) continue;
 
-    const entity = world.createGameObject(node.source);
+      const entity = this.engine.world.createGameObject(node.source);
 
-    runtimeContext.entitiesByName.set(nodeName, entity);
+      runtimeContext.entitiesByName.set(nodeName, entity);
 
-    addPhysicsComponents(world, entity, node);
+      this.addPhysicsComponents(entity, node);
 
-    for (const componentConfig of entityConfig.components ?? []) {
-      const component = createComponent(componentConfig);
-      bindObjectRefs(component, componentConfig, runtimeContext);
-      world.addComponent(entity, component);
+      for (const componentConfig of entityConfig.components ?? []) {
+        const component = this.createComponent(componentConfig);
+        this.bindObjectRefs(component, componentConfig, runtimeContext);
+        this.engine.world.addComponent(entity, component);
+      }
     }
+  }
+
+  private addObjectTreeToMap(root: THREE.Object3D, nodesByName: InstanceNodeMap) {
+    root.traverse((object) => {
+      this.addObjectToMap(object, nodesByName);
+    });
+  }
+
+  private addObjectToMap(object: THREE.Object3D, nodesByName: InstanceNodeMap) {
+    if (this.isColliderHelperName(object.name)) {
+      object.visible = false;
+    }
+
+    if (!object.name || nodesByName.has(object.name)) {
+      return;
+    }
+
+    nodesByName.set(object.name, {
+      source: object,
+    });
+  }
+  private isColliderHelperName(name: string) {
+    return COLLIDER_HELPER_NAME.test(name);
   }
 }

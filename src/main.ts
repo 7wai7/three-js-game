@@ -4,12 +4,11 @@ import Engine from './engine/engine.js';
 import EngineContext from './engine/contexts/engine.context.js';
 import { createEcsCamera, createMainCamera } from './engine/game/global-factory.js';
 import setupResizeHandler from './listeners/setup-resize-listener.js';
-import { createLight } from './engine/game/terrain-factory.js';
-import { instanceModelByConfig } from './engine/model-instancing/instancing.js';
-import { autocannonConfig } from './engine/model-instancing/configs/autocannon.js';
-import RigidBody from './engine/components/rigidbody.js';
-import AimAtTarget from './engine/components/transform/aim-at-target.js';
-import Weapon from './engine/components/combat/weapon.js';
+import { createFloor, createLight } from './engine/game/terrain-factory.js';
+import { Rx_Vision_GT3_config } from './engine/model-instancing/configs/Rx-Vision-GT3.js';
+import Car from './engine/components/vehicle/car.js';
+import CameraControllerSystem from './engine/systems/camera-controller.system.js';
+import PlayerControlled from './engine/components/player-controlled.js';
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -28,22 +27,28 @@ EngineContext.setEngine(engine);
 setupResizeHandler(renderer, camera);
 
 createEcsCamera(engine.world, camera);
-// createFloor(engine, {
-//   position: new THREE.Vector3(0, -2, 0),
-// });
+createFloor(engine, {
+  position: new THREE.Vector3(0, -2, 0),
+});
 
 createLight(scene);
 
-instanceModelByConfig(engine, autocannonConfig, new Map()).then(({ entities }) => {
-  const [weapon] = engine.world.getComponentsFromEntities([...entities], Weapon);
-  const rb = engine.world.getComponent(weapon.entity, RigidBody)!;
-  const aims = engine.world.getChildComponents(weapon.entity, AimAtTarget);
+// engine.modelInstancer.instance(autocannonConfig, new Map()).then(({ entities }) => {
+//   const [weapon] = engine.world.getComponentsFromEntities([...entities], Weapon);
+//   const aims = engine.world.getChildComponents(weapon.entity, AimAtTarget);
 
-  rb.rigidBody.setTranslation(new THREE.Vector3(0, -1.7, 0), false);
+//   const target = new THREE.Vector3(0, 2, 10);
 
-  const target = new THREE.Vector3(0, 2, 10);
+//   aims.forEach((aim) => (aim.targetPosition = target));
+// });
 
-  aims.forEach((aim) => (aim.targetPosition = target));
+engine.modelInstancer.instance(Rx_Vision_GT3_config).then(({ entities }) => {
+  const [chassis] = engine.world.getComponentsFromEntities([...entities], Car);
+
+  engine.world.addComponent(chassis.entity, new PlayerControlled());
+
+  const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
+  cameraControllerSystem.followEntity = chassis.entity;
 });
 
 engine.start();

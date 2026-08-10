@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 import type RAPIER from '@dimforge/rapier3d';
 
 import World from '../../src/engine/ecs/world';
 import Component from '../../src/engine/ecs/component';
 import RigidBody from '../../src/engine/components/rigidbody';
-import Collider from '../../src/engine/components/collider';
+import Colliders from '../../src/engine/components/colliders';
 import AutomaticTrigger from '../../src/engine/components/combat/firing-modes/automatic-trigger';
 import FireRate from '../../src/engine/components/combat/fire-rate';
 import ShotQueue from '../../src/engine/components/combat/shot-queue';
@@ -21,9 +21,9 @@ describe('ecs tests', () => {
     const mockCollider = {} as RAPIER.Collider;
 
     world.addComponent(entity, new RigidBody(mockRigidBody));
-    world.addComponent(entity, new Collider(mockCollider));
+    world.addComponent(entity, new Colliders([mockCollider]));
 
-    const entities = world.entitiesWith(RigidBody, Collider);
+    const entities = world.entitiesWith(RigidBody, Colliders);
 
     expect([...entities]).toEqual([entity]);
   });
@@ -35,16 +35,16 @@ describe('ecs tests', () => {
     const missingColliderEntity = world.createEntity('missing-collider');
 
     const rigidBody = new RigidBody({} as RAPIER.RigidBody);
-    const collider = new Collider({} as RAPIER.Collider);
+    const colliders = new Colliders([{} as RAPIER.Collider]);
 
     world.addComponent(matchingEntity, rigidBody);
-    world.addComponent(matchingEntity, collider);
+    world.addComponent(matchingEntity, colliders);
     world.addComponent(missingColliderEntity, new RigidBody({} as RAPIER.RigidBody));
 
-    const results = world.query(RigidBody, Collider);
+    const results = world.query(RigidBody, Colliders);
 
     expect(results).toHaveLength(1);
-    expect(results[0]).toEqual([matchingEntity, rigidBody, collider]);
+    expect(results[0]).toEqual([matchingEntity, rigidBody, colliders]);
   });
 
   it('returns components from entity list in requested component order', () => {
@@ -53,12 +53,12 @@ describe('ecs tests', () => {
     const first = world.createEntity('first');
     const second = world.createEntity('second');
 
-    const collider = world.addComponent(first, new Collider({} as RAPIER.Collider));
+    const colliders = world.addComponent(first, new Colliders([{} as RAPIER.Collider]));
     const rigidBody = world.addComponent(second, new RigidBody({} as RAPIER.RigidBody));
 
-    const result = world.getComponentsFromEntities([first, second], RigidBody, Collider);
+    const result = world.getComponentsFromEntities([first, second], RigidBody, Colliders);
 
-    expect(result).toEqual([rigidBody, collider]);
+    expect(result).toEqual([rigidBody, colliders]);
   });
 
   it('can find ordered components from a single-use entity iterator', () => {
@@ -70,16 +70,16 @@ describe('ecs tests', () => {
     entitiesByName.set('first', first);
     entitiesByName.set('second', second);
 
-    const collider = world.addComponent(first, new Collider({} as RAPIER.Collider));
+    const colliders = world.addComponent(first, new Colliders([{} as RAPIER.Collider]));
     const rigidBody = world.addComponent(second, new RigidBody({} as RAPIER.RigidBody));
 
     const result = world.getComponentsFromEntities(
       Array.from(entitiesByName.values()),
       RigidBody,
-      Collider,
+      Colliders,
     );
 
-    expect(result).toEqual([rigidBody, collider]);
+    expect(result).toEqual([rigidBody, colliders]);
   });
 
   it('throws when requested component is not found in entity list', () => {
@@ -88,9 +88,24 @@ describe('ecs tests', () => {
 
     world.addComponent(entity, new RigidBody({} as RAPIER.RigidBody));
 
-    expect(() => world.getComponentsFromEntities([entity], RigidBody, Collider)).toThrow(
-      'Component "Collider" not found in provided entities',
+    expect(() => world.getComponentsFromEntities([entity], RigidBody, Colliders)).toThrow(
+      'Component "Colliders" not found in provided entities',
     );
+  });
+
+  it('warns when replacing an existing component on the same entity', () => {
+    const world = new World();
+    const entity = world.createEntity('entity');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    world.addComponent(entity, new Colliders([{} as RAPIER.Collider]));
+    world.addComponent(entity, new Colliders([{} as RAPIER.Collider]));
+
+    expect(warn).toHaveBeenCalledWith(
+      'Component "Colliders" is already attached to entity "entity" and will be replaced',
+    );
+
+    warn.mockRestore();
   });
 
   it('does not validate required components until the entity is checked', () => {

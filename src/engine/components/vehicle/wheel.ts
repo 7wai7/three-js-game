@@ -30,7 +30,7 @@ export default class Wheel extends Component {
   currentRollAngularSpeed = 0;
 
   freeRollAngularSpeed = 35;
-  rollStopSpeed = 20;
+  rollStopSpeed = 200;
 
   steerObject?: THREE.Object3D;
   rollObject?: THREE.Object3D;

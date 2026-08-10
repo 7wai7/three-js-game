@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d';
-import Collider from '../components/collider';
+import Colliders from '../components/colliders';
 import RigidBody from '../components/rigidbody';
 import {
   GROUP_PLAYER,
@@ -55,7 +55,7 @@ export async function createFloor(engine: Engine, transform?: SpawnTransform) {
       .setRotation(rotation),
   );
 
-  world.addComponent(entity, new Collider(collider));
+  world.addComponent(entity, new Colliders([collider]));
 
   return entity;
 }
@@ -93,7 +93,7 @@ export function createCube(engine: Engine, transform?: SpawnTransform) {
 
   const entity = world.createGameObject(mesh);
   world.addComponent(entity, new RigidBody(rb));
-  world.addComponent(entity, new Collider(collider));
+  world.addComponent(entity, new Colliders([collider]));
 
   return entity;
 }

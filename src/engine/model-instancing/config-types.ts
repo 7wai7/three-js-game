@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import RAPIER from '@dimforge/rapier3d';
+import type RAPIER from '@dimforge/rapier3d';
 import type Component from '../ecs/component';
+import type { EntityId } from '../ecs/types';
 
 export type SceneRef = string;
 
@@ -12,18 +13,28 @@ export type ModelConfig = {
   joints?: JointConfig[];
 };
 
+export type RuntimeContext = {
+  entitiesByName: Map<SceneRef, EntityId>;
+  nodesByName: InstanceNodeMap;
+};
+
+export type ModelInstanceResult = {
+  entities: IterableIterator<EntityId>;
+  model: THREE.Object3D;
+  nodesByName: InstanceNodeMap;
+};
+
 export type EntityConfig = {
   components?: EntityComponentConfig[];
-  collider?: ColliderConfig;
+  rigidBody?: RigidBodyConfig;
+  colliders?: ColliderConfig[];
 };
 
 export type InstanceNode = {
   source: THREE.Object3D;
 
   rigidBody?: RAPIER.RigidBody;
-  collider?: RAPIER.Collider;
-
-  steerPivot?: THREE.Object3D;
+  colliders?: RAPIER.Collider[];
 };
 
 export type InstanceNodeMap = Map<SceneRef, InstanceNode>;
@@ -106,13 +117,19 @@ export function component<C extends ComponentConstructor>(
 export type ColliderConfig = {
   source: SceneRef;
   shape?: ColliderShape;
-  rigidBodyType?: RigidBodyType;
   axis?: Axis;
   mass?: number;
   collisionGroups?: number;
-  enableCcd?: boolean;
   friction?: number;
   frictionRule?: RAPIER.CoefficientCombineRule;
+};
+
+export type RigidBodyConfig = {
+  type?: PhysicalRigidBodyType;
+  mass?: number;
+  enableCcd?: boolean;
+  linearDamping?: number;
+  angularDamping?: number;
 };
 
 // JOINT TYPES
@@ -171,8 +188,9 @@ export type SphericalJointConfig = {
 export const COLLIDER_SHAPE = ['BOX', 'BALL', 'CAPSULE', 'CYLINDER'] as const;
 export type ColliderShape = (typeof COLLIDER_SHAPE)[number];
 
-export const RIGIDBODY_TYPE = ['FIXED', 'DYNAMIC', 'KINEMATIC'] as const;
+export const RIGIDBODY_TYPE = ['NONE', 'FIXED', 'DYNAMIC', 'KINEMATIC'] as const;
 export type RigidBodyType = (typeof RIGIDBODY_TYPE)[number];
+export type PhysicalRigidBodyType = Exclude<RigidBodyType, 'NONE'>;
 
 export const AXIS = ['X', 'Y', 'Z'] as const;
 export type Axis = (typeof AXIS)[number];

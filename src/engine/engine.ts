@@ -26,6 +26,7 @@ import ProjectileFireSystem from './systems/combat/projectile-fire.system';
 import ProjectileMotionSystem from './systems/combat/projectile-motion.system';
 import AimAtMouseScreenSystem from './systems/transform/aim-at-mouse-screen.system';
 import AimAtTargetSystem from './systems/transform/aim-at-target.system';
+import ModelInstancer from './model-instancing/instancing';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
@@ -44,6 +45,7 @@ export default class Engine {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene: THREE.Scene<THREE.Object3DEventMap>;
   readonly camera: THREE.Camera;
+  readonly modelInstancer: ModelInstancer;
 
   private readonly clock = new THREE.Clock();
   private readonly gravity = { x: 0, y: -9.81, z: 0 };
@@ -56,6 +58,7 @@ export default class Engine {
     this.renderer = renderer;
     this.scene = scene;
     this.camera = camera;
+    this.modelInstancer = new ModelInstancer(this);
 
     this.world.addSystem(new PhysicsSyncSystem());
     this.world.addSystem(new PlayerInputSystem());

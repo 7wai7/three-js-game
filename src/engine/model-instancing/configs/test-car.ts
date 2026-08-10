@@ -25,7 +25,6 @@ const wheelCollider: Omit<ColliderConfig, 'source'> = {
   friction: 0,
   frictionRule: RAPIER.CoefficientCombineRule.Min,
   collisionGroups: interactionGroups(GROUP_WHEEL, GROUP_WORLD | GROUP_PLAYER),
-  enableCcd: true,
 };
 
 const prismaticJoint: Omit<PrismaticJointConfig, 'bodyB'> = {
@@ -61,10 +60,16 @@ const revoluteJoint: Omit<RevoluteJointConfig, 'bodyB' | 'anchor'> = {
 function createWheel(source: string, wheelProps?: ComponentProps<typeof Wheel>): EntityConfig {
   return {
     components: [component(Wheel, wheelProps)],
-    collider: {
-      ...wheelCollider,
-      source,
+    rigidBody: {
+      type: 'DYNAMIC',
+      enableCcd: true,
     },
+    colliders: [
+      {
+        ...wheelCollider,
+        source,
+      },
+    ],
   };
 }
 
@@ -81,15 +86,20 @@ export const testCarConfig: ModelConfig = {
           pullingForce: 20,
         }),
       ],
-      collider: {
-        source: 'COL_chassis',
-        shape: 'BOX',
-        mass: 700,
-        collisionGroups: interactionGroups(
-          GROUP_VEHICLE,
-          GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER,
-        ),
+      rigidBody: {
+        type: 'DYNAMIC',
       },
+      colliders: [
+        {
+          source: 'COL_chassis',
+          shape: 'BOX',
+          mass: 700,
+          collisionGroups: interactionGroups(
+            GROUP_VEHICLE,
+            GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER,
+          ),
+        },
+      ],
     },
 
     PH_wheel_FR: createWheel('COL_FR', {
