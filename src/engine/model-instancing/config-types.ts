@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type RAPIER from '@dimforge/rapier3d';
 import type Component from '../ecs/component';
+import type { EntityId } from '../ecs/types';
 
 export type SceneRef = string;
 
@@ -12,10 +13,20 @@ export type ModelConfig = {
   joints?: JointConfig[];
 };
 
+export type RuntimeContext = {
+  entitiesByName: Map<SceneRef, EntityId>;
+  nodesByName: InstanceNodeMap;
+};
+
+export type ModelInstanceResult = {
+  entities: IterableIterator<EntityId>;
+  model: THREE.Object3D;
+  nodesByName: InstanceNodeMap;
+};
+
 export type EntityConfig = {
   components?: EntityComponentConfig[];
   rigidBody?: RigidBodyConfig;
-  collider?: ColliderConfig;
   colliders?: ColliderConfig[];
 };
 

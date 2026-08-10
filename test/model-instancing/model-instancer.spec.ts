@@ -63,10 +63,12 @@ describe('ModelInstancer', () => {
       modelPath: 'trigger.glb',
       entities: {
         Trigger: {
-          collider: {
-            source: 'COL_trigger',
-            shape: 'BOX',
-          },
+          colliders: [
+            {
+              source: 'COL_trigger',
+              shape: 'BOX',
+            },
+          ],
         },
       },
     };

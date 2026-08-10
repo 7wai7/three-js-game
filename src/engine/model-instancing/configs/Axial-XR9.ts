@@ -79,10 +79,12 @@ function createWheel(
       type: 'DYNAMIC',
       enableCcd: true,
     },
-    collider: {
-      ...wheelCollider,
-      source: collider,
-    },
+    colliders: [
+      {
+        ...wheelCollider,
+        source: collider,
+      },
+    ],
   };
 }
 
@@ -102,15 +104,17 @@ export const axial_XR9_config: ModelConfig = {
       rigidBody: {
         type: 'DYNAMIC',
       },
-      collider: {
-        source: 'COL_chassis',
-        shape: 'BOX',
-        mass: 400,
-        collisionGroups: interactionGroups(
-          GROUP_VEHICLE,
-          GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER,
-        ),
-      },
+      colliders: [
+        {
+          source: 'COL_chassis',
+          shape: 'BOX',
+          mass: 400,
+          collisionGroups: interactionGroups(
+            GROUP_VEHICLE,
+            GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER,
+          ),
+        },
+      ],
     },
 
     wheel_baseFR: createWheel(

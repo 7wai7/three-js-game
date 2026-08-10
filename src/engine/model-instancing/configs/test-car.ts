@@ -64,10 +64,12 @@ function createWheel(source: string, wheelProps?: ComponentProps<typeof Wheel>):
       type: 'DYNAMIC',
       enableCcd: true,
     },
-    collider: {
-      ...wheelCollider,
-      source,
-    },
+    colliders: [
+      {
+        ...wheelCollider,
+        source,
+      },
+    ],
   };
 }
 
@@ -87,15 +89,17 @@ export const testCarConfig: ModelConfig = {
       rigidBody: {
         type: 'DYNAMIC',
       },
-      collider: {
-        source: 'COL_chassis',
-        shape: 'BOX',
-        mass: 700,
-        collisionGroups: interactionGroups(
-          GROUP_VEHICLE,
-          GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER,
-        ),
-      },
+      colliders: [
+        {
+          source: 'COL_chassis',
+          shape: 'BOX',
+          mass: 700,
+          collisionGroups: interactionGroups(
+            GROUP_VEHICLE,
+            GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER,
+          ),
+        },
+      ],
     },
 
     PH_wheel_FR: createWheel('COL_FR', {

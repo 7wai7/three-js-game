@@ -2,34 +2,24 @@ import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d/rapier.js';
 import {
   type EntityComponentConfig,
-  type EntityConfig,
   type InstanceNode,
   type InstanceNodeMap,
   type ColliderConfig,
   type ModelConfig,
   type RigidBodyConfig,
   type SceneRef,
+  type ModelInstanceResult,
+  type RuntimeContext,
 } from './config-types';
 import { getObjectSize } from '../../utils/get-object-size';
 import { getAxisDimensions, getColliderRotationByAxis } from './utils';
-import SceneNodeIndex from './scene-node-index';
 import type Engine from '../engine';
 import type { EntityId } from '../ecs/types';
 import type Component from '../ecs/component';
 import RigidBody from '../components/rigidbody';
 import Colliders from '../components/colliders';
 
-type RuntimeContext = {
-  entitiesByName: Map<SceneRef, EntityId>;
-  nodesByName: InstanceNodeMap;
-};
-
-export type ModelInstanceResult = {
-  entities: IterableIterator<EntityId>;
-  model: THREE.Object3D;
-  nodeIndex: SceneNodeIndex;
-  nodesByName: InstanceNodeMap;
-};
+const COLLIDER_HELPER_NAME = /^col/i;
 
 export default class ModelInstancer {
   private readonly engine: Engine;
@@ -38,16 +28,15 @@ export default class ModelInstancer {
     this.engine = engine;
   }
 
-  async instance(config: ModelConfig, nodesByName?: InstanceNodeMap): Promise<ModelInstanceResult> {
+  async instance(config: ModelConfig): Promise<ModelInstanceResult> {
     const { scene, assets } = this.engine;
 
-    if (!nodesByName) nodesByName = new Map();
+    const nodesByName: InstanceNodeMap = new Map();
 
     const gltf = await assets.gltf.loadModel(config.modelPath);
     const model = gltf.scene;
 
-    const nodeIndex = SceneNodeIndex.fromModel(model, nodesByName);
-    nodesByName = nodeIndex.nodesByName;
+    this.addObjectTreeToMap(model, nodesByName);
 
     const runtimeContext: RuntimeContext = {
       entitiesByName: new Map<SceneRef, string>(),
@@ -65,7 +54,6 @@ export default class ModelInstancer {
     return {
       entities: runtimeContext.entitiesByName.values(),
       model,
-      nodeIndex,
       nodesByName,
     };
   }
@@ -120,7 +108,7 @@ export default class ModelInstancer {
 
   private createPhysics(config: ModelConfig, nodesByName: InstanceNodeMap) {
     for (const [entityName, entityConfig] of Object.entries(config.entities)) {
-      const colliderConfigs = this.getColliderConfigs(entityConfig);
+      const colliderConfigs = entityConfig.colliders ?? [];
       if (!entityConfig.rigidBody && colliderConfigs.length === 0) continue;
 
       const target = nodesByName.get(entityName);
@@ -162,13 +150,6 @@ export default class ModelInstancer {
         target.colliders = colliders;
       }
     }
-  }
-
-  private getColliderConfigs(entityConfig: EntityConfig) {
-    return [
-      ...(entityConfig.collider ? [entityConfig.collider] : []),
-      ...(entityConfig.colliders ?? []),
-    ];
   }
 
   private createCollider(
@@ -473,12 +454,27 @@ export default class ModelInstancer {
       }
     }
   }
-}
 
-export async function instanceModelByConfig(
-  engine: Engine,
-  config: ModelConfig,
-  nodesByName?: InstanceNodeMap,
-) {
-  return engine.modelInstancer.instance(config, nodesByName);
+  private addObjectTreeToMap(root: THREE.Object3D, nodesByName: InstanceNodeMap) {
+    root.traverse((object) => {
+      this.addObjectToMap(object, nodesByName);
+    });
+  }
+
+  private addObjectToMap(object: THREE.Object3D, nodesByName: InstanceNodeMap) {
+    if (this.isColliderHelperName(object.name)) {
+      object.visible = false;
+    }
+
+    if (!object.name || nodesByName.has(object.name)) {
+      return;
+    }
+
+    nodesByName.set(object.name, {
+      source: object,
+    });
+  }
+  private isColliderHelperName(name: string) {
+    return COLLIDER_HELPER_NAME.test(name);
+  }
 }
