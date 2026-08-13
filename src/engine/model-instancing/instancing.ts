@@ -18,6 +18,7 @@ import type { EntityId } from '../ecs/types';
 import type Component from '../ecs/component';
 import RigidBody from '../components/rigidbody';
 import Colliders from '../components/colliders';
+import type { SpawnTransform } from '../../utils/spawn-transform';
 
 const COLLIDER_HELPER_NAME = /^col/i;
 
@@ -28,13 +29,18 @@ export default class ModelInstancer {
     this.engine = engine;
   }
 
-  async instance(config: ModelConfig): Promise<ModelInstanceResult> {
+  async instance(
+    config: ModelConfig,
+    spawnTransform?: SpawnTransform,
+  ): Promise<ModelInstanceResult> {
     const { scene, assets } = this.engine;
 
     const nodesByName: InstanceNodeMap = new Map();
 
     const gltf = await assets.gltf.loadModel(config.modelPath);
     const model = gltf.scene;
+
+    this.applySpawnTransform(model, spawnTransform);
 
     this.addObjectTreeToMap(model, nodesByName);
 
@@ -56,6 +62,23 @@ export default class ModelInstancer {
       model,
       nodesByName,
     };
+  }
+
+  private applySpawnTransform(model: THREE.Object3D, spawnTransform?: SpawnTransform) {
+    if (spawnTransform?.position) {
+      model.position.copy(spawnTransform.position);
+    }
+
+    if (spawnTransform?.rotation) {
+      const rotation =
+        spawnTransform.rotation instanceof THREE.Euler
+          ? new THREE.Quaternion().setFromEuler(spawnTransform.rotation)
+          : spawnTransform.rotation;
+
+      model.quaternion.copy(rotation);
+    }
+
+    model.updateMatrixWorld(true);
   }
 
   private addPhysicsComponents(entity: EntityId, node: InstanceNode) {
@@ -340,15 +363,8 @@ export default class ModelInstancer {
             z: axis.z ?? 0,
           };
 
-          const aPos = bodyA.translation();
-          const bPos = bodyB.translation();
-
-          const anchor1 = {
-            x: bPos.x - aPos.x,
-            y: bPos.y - aPos.y,
-            z: bPos.z - aPos.z,
-          };
-
+          const bodyBPosition = bodyB.translation();
+          const anchor1 = this.worldPointToRigidBodyLocalPoint(bodyA, bodyBPosition);
           const anchor2 = { x: 0, y: 0, z: 0 };
 
           const jointData = RAPIER.JointData.prismatic(anchor1, anchor2, rapierAxis);
@@ -387,21 +403,8 @@ export default class ModelInstancer {
 
           pivot.source.getWorldPosition(pivotWorld);
 
-          const bodyAPos = bodyA.translation();
-
-          const anchor1 = {
-            x: pivotWorld.x - bodyAPos.x,
-            y: pivotWorld.y - bodyAPos.y,
-            z: pivotWorld.z - bodyAPos.z,
-          };
-
-          const bodyBPos = bodyB.translation();
-
-          const anchor2 = {
-            x: pivotWorld.x - bodyBPos.x,
-            y: pivotWorld.y - bodyBPos.y,
-            z: pivotWorld.z - bodyBPos.z,
-          };
+          const anchor1 = this.worldPointToRigidBodyLocalPoint(bodyA, pivotWorld);
+          const anchor2 = this.worldPointToRigidBodyLocalPoint(bodyB, pivotWorld);
 
           const axis = {
             x: joint.axis.x ?? 0,
@@ -434,6 +437,32 @@ export default class ModelInstancer {
         }
       }
     }
+  }
+
+  private worldPointToRigidBodyLocalPoint(rb: RAPIER.RigidBody, worldPoint: RAPIER.Vector) {
+    const bodyPosition = rb.translation();
+    const bodyRotation = rb.rotation();
+
+    const localPoint = new THREE.Vector3(
+      worldPoint.x - bodyPosition.x,
+      worldPoint.y - bodyPosition.y,
+      worldPoint.z - bodyPosition.z,
+    );
+
+    const inverseBodyRotation = new THREE.Quaternion(
+      bodyRotation.x,
+      bodyRotation.y,
+      bodyRotation.z,
+      bodyRotation.w,
+    ).invert();
+
+    localPoint.applyQuaternion(inverseBodyRotation);
+
+    return {
+      x: localPoint.x,
+      y: localPoint.y,
+      z: localPoint.z,
+    };
   }
 
   private createEntities(config: ModelConfig, runtimeContext: RuntimeContext) {

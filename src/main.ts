@@ -42,13 +42,17 @@ createLight(scene);
 //   aims.forEach((aim) => (aim.targetPosition = target));
 // });
 
-engine.modelInstancer.instance(Rx_Vision_GT3_config).then(({ entities }) => {
-  const [chassis] = engine.world.getComponentsFromEntities([...entities], Car);
+engine.modelInstancer
+  .instance(Rx_Vision_GT3_config, {
+    position: new THREE.Vector3(0, 2, 0),
+  })
+  .then(({ entities }) => {
+    const [chassis] = engine.world.getComponentsFromEntities([...entities], Car);
 
-  engine.world.addComponent(chassis.entity, new PlayerControlled());
+    engine.world.addComponent(chassis.entity, new PlayerControlled());
 
-  const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
-  cameraControllerSystem.followEntity = chassis.entity;
-});
+    const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
+    cameraControllerSystem.followEntity = chassis.entity;
+  });
 
 engine.start();
