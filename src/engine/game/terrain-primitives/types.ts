@@ -54,3 +54,12 @@ export type CylinderOptions = PrimitiveOptions & {
   heightSegments?: number;
   openEnded?: boolean;
 };
+
+export type RampOptions = PrimitiveOptions & {
+  width?: number;
+  length?: number;
+  height?: number;
+  bend?: number;
+  segments?: number;
+  thickness?: number;
+};

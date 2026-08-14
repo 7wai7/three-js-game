@@ -11,6 +11,20 @@ import {
 } from './physics-groups';
 import { createCube } from './terrain-primitives/cube';
 import { createCylinder } from './terrain-primitives/cylinder';
+import { createRamp } from './terrain-primitives/ramp';
+
+export { createBox, createCube } from './terrain-primitives/cube';
+export { createCylinder } from './terrain-primitives/cylinder';
+export { createSphere } from './terrain-primitives/sphere';
+export { createRamp } from './terrain-primitives/ramp';
+export type {
+  CubeOptions,
+  CylinderOptions,
+  PrimitiveOptions,
+  PrimitiveRigidBodyType,
+  RampOptions,
+  SphereOptions,
+} from './terrain-primitives/types';
 
 export async function createFloor(engine: Engine) {
   const { world, physicsWorld, scene, assets } = engine;
@@ -86,6 +100,16 @@ export function createTestTerrain(engine: Engine) {
     rotation: new THREE.Euler(Math.PI / 2, 0, Math.PI / 2),
     radius: 0.4,
     height: 5,
+    rigidBodyType: 'fixed',
+  });
+
+  createRamp(engine, {
+    position: new THREE.Vector3(0, 0, 12),
+    length: 12,
+    width: 5,
+    height: 3,
+    bend: 0.6,
+    segments: 24,
     rigidBodyType: 'fixed',
   });
 }
