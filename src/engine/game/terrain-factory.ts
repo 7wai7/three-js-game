@@ -1,7 +1,7 @@
-import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d';
+import * as THREE from 'three';
 import Colliders from '../components/colliders';
-import RigidBody from '../components/rigidbody';
+import type Engine from '../engine';
 import {
   GROUP_PLAYER,
   GROUP_VEHICLE,
@@ -9,12 +9,11 @@ import {
   GROUP_WORLD,
   interactionGroups,
 } from './physics-groups';
-import type Engine from '../engine';
-import { resolveSpawnTransform, type SpawnTransform } from '../../utils/spawn-transform';
+import { createCube } from './terrain-primitives/cube';
+import { createCylinder } from './terrain-primitives/cylinder';
 
-export async function createFloor(engine: Engine, transform?: SpawnTransform) {
+export async function createFloor(engine: Engine) {
   const { world, physicsWorld, scene, assets } = engine;
-  const { position, rotation } = resolveSpawnTransform(transform);
 
   const size = 1000;
   const texture = await assets.textures.load('src/assets/textures/grid.png');
@@ -35,8 +34,7 @@ export async function createFloor(engine: Engine, transform?: SpawnTransform) {
     }),
   );
 
-  mesh.position.set(position.x, position.y, position.z);
-  mesh.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+  mesh.position.set(0, -0.1, 0);
 
   mesh.receiveShadow = true;
 
@@ -51,9 +49,10 @@ export async function createFloor(engine: Engine, transform?: SpawnTransform) {
       )
       .setDensity(1000)
       .setRestitution(0)
-      .setTranslation(position.x, position.y, position.z)
-      .setRotation(rotation),
+      .setTranslation(0, -0.1, 0),
   );
+
+  console.log('floor', collider);
 
   world.addComponent(entity, new Colliders([collider]));
 
@@ -70,30 +69,25 @@ export function createLight(scene: THREE.Scene) {
   scene.add(ambientLight);
 }
 
-export function createCube(engine: Engine, transform?: SpawnTransform) {
-  const { world, physicsWorld, scene } = engine;
-  const { position, rotation } = resolveSpawnTransform(transform);
+export function createTestTerrain(engine: Engine) {
+  createFloor(engine);
 
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({ color: 0x66cc00 }),
-  );
-  mesh.castShadow = true;
-  scene.add(mesh);
+  createLight(engine.scene);
 
-  const rbDesc = RAPIER.RigidBodyDesc.dynamic()
-    .setTranslation(position.x, position.y, position.z)
-    .setRotation(rotation);
+  createCube(engine, {
+    position: new THREE.Vector3(-17, 1, 5),
+    restitution: 0,
+    width: 0.2,
+    height: 2,
+    depth: 3,
+    rigidBodyType: 'fixed',
+  });
 
-  const colliderDesc = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5)
-    .setCollisionGroups(interactionGroups(GROUP_WORLD, GROUP_WORLD | GROUP_PLAYER))
-    .setRestitution(0.3);
-  const rb = physicsWorld.createRigidBody(rbDesc);
-  const collider = physicsWorld.createCollider(colliderDesc, rb);
-
-  const entity = world.createGameObject(mesh);
-  world.addComponent(entity, new RigidBody(rb));
-  world.addComponent(entity, new Colliders([collider]));
-
-  return entity;
+  createCylinder(engine, {
+    position: new THREE.Vector3(0, -0.35, 10),
+    rotation: new THREE.Euler(Math.PI / 2, 0, Math.PI / 2),
+    radius: 0.4,
+    height: 5,
+    rigidBodyType: 'fixed',
+  });
 }

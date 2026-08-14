@@ -4,7 +4,7 @@ import Engine from './engine/engine.js';
 import EngineContext from './engine/contexts/engine.context.js';
 import { createEcsCamera, createMainCamera } from './engine/game/global-factory.js';
 import setupResizeHandler from './listeners/setup-resize-listener.js';
-import { createFloor, createLight } from './engine/game/terrain-factory.js';
+import { createTestTerrain } from './engine/game/terrain-factory.js';
 import { Rx_Vision_GT3_config } from './engine/model-instancing/configs/Rx-Vision-GT3.js';
 import Car from './engine/components/vehicle/car.js';
 import CameraControllerSystem from './engine/systems/camera-controller.system.js';
@@ -27,11 +27,7 @@ EngineContext.setEngine(engine);
 setupResizeHandler(renderer, camera);
 
 createEcsCamera(engine.world, camera);
-createFloor(engine, {
-  position: new THREE.Vector3(0, -2, 0),
-});
-
-createLight(scene);
+createTestTerrain(engine);
 
 // engine.modelInstancer.instance(autocannonConfig, new Map()).then(({ entities }) => {
 //   const [weapon] = engine.world.getComponentsFromEntities([...entities], Weapon);
@@ -42,17 +38,13 @@ createLight(scene);
 //   aims.forEach((aim) => (aim.targetPosition = target));
 // });
 
-engine.modelInstancer
-  .instance(Rx_Vision_GT3_config, {
-    position: new THREE.Vector3(0, 2, 0),
-  })
-  .then(({ entities }) => {
-    const [chassis] = engine.world.getComponentsFromEntities([...entities], Car);
+engine.modelInstancer.instance(Rx_Vision_GT3_config).then(({ entities }) => {
+  const [chassis] = engine.world.getComponentsFromEntities([...entities], Car);
 
-    engine.world.addComponent(chassis.entity, new PlayerControlled());
+  engine.world.addComponent(chassis.entity, new PlayerControlled());
 
-    const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
-    cameraControllerSystem.followEntity = chassis.entity;
-  });
+  const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
+  cameraControllerSystem.followEntity = chassis.entity;
+});
 
 engine.start();
