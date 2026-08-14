@@ -27,6 +27,7 @@ import ProjectileMotionSystem from './systems/combat/projectile-motion.system';
 import AimAtMouseScreenSystem from './systems/transform/aim-at-mouse-screen.system';
 import AimAtTargetSystem from './systems/transform/aim-at-target.system';
 import ModelInstancer from './model-instancing/instancing';
+import VehicleTelemetrySystem from './systems/vehicle-telemetry.system';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
@@ -63,6 +64,7 @@ export default class Engine {
     this.world.addSystem(new PhysicsSyncSystem());
     this.world.addSystem(new PlayerInputSystem());
     this.world.addSystem(new CarControllerSystem());
+    this.world.addSystem(new VehicleTelemetrySystem());
     this.world.addSystem(new CharacterControllerSystem());
     this.world.addSystem(new ReloadSystem());
     this.world.addSystem(new FireInputSystem());
