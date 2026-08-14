@@ -60,8 +60,6 @@ export function createPrimitiveEntity(
 
   const collider = physicsWorld.createCollider(colliderDesc, rb);
 
-  console.log('primitive', collider);
-
   const entity = world.createGameObject(mesh);
   world.addComponent(entity, new RigidBody(rb));
   world.addComponent(entity, new Colliders([collider]));

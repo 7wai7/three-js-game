@@ -52,8 +52,6 @@ export async function createFloor(engine: Engine) {
       .setTranslation(0, -0.1, 0),
   );
 
-  console.log('floor', collider);
-
   world.addComponent(entity, new Colliders([collider]));
 
   return entity;

@@ -73,8 +73,6 @@ describe('PhysicsSyncSystem', () => {
     child.getWorldPosition(childWorldPosition);
     child.getWorldQuaternion(childWorldQuaternion);
 
-    console.log(childWorldPosition);
-    console.log(rigidBodyPosition);
     expectVectorCloseTo(childWorldPosition, rigidBodyPosition);
     expectQuaternionCloseTo(childWorldQuaternion, rigidBodyRotation);
   });
