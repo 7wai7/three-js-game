@@ -21,9 +21,10 @@ import PlayerControlled from '../../components/player-controlled';
 
 const wheelCollider: Omit<ColliderConfig, 'source'> = {
   shape: 'BALL' as const,
-  mass: 300,
+  mass: 30,
   friction: 0,
   frictionRule: RAPIER.CoefficientCombineRule.Min,
+  restitution: 0,
   collisionGroups: interactionGroups(GROUP_WHEEL, GROUP_WORLD | GROUP_PLAYER),
 };
 
@@ -38,8 +39,8 @@ function createWheelPrismaticJoint(wheel: string) {
     },
     motorPosition: {
       target: -0.05,
-      stiffness: 500,
-      damping: 70,
+      stiffness: 4000,
+      damping: 170,
     },
   };
 
@@ -86,7 +87,7 @@ export const Rx_Vision_GT3_config: ModelConfig = {
       components: [
         component(Car, {
           // TODO: separate the parameters for each wheel
-          engineForce: 120,
+          engineForce: 170,
           brakeForce: 22,
           sideGrip: 24,
           pullingForce: 5,
@@ -100,12 +101,23 @@ export const Rx_Vision_GT3_config: ModelConfig = {
         {
           source: 'COL_Body',
           shape: 'BOX',
-          mass: 400,
+          mass: 2200,
+          restitution: 0.1,
           collisionGroups: interactionGroups(
             GROUP_VEHICLE,
             GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER,
           ),
         },
+        // {
+        //   source: 'COL_Body_2',
+        //   shape: 'BOX',
+        //   mass: 400,
+        //   restitution: 0,
+        //   collisionGroups: interactionGroups(
+        //     GROUP_VEHICLE,
+        //     GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER,
+        //   ),
+        // },
       ],
     },
 

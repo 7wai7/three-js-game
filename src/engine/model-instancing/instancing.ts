@@ -281,6 +281,10 @@ export default class ModelInstancer {
         colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5);
     }
 
+    if (config.restitution !== undefined) {
+      colliderDesc.setRestitution(config.restitution);
+    }
+
     if (attachedToRigidBody) {
       this.setAttachedColliderTransform(colliderDesc, config, target, colliderSource);
     } else {

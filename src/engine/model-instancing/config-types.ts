@@ -122,6 +122,7 @@ export type ColliderConfig = {
   collisionGroups?: number;
   friction?: number;
   frictionRule?: RAPIER.CoefficientCombineRule;
+  restitution?: number;
 };
 
 export type RigidBodyConfig = {

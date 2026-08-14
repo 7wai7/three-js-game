@@ -47,7 +47,7 @@ function createWheelRevoluteJoint(wheel: string, anchor: string, isFront = false
         },
     motorPosition: {
       target: !isFront ? min : min * -1,
-      stiffness: 300,
+      stiffness: 2000,
       damping: 90,
     },
   };
@@ -95,9 +95,9 @@ export const axial_XR9_config: ModelConfig = {
     Chassis: {
       components: [
         component(Car, {
-          engineForce: 120,
+          engineForce: 190,
           brakeForce: 22,
-          sideGrip: 24,
+          sideGrip: 30,
           pullingForce: 5,
         }),
       ],
@@ -108,7 +108,7 @@ export const axial_XR9_config: ModelConfig = {
         {
           source: 'COL_chassis',
           shape: 'BOX',
-          mass: 400,
+          mass: 2000,
           collisionGroups: interactionGroups(
             GROUP_VEHICLE,
             GROUP_VEHICLE | GROUP_WORLD | GROUP_PLAYER,
