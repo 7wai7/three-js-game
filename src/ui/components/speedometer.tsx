@@ -1,4 +1,4 @@
-import { useGameUiStore } from '../stores/use-game-ui-store.js';
+import { useGameUiStore } from '../stores/game-ui-store.js';
 
 export default function Speedometer() {
   const speedKmh = useGameUiStore((state) => state.playerVehicle.speedKmh);
