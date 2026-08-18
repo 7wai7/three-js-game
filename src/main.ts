@@ -9,12 +9,22 @@ import { Rx_Vision_GT3_config } from './engine/model-instancing/configs/Rx-Visio
 import Car from './engine/components/vehicle/car.js';
 import CameraControllerSystem from './engine/systems/camera-controller.system.js';
 import PlayerControlled from './engine/components/player-controlled.js';
+import { renderGameUi } from './ui/render-game-ui.js';
 
 // Initialize Three.js renderer, scene, and camera
 const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.shadowMap.enabled = true;
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.domElement.className = 'block [image-rendering:crisp-edges] [image-rendering:pixelated]';
 document.body.appendChild(renderer.domElement);
+
+const uiRoot = document.getElementById('ui-root');
+
+if (!uiRoot) {
+  throw new Error('UI root element not found');
+}
+
+renderGameUi(uiRoot);
 
 const scene = new THREE.Scene();
 const camera = createMainCamera(scene);

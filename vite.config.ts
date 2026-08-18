@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import wasm from 'vite-plugin-wasm';
 
 export default defineConfig({
-  plugins: [wasm()],
+  plugins: [react(), tailwindcss(), wasm()],
   optimizeDeps: {
     include: ['@dimforge/rapier3d'],
   },
