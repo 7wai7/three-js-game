@@ -28,14 +28,19 @@ import AimAtMouseScreenSystem from './systems/transform/aim-at-mouse-screen.syst
 import AimAtTargetSystem from './systems/transform/aim-at-target.system';
 import ModelInstancer from './model-instancing/instancing';
 import VehicleTelemetrySystem from './systems/vehicle-telemetry.system';
+import ModeManager from './mode/mode-manager';
+import { editModeInput } from './input/input-configs/edit-mode-input';
+import EditModeToggleSystem from './systems/edit-mode-toggle.system';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
   readonly input: InputManager = new InputManager();
+  readonly mode: ModeManager = new ModeManager();
   readonly inputLayers = new Map<string, InputLayer>([
     ['system', new InputLayer(this.input, systemInput)],
     ['camera', new InputLayer(this.input, defaultCameraInput)],
     ['gameplay', new InputLayer(this.input, defaultGameplayInput)],
+    ['edit', new InputLayer(this.input, editModeInput)],
   ]);
 
   readonly assets: Assets = {
@@ -61,6 +66,7 @@ export default class Engine {
     this.camera = camera;
     this.modelInstancer = new ModelInstancer(this);
 
+    this.world.addSystem(new EditModeToggleSystem());
     this.world.addSystem(new PhysicsSyncSystem());
     this.world.addSystem(new PlayerInputSystem());
     this.world.addSystem(new CarControllerSystem());

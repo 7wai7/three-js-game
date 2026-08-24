@@ -7,6 +7,7 @@ export type InputKey =
   | 'KeyE'
   | 'KeyC'
   | 'KeyR'
+  | 'Backquote'
   | 'Space'
   | 'ShiftLeft'
   | 'ShiftRight'
@@ -27,6 +28,7 @@ export const INPUT_ACTIONS = [
   'boost',
   'cameraRotate',
   'showColliders',
+  'toggleEditMode',
 ] as const;
 
 export type InputAction = (typeof INPUT_ACTIONS)[number];
