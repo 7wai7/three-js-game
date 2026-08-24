@@ -182,6 +182,96 @@ describe('ModelInstancer', () => {
     expect(rightColliderSource.visible).toBe(false);
   });
 
+  it('can create an attached collider from manual dimensions', async () => {
+    const model = new THREE.Group();
+    const body = new THREE.Object3D();
+
+    body.name = 'Body';
+    model.add(body);
+
+    const { engine, world } = createTestEngine(model);
+    const instancer = new ModelInstancer(engine);
+    const config: ModelConfig = {
+      modelPath: 'body.glb',
+      entities: {
+        Body: {
+          rigidBody: {
+            type: 'KINEMATIC',
+          },
+          colliders: [
+            {
+              shape: 'CAPSULE',
+              position: { y: 2 },
+              halfHeight: 1.2,
+              radius: 0.3,
+            },
+          ],
+        },
+      },
+    };
+
+    const spawnPosition = new THREE.Vector3(10, 5, 20);
+    const spawnRotation = new THREE.Euler(0, Math.PI / 2, 0);
+    const spawnQuaternion = new THREE.Quaternion().setFromEuler(spawnRotation);
+
+    const { entities } = await instancer.instance(config, {
+      position: spawnPosition,
+      rotation: spawnRotation,
+    });
+    const [entity] = [...entities];
+    const collider = world.getComponent(entity, Colliders)?.primary;
+    const expectedColliderPosition = new THREE.Vector3(0, 2, 0)
+      .applyQuaternion(spawnQuaternion)
+      .add(spawnPosition);
+
+    expect(collider?.halfHeight()).toBeCloseTo(1.2);
+    expect(collider?.radius()).toBeCloseTo(0.3);
+    expectVectorCloseTo(collider?.translation(), expectedColliderPosition);
+  });
+
+  it('can create a standalone collider from manual dimensions relative to the target object', async () => {
+    const model = new THREE.Group();
+    const trigger = new THREE.Object3D();
+
+    trigger.name = 'Trigger';
+    trigger.position.set(2, 0, 0);
+    model.add(trigger);
+
+    const { engine, world } = createTestEngine(model);
+    const instancer = new ModelInstancer(engine);
+    const config: ModelConfig = {
+      modelPath: 'trigger.glb',
+      entities: {
+        Trigger: {
+          colliders: [
+            {
+              shape: 'BOX',
+              position: { z: 3 },
+              halfExtents: { x: 0.5, y: 1, z: 1.5 },
+            },
+          ],
+        },
+      },
+    };
+
+    const spawnPosition = new THREE.Vector3(10, 5, 20);
+    const spawnRotation = new THREE.Euler(0, Math.PI / 2, 0);
+    const spawnQuaternion = new THREE.Quaternion().setFromEuler(spawnRotation);
+
+    const { entities } = await instancer.instance(config, {
+      position: spawnPosition,
+      rotation: spawnRotation,
+    });
+    const [entity] = [...entities];
+    const collider = world.getComponent(entity, Colliders)?.primary;
+    const expectedColliderPosition = new THREE.Vector3(2, 0, 3)
+      .applyQuaternion(spawnQuaternion)
+      .add(spawnPosition);
+
+    expectVectorCloseTo(collider?.halfExtents(), new THREE.Vector3(0.5, 1, 1.5));
+    expectVectorCloseTo(collider?.translation(), expectedColliderPosition);
+  });
+
   it('applies spawn transform before creating rigidbodies and joints', async () => {
     const model = new THREE.Group();
     const chassis = new THREE.Object3D();

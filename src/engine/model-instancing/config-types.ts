@@ -114,16 +114,52 @@ export function component<C extends ComponentConstructor>(
 }
 
 // COLLIDER TYPES
-export type ColliderConfig = {
-  source: SceneRef;
-  shape?: ColliderShape;
+export type Vector3Config =
+  | THREE.Vector3
+  | {
+      x?: number;
+      y?: number;
+      z?: number;
+    };
+
+type ColliderCommonConfig = {
+  source?: SceneRef;
+  position?: Vector3Config;
+  rotation?: THREE.Quaternion | THREE.Euler;
   axis?: Axis;
+  shape?: ColliderShape;
   mass?: number;
   collisionGroups?: number;
   friction?: number;
   frictionRule?: RAPIER.CoefficientCombineRule;
   restitution?: number;
 };
+
+export type BoxColliderConfig = ColliderCommonConfig & {
+  shape?: 'BOX';
+  size?: Vector3Config;
+  halfExtents?: Vector3Config;
+};
+
+export type BallColliderConfig = ColliderCommonConfig & {
+  shape: 'BALL';
+  radius?: number;
+};
+
+export type CapsuleColliderConfig = ColliderCommonConfig & {
+  shape: 'CAPSULE';
+  halfHeight?: number;
+  radius?: number;
+};
+
+export type CylinderColliderConfig = ColliderCommonConfig & {
+  shape: 'CYLINDER';
+  halfHeight?: number;
+  radius?: number;
+};
+
+export type ColliderConfig =
+  BoxColliderConfig | BallColliderConfig | CapsuleColliderConfig | CylinderColliderConfig;
 
 export type RigidBodyConfig = {
   type?: PhysicalRigidBodyType;

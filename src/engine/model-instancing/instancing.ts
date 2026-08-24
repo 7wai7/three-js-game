@@ -10,6 +10,11 @@ import {
   type SceneRef,
   type ModelInstanceResult,
   type RuntimeContext,
+  type BallColliderConfig,
+  type BoxColliderConfig,
+  type CapsuleColliderConfig,
+  type CylinderColliderConfig,
+  type Vector3Config,
 } from './config-types';
 import { getObjectSize } from '../../utils/get-object-size';
 import { getAxisDimensions, getColliderRotationByAxis } from './utils';
@@ -146,19 +151,23 @@ export default class ModelInstancer {
       const colliders: RAPIER.Collider[] = [];
 
       for (const colliderConfig of colliderConfigs) {
-        const colliderNode = nodesByName.get(colliderConfig.source);
+        const colliderNode = colliderConfig.source
+          ? nodesByName.get(colliderConfig.source)
+          : undefined;
 
-        if (!colliderNode) {
+        if (colliderConfig.source && !colliderNode) {
           console.warn(`Collider source not found "${colliderConfig.source}"`);
           continue;
         }
 
-        colliderNode.source.visible = false;
+        if (colliderNode) {
+          colliderNode.source.visible = false;
+        }
 
         const collider = this.createCollider(
           colliderConfig,
           target.source,
-          colliderNode.source,
+          colliderNode?.source,
           rb,
         );
 
@@ -178,7 +187,7 @@ export default class ModelInstancer {
   private createCollider(
     config: ColliderConfig,
     target: THREE.Object3D,
-    colliderSource: THREE.Object3D,
+    colliderSource: THREE.Object3D | undefined,
     rb: RAPIER.RigidBody | null,
   ) {
     const colliderDesc = this.createColliderDesc(config, target, colliderSource, Boolean(rb));
@@ -256,34 +265,16 @@ export default class ModelInstancer {
   private createColliderDesc(
     config: ColliderConfig,
     target: THREE.Object3D,
-    colliderSource: THREE.Object3D,
+    colliderSource: THREE.Object3D | undefined,
     attachedToRigidBody: boolean,
   ) {
-    const size = getObjectSize(colliderSource);
-    const { length, radius } = getAxisDimensions(size, config.axis);
-
-    let colliderDesc: RAPIER.ColliderDesc;
-
-    switch (config.shape) {
-      case 'BALL':
-        colliderDesc = RAPIER.ColliderDesc.ball(Math.max(size.x, size.y, size.z) * 0.5);
-        break;
-
-      case 'CAPSULE':
-        colliderDesc = RAPIER.ColliderDesc.capsule(Math.max(0, length * 0.5 - radius), radius);
-        break;
-
-      case 'CYLINDER':
-        colliderDesc = RAPIER.ColliderDesc.cylinder(length * 0.5, radius);
-        break;
-
-      default:
-        colliderDesc = RAPIER.ColliderDesc.cuboid(size.x * 0.5, size.y * 0.5, size.z * 0.5);
-    }
+    const colliderDesc = this.createColliderShapeDesc(config, colliderSource);
 
     if (config.restitution !== undefined) {
       colliderDesc.setRestitution(config.restitution);
     }
+
+    colliderDesc.setTranslation(0, -0.45, 0);
 
     if (attachedToRigidBody) {
       this.setAttachedColliderTransform(colliderDesc, config, target, colliderSource);
@@ -294,28 +285,102 @@ export default class ModelInstancer {
     return colliderDesc;
   }
 
+  private createColliderShapeDesc(
+    config: ColliderConfig,
+    colliderSource: THREE.Object3D | undefined,
+  ) {
+    const size = colliderSource ? getObjectSize(colliderSource) : undefined;
+
+    switch (config.shape) {
+      case 'BALL':
+        return this.createBallColliderDesc(config, size);
+
+      case 'CAPSULE':
+        return this.createCapsuleColliderDesc(config, size);
+
+      case 'CYLINDER':
+        return this.createCylinderColliderDesc(config, size);
+
+      default:
+        return this.createBoxColliderDesc(config, size);
+    }
+  }
+
+  private createBoxColliderDesc(config: BoxColliderConfig, size: THREE.Vector3 | undefined) {
+    const halfExtents = this.getBoxHalfExtents(config, size);
+
+    return RAPIER.ColliderDesc.cuboid(halfExtents.x, halfExtents.y, halfExtents.z);
+  }
+
+  private createBallColliderDesc(config: BallColliderConfig, size: THREE.Vector3 | undefined) {
+    const radius =
+      config.radius ??
+      (size ? Math.max(size.x, size.y, size.z) * 0.5 : this.requireNumber(config.radius, 'radius'));
+
+    return RAPIER.ColliderDesc.ball(radius);
+  }
+
+  private createCapsuleColliderDesc(
+    config: CapsuleColliderConfig,
+    size: THREE.Vector3 | undefined,
+  ) {
+    const sourceDimensions = size ? getAxisDimensions(size, config.axis) : undefined;
+    const sourceHalfHeight = sourceDimensions
+      ? Math.max(0, sourceDimensions.length * 0.5 - sourceDimensions.radius)
+      : undefined;
+
+    const halfHeight =
+      config.halfHeight ?? sourceHalfHeight ?? this.requireNumber(config.halfHeight, 'halfHeight');
+    const radius =
+      config.radius ?? sourceDimensions?.radius ?? this.requireNumber(config.radius, 'radius');
+
+    return RAPIER.ColliderDesc.capsule(halfHeight, radius);
+  }
+
+  private createCylinderColliderDesc(
+    config: CylinderColliderConfig,
+    size: THREE.Vector3 | undefined,
+  ) {
+    const sourceDimensions = size ? getAxisDimensions(size, config.axis) : undefined;
+    const halfHeight =
+      config.halfHeight ??
+      (sourceDimensions ? sourceDimensions.length * 0.5 : undefined) ??
+      this.requireNumber(config.halfHeight, 'halfHeight');
+    const radius =
+      config.radius ?? sourceDimensions?.radius ?? this.requireNumber(config.radius, 'radius');
+
+    return RAPIER.ColliderDesc.cylinder(halfHeight, radius);
+  }
+
+  private getBoxHalfExtents(config: BoxColliderConfig, size: THREE.Vector3 | undefined) {
+    if (config.halfExtents) {
+      return this.createRequiredVector3(config.halfExtents, 'halfExtents');
+    }
+
+    if (config.size) {
+      return this.createRequiredVector3(config.size, 'size').multiplyScalar(0.5);
+    }
+
+    if (size) {
+      return size.clone().multiplyScalar(0.5);
+    }
+
+    throw new Error('BOX collider requires "source", "halfExtents", or "size"');
+  }
+
   private setAttachedColliderTransform(
     colliderDesc: RAPIER.ColliderDesc,
     config: ColliderConfig,
     target: THREE.Object3D,
-    colliderSource: THREE.Object3D,
+    colliderSource: THREE.Object3D | undefined,
   ) {
     target.updateMatrixWorld(true);
-    colliderSource.updateMatrixWorld(true);
+    colliderSource?.updateMatrixWorld(true);
 
-    const localPos = new THREE.Vector3();
-
-    const localMatrix = target.matrixWorld
-      .clone()
-      .invert()
-      .multiply(colliderSource.matrixWorld.clone());
-
-    localMatrix.decompose(localPos, new THREE.Quaternion(), new THREE.Vector3());
-
+    const localPos = this.getColliderLocalPosition(config, target, colliderSource);
     colliderDesc.setTranslation(localPos.x, localPos.y, localPos.z);
 
-    const localQuat = getColliderRotationByAxis(config.axis);
-
+    const localQuat = this.getColliderLocalRotation(config);
     colliderDesc.setRotation({
       x: localQuat.x,
       y: localQuat.y,
@@ -328,18 +393,17 @@ export default class ModelInstancer {
     colliderDesc: RAPIER.ColliderDesc,
     config: ColliderConfig,
     target: THREE.Object3D,
-    colliderSource: THREE.Object3D,
+    colliderSource: THREE.Object3D | undefined,
   ) {
     target.updateMatrixWorld(true);
-    colliderSource.updateMatrixWorld(true);
+    colliderSource?.updateMatrixWorld(true);
 
-    const worldPos = new THREE.Vector3();
+    const localPos = this.getColliderLocalPosition(config, target, colliderSource);
+    const worldPos = localPos.applyMatrix4(target.matrixWorld);
     const worldQuat = new THREE.Quaternion();
-    const axisQuat = getColliderRotationByAxis(config.axis);
 
-    colliderSource.getWorldPosition(worldPos);
     target.getWorldQuaternion(worldQuat);
-    worldQuat.multiply(axisQuat);
+    worldQuat.multiply(this.getColliderLocalRotation(config));
 
     colliderDesc.setTranslation(worldPos.x, worldPos.y, worldPos.z);
     colliderDesc.setRotation({
@@ -348,6 +412,75 @@ export default class ModelInstancer {
       z: worldQuat.z,
       w: worldQuat.w,
     });
+  }
+
+  private getColliderLocalPosition(
+    config: ColliderConfig,
+    target: THREE.Object3D,
+    colliderSource: THREE.Object3D | undefined,
+  ) {
+    const localPos = new THREE.Vector3();
+
+    if (colliderSource) {
+      const localMatrix = target.matrixWorld
+        .clone()
+        .invert()
+        .multiply(colliderSource.matrixWorld.clone());
+
+      localMatrix.decompose(localPos, new THREE.Quaternion(), new THREE.Vector3());
+    }
+
+    if (config.position) {
+      localPos.add(this.createVector3(config.position));
+    }
+
+    return localPos;
+  }
+
+  private getColliderLocalRotation(config: ColliderConfig) {
+    const rotation = this.createQuaternion(config.rotation);
+    rotation.multiply(getColliderRotationByAxis(config.axis));
+    return rotation;
+  }
+
+  private createVector3(config: Vector3Config) {
+    if (config instanceof THREE.Vector3) {
+      return config.clone();
+    }
+
+    return new THREE.Vector3(config.x ?? 0, config.y ?? 0, config.z ?? 0);
+  }
+
+  private createRequiredVector3(config: Vector3Config, label: string) {
+    if (config instanceof THREE.Vector3) {
+      return config.clone();
+    }
+
+    return new THREE.Vector3(
+      this.requireNumber(config.x, `${label}.x`),
+      this.requireNumber(config.y, `${label}.y`),
+      this.requireNumber(config.z, `${label}.z`),
+    );
+  }
+
+  private createQuaternion(rotation: THREE.Quaternion | THREE.Euler | undefined) {
+    if (rotation instanceof THREE.Quaternion) {
+      return rotation.clone();
+    }
+
+    if (rotation instanceof THREE.Euler) {
+      return new THREE.Quaternion().setFromEuler(rotation);
+    }
+
+    return new THREE.Quaternion();
+  }
+
+  private requireNumber(value: number | undefined, label: string) {
+    if (value === undefined) {
+      throw new Error(`Collider config requires "${label}"`);
+    }
+
+    return value;
   }
 
   private createJoints(config: ModelConfig, ctx: RuntimeContext) {
