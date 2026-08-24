@@ -29,8 +29,8 @@ import AimAtTargetSystem from './systems/transform/aim-at-target.system';
 import ModelInstancer from './model-instancing/instancing';
 import VehicleTelemetrySystem from './systems/vehicle-telemetry.system';
 import ModeManager from './mode/mode-manager';
-import { editModeInput } from './input/input-configs/edit-mode-input';
-import EditModeToggleSystem from './systems/edit-mode-toggle.system';
+import { inspectModeInput } from './input/input-configs/inspect-mode-input';
+import InspectModeToggleSystem from './systems/inspect-mode-toggle.system';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
@@ -40,7 +40,7 @@ export default class Engine {
     ['system', new InputLayer(this.input, systemInput)],
     ['camera', new InputLayer(this.input, defaultCameraInput)],
     ['gameplay', new InputLayer(this.input, defaultGameplayInput)],
-    ['edit', new InputLayer(this.input, editModeInput)],
+    ['inspect', new InputLayer(this.input, inspectModeInput)],
   ]);
 
   readonly assets: Assets = {
@@ -66,7 +66,7 @@ export default class Engine {
     this.camera = camera;
     this.modelInstancer = new ModelInstancer(this);
 
-    this.world.addSystem(new EditModeToggleSystem());
+    this.world.addSystem(new InspectModeToggleSystem());
     this.world.addSystem(new PhysicsSyncSystem());
     this.world.addSystem(new PlayerInputSystem());
     this.world.addSystem(new CarControllerSystem());

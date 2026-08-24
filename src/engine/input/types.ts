@@ -28,7 +28,7 @@ export const INPUT_ACTIONS = [
   'boost',
   'cameraRotate',
   'showColliders',
-  'toggleEditMode',
+  'toggleInspectMode',
 ] as const;
 
 export type InputAction = (typeof INPUT_ACTIONS)[number];

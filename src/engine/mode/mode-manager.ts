@@ -1,5 +1,5 @@
 export type AppState = 'menu' | 'game';
-export type SceneMode = 'play' | 'edit';
+export type SceneMode = 'play' | 'inspect';
 
 export default class ModeManager {
   private _appState: AppState = 'game';
@@ -13,15 +13,15 @@ export default class ModeManager {
     return this._sceneMode;
   }
 
-  get isEditMode() {
-    return this._sceneMode === 'edit';
+  get isInspectMode() {
+    return this._sceneMode === 'inspect';
   }
 
   get isPlayMode() {
     return this._sceneMode === 'play';
   }
 
-  canEnterEditMode() {
+  canEnterInspectMode() {
     return this._appState === 'game';
   }
 
@@ -31,24 +31,24 @@ export default class ModeManager {
 
   enterMenu() {
     this._appState = 'menu';
-    this.exitEditMode();
+    this.exitInspectMode();
   }
 
-  enterEditMode() {
-    if (!this.canEnterEditMode()) {
+  enterInspectMode() {
+    if (!this.canEnterInspectMode()) {
       return false;
     }
 
-    this._sceneMode = 'edit';
+    this._sceneMode = 'inspect';
     return true;
   }
 
-  exitEditMode() {
+  exitInspectMode() {
     this._sceneMode = 'play';
     return true;
   }
 
-  toggleEditMode() {
-    return this.isEditMode ? this.exitEditMode() : this.enterEditMode();
+  toggleInspectMode() {
+    return this.isInspectMode ? this.exitInspectMode() : this.enterInspectMode();
   }
 }
