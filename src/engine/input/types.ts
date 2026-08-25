@@ -7,6 +7,7 @@ export type InputKey =
   | 'KeyE'
   | 'KeyC'
   | 'KeyR'
+  | 'KeyP'
   | 'Backquote'
   | 'Space'
   | 'ShiftLeft'
@@ -33,7 +34,7 @@ export const INPUT_ACTIONS = [
 
 export type InputAction = (typeof INPUT_ACTIONS)[number];
 
-export const AXIS_ACTIONS = ['moveX', 'moveY', 'lookX', 'lookY', 'zoom'] as const;
+export const AXIS_ACTIONS = ['moveX', 'moveY', 'lookX', 'lookY', 'zoom', 'cameraMoveY'] as const;
 
 export type AxisAction = (typeof AXIS_ACTIONS)[number];
 

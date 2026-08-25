@@ -7,6 +7,7 @@ import System from './system';
 export default class InspectCameraControlSystem extends System {
   private readonly cameraForward = new THREE.Vector3();
   private readonly cameraRight = new THREE.Vector3();
+  private readonly cameraUp = new THREE.Vector3();
   private readonly moveDirection = new THREE.Vector3();
   private readonly rotation = new THREE.Euler(0, 0, 0, 'YXZ');
 
@@ -73,17 +74,20 @@ export default class InspectCameraControlSystem extends System {
 
     const moveX = input.axis('moveX');
     const moveY = input.axis('moveY');
+    const moveZ = input.axis('cameraMoveY');
 
-    if (moveX === 0 && moveY === 0) {
+    if (moveX === 0 && moveY === 0 && moveZ === 0) {
       return;
     }
 
     camera.getWorldDirection(this.cameraForward).normalize();
     this.cameraRight.set(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+    this.resolveVerticalAxis(camera, control);
 
     this.moveDirection
       .addScaledVector(this.cameraForward, moveY)
-      .addScaledVector(this.cameraRight, moveX);
+      .addScaledVector(this.cameraRight, moveX)
+      .addScaledVector(this.cameraUp, moveZ);
 
     this.moveDirection.normalize();
 
@@ -120,5 +124,13 @@ export default class InspectCameraControlSystem extends System {
   private clampPitch(control: InspectCameraControl) {
     const limit = (Math.PI / 2) * 0.99;
     control.pitch = THREE.MathUtils.clamp(control.pitch, -limit, limit);
+  }
+
+  private resolveVerticalAxis(camera: THREE.Camera, control: InspectCameraControl) {
+    this.cameraUp.set(0, 1, 0);
+
+    if (!control.useWorldVerticalAxis) {
+      this.cameraUp.applyQuaternion(camera.quaternion).normalize();
+    }
   }
 }

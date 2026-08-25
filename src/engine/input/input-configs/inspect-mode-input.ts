@@ -20,6 +20,11 @@ export const inspectModeInput: InputLayerConfig = {
       negative: { device: 'keyboard', code: 'KeyS' },
       positive: { device: 'keyboard', code: 'KeyW' },
     },
+    cameraMoveY: {
+      type: 'buttons',
+      negative: { device: 'keyboard', code: 'KeyQ' },
+      positive: { device: 'keyboard', code: 'KeyE' },
+    },
     lookX: {
       type: 'mouse',
       axis: 'x',
