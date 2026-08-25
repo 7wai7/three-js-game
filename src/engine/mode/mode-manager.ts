@@ -1,9 +1,11 @@
 export type AppState = 'menu' | 'game';
 export type SceneMode = 'play' | 'inspect';
+export type SceneModeListener = (sceneMode: SceneMode) => void;
 
 export default class ModeManager {
   private _appState: AppState = 'game';
   private _sceneMode: SceneMode = 'play';
+  private readonly sceneModeListeners = new Set<SceneModeListener>();
 
   get appState() {
     return this._appState;
@@ -25,6 +27,14 @@ export default class ModeManager {
     return this._appState === 'game';
   }
 
+  subscribeSceneMode(listener: SceneModeListener) {
+    this.sceneModeListeners.add(listener);
+
+    return () => {
+      this.sceneModeListeners.delete(listener);
+    };
+  }
+
   enterGame() {
     this._appState = 'game';
   }
@@ -39,16 +49,28 @@ export default class ModeManager {
       return false;
     }
 
-    this._sceneMode = 'inspect';
-    return true;
+    return this.setSceneMode('inspect');
   }
 
   exitInspectMode() {
-    this._sceneMode = 'play';
-    return true;
+    return this.setSceneMode('play');
   }
 
   toggleInspectMode() {
     return this.isInspectMode ? this.exitInspectMode() : this.enterInspectMode();
+  }
+
+  private setSceneMode(sceneMode: SceneMode) {
+    if (this._sceneMode === sceneMode) {
+      return true;
+    }
+
+    this._sceneMode = sceneMode;
+
+    for (const listener of this.sceneModeListeners) {
+      listener(sceneMode);
+    }
+
+    return true;
   }
 }

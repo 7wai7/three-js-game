@@ -20,14 +20,13 @@ if (!uiRoot) {
   throw new Error('UI root element not found');
 }
 
-renderGameUi(uiRoot);
-
 const scene = new THREE.Scene();
 const camera = createMainCamera(scene);
 
 // Initialize the game engine
 const engine = new Engine(renderer, scene, camera);
 EngineContext.setEngine(engine);
+renderGameUi(uiRoot);
 
 // Handle window resize
 setupResizeHandler(renderer, camera);
@@ -49,8 +48,8 @@ createTestTerrain(engine);
 
 //   engine.world.addComponent(chassis.entity, new PlayerControlled());
 
-//   const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
-//   cameraControllerSystem.followEntity = chassis.entity;
+//   const cameraFollow = engine.world.getComponent(camera.uuid, OrbitFollowCamera);
+//   if (cameraFollow) cameraFollow.targetEntity = chassis.entity;
 // });
 
 engine.start();

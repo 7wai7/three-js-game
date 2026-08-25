@@ -41,6 +41,20 @@ export default class InputManager {
     this.lockElement = el;
   }
 
+  requestPointerLock() {
+    this.lockElement?.requestPointerLock();
+  }
+
+  exitPointerLock() {
+    if (this.isPointerLocked) {
+      document.exitPointerLock();
+    }
+  }
+
+  get isPointerLocked() {
+    return this.lockElement !== null && document.pointerLockElement === this.lockElement;
+  }
+
   // ------------------- public queries -------------------
   pressed(code: InputKey) {
     return this.pressedKeys.has(code);
@@ -113,6 +127,10 @@ export default class InputManager {
   };
 
   private mouseMove = (e: MouseEvent) => {
+    if (this.isPointerLocked) {
+      return;
+    }
+
     const newX = e.clientX;
     const newY = e.clientY;
     this._mouseDelta.x = newX - (this._mousePosition.x ?? 0);
