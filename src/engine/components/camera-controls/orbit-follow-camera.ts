@@ -33,7 +33,7 @@ export default class OrbitFollowCamera extends Component {
 
   rotationSmoothness = 10;
   readonly currentRotation = new THREE.Quaternion();
-  initialized = false;
+  hasCurrentRotation = false;
 
   constructor(props: OrbitFollowCameraProps = {}) {
     super();

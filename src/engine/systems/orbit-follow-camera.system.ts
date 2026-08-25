@@ -72,9 +72,9 @@ export default class OrbitFollowCameraSystem extends System {
     this.pitchRotation.setFromAxisAngle(this.rightAxis, follow.pitch);
     this.targetRotation.copy(this.yawRotation).multiply(this.pitchRotation);
 
-    if (!follow.initialized) {
+    if (!follow.hasCurrentRotation) {
       follow.currentRotation.copy(this.targetRotation);
-      follow.initialized = true;
+      follow.hasCurrentRotation = true;
     } else {
       const t =
         follow.rotationSmoothness > 0 ? 1 - Math.exp(-follow.rotationSmoothness * this.dt) : 1;

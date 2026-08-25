@@ -1,3 +1,4 @@
+import { setSystemUiState } from '../../ui/stores/system-ui-store';
 import type { InputKey, MouseButton } from './types';
 
 export default class InputManager {
@@ -30,6 +31,7 @@ export default class InputManager {
     window.addEventListener('keydown', this.keyDown);
     window.addEventListener('keyup', this.keyUp);
     window.addEventListener('contextmenu', this.onContextMenu);
+    document.addEventListener('pointerlockchange', this.pointerLockChange);
 
     // Touch support (map touches to mouse)
     window.addEventListener('touchstart', this.onTouchStart, { passive: false });
@@ -199,6 +201,10 @@ export default class InputManager {
     e.preventDefault();
   };
 
+  private pointerLockChange = () => {
+    setSystemUiState({ isPointerLocked: this.isPointerLocked });
+  };
+
   // ---------- touch handlers (map to mouse) ----------
   private onTouchStart = (e: TouchEvent) => {
     // treat first touch as left mouse down
@@ -245,6 +251,7 @@ export default class InputManager {
     window.removeEventListener('keydown', this.keyDown);
     window.removeEventListener('keyup', this.keyUp);
     window.removeEventListener('contextmenu', this.onContextMenu);
+    document.removeEventListener('pointerlockchange', this.pointerLockChange);
 
     window.removeEventListener('touchstart', this.onTouchStart);
     window.removeEventListener('touchmove', this.onTouchMove);

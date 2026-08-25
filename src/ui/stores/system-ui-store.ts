@@ -16,10 +16,6 @@ export function useSystemUiStore<T>(selector: (state: SystemUiState) => T) {
   return useStore(systemUiStore, selector);
 }
 
-export function setSystemSceneMode(sceneMode: SceneMode) {
-  systemUiStore.setState({ sceneMode });
-}
-
-export function setPointerLocked(isPointerLocked: boolean) {
-  systemUiStore.setState({ isPointerLocked });
+export function setSystemUiState(state: Partial<SystemUiState>) {
+  systemUiStore.setState(state);
 }
