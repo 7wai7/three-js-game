@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import EngineContext from '../contexts/engine.context';
 import Camera from '../components/camera';
+import OrbitFollowCamera from '../components/camera-controls/orbit-follow-camera';
+import InspectCameraControl from '../components/camera-controls/inspect-camera-control';
 import type GameWorld from './game-world';
 
 export function createMainCamera(scene: THREE.Scene) {
@@ -22,6 +24,8 @@ export function createEcsCamera(world: GameWorld, camera: THREE.Camera) {
   const entity = world.createGameObject(camera);
 
   world.addComponent(entity, new Camera(camera));
+  world.addComponent(entity, new OrbitFollowCamera());
+  world.addComponent(entity, new InspectCameraControl());
 
   return { entity, camera };
 }

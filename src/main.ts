@@ -5,10 +5,6 @@ import EngineContext from './engine/contexts/engine.context.js';
 import { createEcsCamera, createMainCamera } from './engine/game/global-factory.js';
 import setupResizeHandler from './listeners/setup-resize-listener.js';
 import { createTestTerrain } from './engine/game/terrain-factory.js';
-import { Rx_Vision_GT3_config } from './engine/model-instancing/configs/Rx-Vision-GT3.js';
-import Car from './engine/components/vehicle/car.js';
-import CameraControllerSystem from './engine/systems/camera-controller.system.js';
-import PlayerControlled from './engine/components/player-controlled.js';
 import { renderGameUi } from './ui/render-game-ui.js';
 
 // Initialize Three.js renderer, scene, and camera
@@ -24,14 +20,13 @@ if (!uiRoot) {
   throw new Error('UI root element not found');
 }
 
-renderGameUi(uiRoot);
-
 const scene = new THREE.Scene();
 const camera = createMainCamera(scene);
 
 // Initialize the game engine
 const engine = new Engine(renderer, scene, camera);
 EngineContext.setEngine(engine);
+renderGameUi(uiRoot);
 
 // Handle window resize
 setupResizeHandler(renderer, camera);
@@ -48,13 +43,13 @@ createTestTerrain(engine);
 //   aims.forEach((aim) => (aim.targetPosition = target));
 // });
 
-engine.modelInstancer.instance(Rx_Vision_GT3_config).then(({ entities }) => {
-  const [chassis] = engine.world.getComponentsFromEntities([...entities], Car);
+// engine.modelInstancer.instance(Rx_Vision_GT3_config).then(({ entities }) => {
+//   const [chassis] = engine.world.getComponentsFromEntities([...entities], Car);
 
-  engine.world.addComponent(chassis.entity, new PlayerControlled());
+//   engine.world.addComponent(chassis.entity, new PlayerControlled());
 
-  const cameraControllerSystem = engine.world.getSystem(CameraControllerSystem);
-  cameraControllerSystem.followEntity = chassis.entity;
-});
+//   const cameraFollow = engine.world.getComponent(camera.uuid, OrbitFollowCamera);
+//   if (cameraFollow) cameraFollow.targetEntity = chassis.entity;
+// });
 
 engine.start();

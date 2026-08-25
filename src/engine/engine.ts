@@ -4,7 +4,6 @@ import GLTFAssetManager from './assets/gltf-asset-manager';
 import PhysicsSyncSystem from './systems/physics-sync.system';
 import InputManager from './input/input-manager';
 import CharacterControllerSystem from './systems/character-controller.system';
-import CameraControllerSystem from './systems/camera-controller.system';
 import AnimationsSystem from './systems/animations.system';
 import type { Assets } from './assets/types';
 import TextureAssetManager from './assets/texture-asset-manager';
@@ -28,14 +27,21 @@ import AimAtMouseScreenSystem from './systems/transform/aim-at-mouse-screen.syst
 import AimAtTargetSystem from './systems/transform/aim-at-target.system';
 import ModelInstancer from './model-instancing/instancing';
 import VehicleTelemetrySystem from './systems/vehicle-telemetry.system';
+import ModeManager from './mode/mode-manager';
+import { inspectModeInput } from './input/input-configs/inspect-mode-input';
+import InspectModeToggleSystem from './systems/inspect-mode-toggle.system';
+import OrbitFollowCameraSystem from './systems/orbit-follow-camera.system';
+import InspectCameraControlSystem from './systems/inspect-camera-control.system';
 
 export default class Engine {
   readonly world: GameWorld = new GameWorld();
   readonly input: InputManager = new InputManager();
+  readonly mode: ModeManager = new ModeManager();
   readonly inputLayers = new Map<string, InputLayer>([
     ['system', new InputLayer(this.input, systemInput)],
     ['camera', new InputLayer(this.input, defaultCameraInput)],
     ['gameplay', new InputLayer(this.input, defaultGameplayInput)],
+    ['inspect', new InputLayer(this.input, inspectModeInput)],
   ]);
 
   readonly assets: Assets = {
@@ -60,7 +66,9 @@ export default class Engine {
     this.scene = scene;
     this.camera = camera;
     this.modelInstancer = new ModelInstancer(this);
+    this.input.setLockElement(renderer.domElement);
 
+    this.world.addSystem(new InspectModeToggleSystem());
     this.world.addSystem(new PhysicsSyncSystem());
     this.world.addSystem(new PlayerInputSystem());
     this.world.addSystem(new CarControllerSystem());
@@ -77,7 +85,8 @@ export default class Engine {
     this.world.addSystem(new AimAtMouseScreenSystem());
     this.world.addSystem(new AimAtTargetSystem());
     this.world.addSystem(new AnimationsSystem());
-    this.world.addSystem(new CameraControllerSystem());
+    this.world.addSystem(new OrbitFollowCameraSystem());
+    this.world.addSystem(new InspectCameraControlSystem());
     this.world.addSystem(new RapierDebugRenderer());
   }
 

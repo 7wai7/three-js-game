@@ -9,6 +9,7 @@ export default class RapierDebugRenderer extends System {
     const material = new LineBasicMaterial({ vertexColors: true });
     this.mesh = new LineSegments(geometry, material);
     this.mesh.frustumCulled = false;
+    this.setVisible(false);
     this.scene.add(this.mesh);
   }
 
